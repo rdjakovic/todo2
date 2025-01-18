@@ -9,7 +9,7 @@ Main features:
 - Lists - you can create multiple lists
 - Lists - you can rename/delete a list
 - Todos - you can add a todo
-- Todos - you can delete a todo
+- Todos - you can rename/delete a todo
 - Todos - you can mark a todo as done
 - Lists and Todos are saved locally in text files for simplicity.
 
@@ -19,6 +19,7 @@ Features:
 - Dark/Light mode
 - Responsive
 - Resize sidebar
+- Settings - you can set the storage path
 
 ## Recommended IDE Setup
 
