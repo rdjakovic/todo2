@@ -63,7 +63,7 @@ export function Sidebar({
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const startResizing = useCallback((e: React.MouseEvent) => {
+  const startResizing = useCallback(() => {
     setIsResizing(true);
   }, []);
 
