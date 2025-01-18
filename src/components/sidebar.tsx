@@ -52,18 +52,16 @@ export function Sidebar({
   const [editingListId, setEditingListId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [isResizing, setIsResizing] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 768) {
-        // md breakpoint
-        onToggle();
-      }
+      setWindowWidth(window.innerWidth);
     };
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [onToggle]);
+  }, []);
 
   const startResizing = useCallback((e: React.MouseEvent) => {
     setIsResizing(true);
@@ -146,7 +144,7 @@ export function Sidebar({
         onClick={onToggle}
         className={clsx(
           "fixed top-4 left-4 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 z-50",
-          isOpen ? "md:hidden" : "block"
+          isOpen && windowWidth >= 768 ? "hidden" : "block"
         )}
         title="Toggle sidebar"
       >
@@ -154,7 +152,7 @@ export function Sidebar({
       </button>
 
       {/* Overlay for mobile when sidebar is open */}
-      {isOpen && window.innerWidth < 768 && (
+      {isOpen && windowWidth < 768 && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40"
           onClick={onToggle}
@@ -164,8 +162,11 @@ export function Sidebar({
       {/* Sidebar */}
       <div
         className={clsx(
-          "fixed inset-y-0 left-0 bg-white dark:bg-gray-800 h-screen border-r border-gray-200 dark:border-gray-700 flex flex-col z-50 transition-transform duration-300",
-          !isOpen && "-translate-x-full"
+          "h-screen border-r border-gray-200 dark:border-gray-700 flex flex-col z-50 transition-transform duration-300 bg-white dark:bg-gray-800",
+          windowWidth >= 768
+            ? "md:fixed inset-y-0 left-0" // Desktop: fixed positioning
+            : "fixed inset-y-0 left-0", // Mobile: fixed positioning
+          !isOpen && "-translate-x-full" // Transform on both mobile and desktop when closed
         )}
         style={{ width: width + "px" }}
       >
@@ -285,7 +286,7 @@ export function Sidebar({
         )}
 
         {/* Settings and collapse button row */}
-        <div className="mt-4 flex items-center gap-2">
+        <div className="mt-4 flex items-center gap-2 p-4">
           <button
             onClick={onSelectSettings}
             className="flex-1 flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
@@ -297,7 +298,7 @@ export function Sidebar({
 
           <button
             onClick={onToggle}
-            className="p-2 text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg hidden md:block"
+            className="p-2 text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
             title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
             {isOpen ? (

@@ -28,6 +28,7 @@ function App() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
   const [sidebarWidth, setSidebarWidth] = useState(256);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   useEffect(() => {
     loadTodos();
@@ -38,6 +39,22 @@ function App() {
       setTheme(savedTheme);
       document.documentElement.classList.toggle("dark", savedTheme === "dark");
     }
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setWindowWidth(width);
+      if (width < 768) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize(); // Call it initially
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const toggleTheme = () => {
@@ -364,11 +381,16 @@ function App() {
         width={sidebarWidth}
         onWidthChange={setSidebarWidth}
       />
+
       <main
         className="flex-1 transition-all duration-300"
         style={{
-          marginLeft: isSidebarOpen ? `${sidebarWidth}px` : "0",
-          paddingTop: !isSidebarOpen || window.innerWidth < 768 ? "4rem" : "0",
+          marginLeft:
+            windowWidth >= 768 && isSidebarOpen ? `${sidebarWidth}px` : "0",
+          paddingTop:
+            (!isSidebarOpen && windowWidth >= 768) || windowWidth < 768
+              ? "4rem"
+              : "1rem",
         }}
       >
         {renderContent()}
