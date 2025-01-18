@@ -1,1 +1,0 @@
-[{"id":"home","name":"Home","icon":"home"},{"id":"completed","name":"Completed","icon":"check"},{"id":"personal","name":"Personal","icon":"user"},{"id":"work","name":"Work","icon":"briefcase"},{"id":"books","name":"List of Book","icon":"book"},{"id":"roadtrip","name":"Road trip","icon":"car"},{"id":"list-1737201979694","name":"Test2","icon":"home"}]
