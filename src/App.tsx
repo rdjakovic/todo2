@@ -35,15 +35,20 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
   const [sidebarWidth, setSidebarWidth] = useState(256);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [storagePath, setStoragePath] = useState<string>("");
 
   useEffect(() => {
     loadTodos();
     loadLists();
-    // Load saved theme
+    // Load saved theme and storage path
     const savedTheme = localStorage.getItem("theme") as "light" | "dark";
+    const savedPath = localStorage.getItem("storagePath") || "";
     if (savedTheme) {
       setTheme(savedTheme);
       document.documentElement.classList.toggle("dark", savedTheme === "dark");
+    }
+    if (savedPath) {
+      setStoragePath(savedPath);
     }
   }, []);
 
@@ -238,6 +243,21 @@ function App() {
     return acc;
   }, {} as Record<string, number>);
 
+  const saveStoragePath = async (path: string) => {
+    try {
+      await invoke("set_storage_path", { path });
+      setStoragePath(path);
+      localStorage.setItem("storagePath", path);
+      setError(null);
+      // Reload todos and lists after changing the path
+      await loadTodos();
+      await loadLists();
+    } catch (err) {
+      setError("Failed to set storage path");
+      console.error("Error setting storage path:", err);
+    }
+  };
+
   const renderContent = () => {
     if (selectedList === "settings") {
       return (
@@ -247,28 +267,57 @@ function App() {
               Settings
             </h1>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-                    Theme
-                  </h2>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    Switch between light and dark mode
-                  </p>
+            <div className="space-y-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+                      Theme
+                    </h2>
+                    <p className="text-gray-500 dark:text-gray-400">
+                      Switch between light and dark mode
+                    </p>
+                  </div>
+                  <button
+                    onClick={toggleTheme}
+                    className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-purple-600 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <span className="sr-only">Toggle theme</span>
+                    <span
+                      className={clsx(
+                        "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                        theme === "dark" ? "translate-x-6" : "translate-x-1"
+                      )}
+                    />
+                  </button>
                 </div>
-                <button
-                  onClick={toggleTheme}
-                  className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-purple-600 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <span className="sr-only">Toggle theme</span>
-                  <span
-                    className={clsx(
-                      "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-                      theme === "dark" ? "translate-x-6" : "translate-x-1"
-                    )}
-                  />
-                </button>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+                <div>
+                  <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Storage Location
+                  </h2>
+                  <p className="text-gray-500 dark:text-gray-400 mb-4">
+                    Set custom path for storing todos and lists (leave empty for
+                    default location)
+                  </p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={storagePath}
+                      onChange={(e) => setStoragePath(e.target.value)}
+                      className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="Enter storage path..."
+                    />
+                    <button
+                      onClick={() => saveStoragePath(storagePath)}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
