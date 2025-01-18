@@ -44,6 +44,14 @@ function App() {
     }
   };
 
+  const saveList = async (updatedLists: TodoList[]) => {
+    try {
+      await invoke("save_lists", { lists: JSON.stringify(updatedLists) });
+    } catch (err) {
+      console.error("Error saving lists:", err);
+    }
+  };
+
   const saveTodos = async (updatedTodos: Todo[]) => {
     try {
       await invoke("save_todos", { todo: JSON.stringify(updatedTodos) });
@@ -107,7 +115,9 @@ function App() {
       name,
       icon: "home",
     };
-    setLists([...lists, newList]);
+    const updatedLists = [...lists, newList];
+    setLists(updatedLists);
+    saveList(updatedLists);
   };
 
   const deleteList = (id: string) => {
@@ -117,6 +127,7 @@ function App() {
     }
     const updatedLists = lists.filter((list) => list.id !== id);
     setLists(updatedLists);
+    saveList(updatedLists);
     if (selectedList === id) {
       setSelectedList("home");
     }
