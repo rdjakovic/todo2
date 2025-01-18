@@ -37,7 +37,7 @@ async fn load_todos(state: State<'_, StoragePathState>) -> Result<String, String
         get_default_todos_path()?
     } else {
         let mut path_buf = PathBuf::from(&*storage_path);
-        path_buf.push("todos.txt");
+        path_buf.push("todos.json");
         path_buf.to_string_lossy().into_owned()
     };
 
@@ -54,7 +54,7 @@ async fn save_todos(todo: String, state: State<'_, StoragePathState>) -> Result<
         get_default_todos_path()?
     } else {
         let mut path_buf = PathBuf::from(&*storage_path);
-        path_buf.push("todos.txt");
+        path_buf.push("todos.json");
         path_buf.to_string_lossy().into_owned()
     };
 
@@ -68,7 +68,7 @@ async fn load_lists(state: State<'_, StoragePathState>) -> Result<String, String
         get_default_lists_path()?
     } else {
         let mut path_buf = PathBuf::from(&*storage_path);
-        path_buf.push("lists.txt");
+        path_buf.push("lists.json");
         path_buf.to_string_lossy().into_owned()
     };
 
@@ -85,7 +85,7 @@ async fn save_lists(lists: String, state: State<'_, StoragePathState>) -> Result
         get_default_lists_path()?
     } else {
         let mut path_buf = PathBuf::from(&*storage_path);
-        path_buf.push("lists.txt");
+        path_buf.push("lists.json");
         path_buf.to_string_lossy().into_owned()
     };
 
@@ -97,7 +97,7 @@ fn get_default_todos_path() -> Result<String, String> {
         .ok_or_else(|| "Failed to get app directory".to_string())?;
     let data_dir = project_dirs.data_dir();
     std::fs::create_dir_all(data_dir).map_err(|e| e.to_string())?;
-    Ok(data_dir.join("todos.txt").to_string_lossy().into_owned())
+    Ok(data_dir.join("todos.json").to_string_lossy().into_owned())
 }
 
 fn get_default_lists_path() -> Result<String, String> {
@@ -105,7 +105,7 @@ fn get_default_lists_path() -> Result<String, String> {
         .ok_or_else(|| "Failed to get app directory".to_string())?;
     let data_dir = project_dirs.data_dir();
     std::fs::create_dir_all(data_dir).map_err(|e| e.to_string())?;
-    Ok(data_dir.join("lists.txt").to_string_lossy().into_owned())
+    Ok(data_dir.join("lists.json").to_string_lossy().into_owned())
 }
 
 fn main() {
