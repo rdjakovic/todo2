@@ -12,6 +12,8 @@ import {
   PencilIcon,
   CheckIcon,
   Bars3Icon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import { TodoList } from "../types/todo";
@@ -139,19 +141,22 @@ export function Sidebar({
 
   return (
     <>
-      {/* Hamburger button for mobile */}
+      {/* Hamburger button */}
       <button
         onClick={onToggle}
-        className="fixed top-4 left-4 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 md:hidden z-50"
+        className={clsx(
+          "fixed top-4 left-4 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 z-50",
+          isOpen ? "md:hidden" : "block"
+        )}
         title="Toggle sidebar"
       >
         <Bars3Icon className="w-6 h-6 text-gray-600 dark:text-gray-200" />
       </button>
 
       {/* Overlay for mobile when sidebar is open */}
-      {isOpen && (
+      {isOpen && window.innerWidth < 768 && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 md:hidden z-40"
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
           onClick={onToggle}
         />
       )}
@@ -159,8 +164,8 @@ export function Sidebar({
       {/* Sidebar */}
       <div
         className={clsx(
-          "fixed md:static inset-y-0 left-0 bg-white dark:bg-gray-800 h-screen border-r border-gray-200 dark:border-gray-700 flex flex-col z-50 transition-transform duration-300",
-          !isOpen && "-translate-x-full md:translate-x-0"
+          "fixed inset-y-0 left-0 bg-white dark:bg-gray-800 h-screen border-r border-gray-200 dark:border-gray-700 flex flex-col z-50 transition-transform duration-300",
+          !isOpen && "-translate-x-full"
         )}
         style={{ width: width + "px" }}
       >
@@ -279,14 +284,29 @@ export function Sidebar({
           </button>
         )}
 
-        <button
-          onClick={onSelectSettings}
-          className="mt-4 w-full flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-          title="Settings"
-        >
-          <Cog6ToothIcon className="w-5 h-5" />
-          <span>Settings</span>
-        </button>
+        {/* Settings and collapse button row */}
+        <div className="mt-4 flex items-center gap-2">
+          <button
+            onClick={onSelectSettings}
+            className="flex-1 flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+            title="Settings"
+          >
+            <Cog6ToothIcon className="w-5 h-5" />
+            <span>Settings</span>
+          </button>
+
+          <button
+            onClick={onToggle}
+            className="p-2 text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg hidden md:block"
+            title={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            {isOpen ? (
+              <ChevronLeftIcon className="w-5 h-5" />
+            ) : (
+              <ChevronRightIcon className="w-5 h-5" />
+            )}
+          </button>
+        </div>
 
         {/* Resize handle - only show on desktop */}
         <div

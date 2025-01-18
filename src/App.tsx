@@ -365,14 +365,10 @@ function App() {
         onWidthChange={setSidebarWidth}
       />
       <main
-        className="flex-1 transition-all duration-300 md:pt-0 pt-16"
+        className="flex-1 transition-all duration-300"
         style={{
-          marginLeft:
-            window.innerWidth >= 768
-              ? isSidebarOpen
-                ? `${sidebarWidth}px`
-                : "0"
-              : "0",
+          marginLeft: isSidebarOpen ? `${sidebarWidth}px` : "0",
+          paddingTop: !isSidebarOpen || window.innerWidth < 768 ? "4rem" : "0",
         }}
       >
         {renderContent()}
