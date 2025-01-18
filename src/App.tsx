@@ -8,7 +8,7 @@ import { Sidebar } from "./components/sidebar";
 import { Todo, TodoList } from "./types/todo";
 import "./App.css";
 
-const defaultLists: TodoList[] = [
+const initialLists = [
   { id: "home", name: "Home", icon: "home" },
   { id: "completed", name: "Completed", icon: "check" },
   { id: "personal", name: "Personal", icon: "user" },
@@ -20,7 +20,7 @@ const defaultLists: TodoList[] = [
 
 function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [lists, setLists] = useState<TodoList[]>(defaultLists);
+  const [lists, setLists] = useState<TodoList[]>(initialLists);
   const [selectedList, setSelectedList] = useState("home");
   const [newTodo, setNewTodo] = useState("");
   const [loading, setLoading] = useState(true);
@@ -28,7 +28,24 @@ function App() {
 
   useEffect(() => {
     loadTodos();
+    loadLists();
   }, []);
+
+  const loadLists = async () => {
+    try {
+      const loadedLists = await invoke<string>("load_lists");
+      const parsedLists = JSON.parse(loadedLists);
+      if (parsedLists && parsedLists.length > 0) {
+        setLists(parsedLists);
+      } else {
+        setLists(initialLists);
+        await saveList(initialLists);
+      }
+    } catch (err) {
+      console.error("Error loading lists:", err);
+      setLists(initialLists);
+    }
+  };
 
   const loadTodos = async () => {
     try {
@@ -109,7 +126,7 @@ function App() {
     }
   };
 
-  const createList = (name: string) => {
+  const createList = async (name: string) => {
     const newList: TodoList = {
       id: `list-${Date.now()}`,
       name,
@@ -117,23 +134,23 @@ function App() {
     };
     const updatedLists = [...lists, newList];
     setLists(updatedLists);
-    saveList(updatedLists);
+    await saveList(updatedLists);
   };
 
-  const deleteList = (id: string) => {
+  const deleteList = async (id: string) => {
     if (id === "home" || id === "completed") {
       setError("Cannot delete default lists");
       return;
     }
     const updatedLists = lists.filter((list) => list.id !== id);
     setLists(updatedLists);
-    saveList(updatedLists);
+    await saveList(updatedLists);
     if (selectedList === id) {
       setSelectedList("home");
     }
     const updatedTodos = todos.filter((todo) => todo.listId !== id);
     setTodos(updatedTodos);
-    saveTodos(updatedTodos);
+    await saveTodos(updatedTodos);
   };
 
   const filteredTodos = todos.filter((todo) =>
