@@ -365,7 +365,7 @@ function App() {
         onWidthChange={setSidebarWidth}
       />
       <main
-        className="flex-1 transition-all duration-300"
+        className="flex-1 transition-all duration-300 md:pt-0 pt-16"
         style={{
           marginLeft:
             window.innerWidth >= 768
