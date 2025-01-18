@@ -8,6 +8,7 @@ import {
   PlusIcon,
   XMarkIcon,
   TrashIcon,
+  Cog6ToothIcon,
 } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import { TodoList } from "../types/todo";
@@ -18,6 +19,7 @@ interface SidebarProps {
   onSelectList: (listId: string) => void;
   onCreateList: (name: string) => Promise<void>;
   onDeleteList: (listId: string) => Promise<void>;
+  onSelectSettings: () => void;
   todoCountByList: Record<string, number>;
 }
 
@@ -27,6 +29,7 @@ export function Sidebar({
   onSelectList,
   onCreateList,
   onDeleteList,
+  onSelectSettings,
   todoCountByList,
 }: SidebarProps) {
   const [isCreating, setIsCreating] = useState(false);
@@ -59,8 +62,8 @@ export function Sidebar({
   };
 
   return (
-    <div className="w-64 bg-white h-screen p-4 border-r">
-      <div className="space-y-2">
+    <div className="w-64 bg-white dark:bg-gray-800 h-screen p-4 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+      <div className="flex-1 space-y-2">
         {lists.map((list) => (
           <div key={list.id} className="flex items-center justify-between">
             <button
@@ -68,21 +71,22 @@ export function Sidebar({
               className={clsx(
                 "w-full flex items-center justify-between px-3 py-2 rounded-lg",
                 selectedList === list.id
-                  ? "bg-purple-100 text-purple-900"
-                  : "hover:bg-gray-100"
+                  ? "bg-purple-100 dark:bg-purple-900 text-purple-900 dark:text-purple-100"
+                  : "hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100"
               )}
             >
               <div className="flex items-center gap-3">
                 {getIconForList(list.icon)}
                 <span>{list.name}</span>
               </div>
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
                 {todoCountByList[list.id] || 0}
               </span>
             </button>
             <button
               onClick={() => onDeleteList(list.id)}
-              className="ml-2 p-1 text-gray-500 hover:text-red-500 rounded-lg hover:bg-red-50"
+              className="ml-2 p-1 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
+              title="Delete list"
             >
               <TrashIcon className="w-5 h-5" />
             </button>
@@ -97,19 +101,20 @@ export function Sidebar({
             value={newListName}
             onChange={(e) => setNewListName(e.target.value)}
             placeholder="List name"
-            className="w-full px-3 py-2 border rounded-lg"
+            className="w-full px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"
             autoFocus
           />
           <div className="flex gap-2">
             <button
               onClick={handleCreateList}
-              className="flex-1 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              className="flex-1 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800"
             >
               Create
             </button>
             <button
               onClick={() => setIsCreating(false)}
-              className="px-3 py-2 border rounded-lg hover:bg-gray-100"
+              className="px-3 py-2 border dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200"
+              title="Cancel"
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
@@ -118,12 +123,21 @@ export function Sidebar({
       ) : (
         <button
           onClick={() => setIsCreating(true)}
-          className="mt-4 w-full flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+          className="mt-4 w-full flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
         >
           <PlusIcon className="w-5 h-5" />
           Create new list
         </button>
       )}
+
+      <button
+        onClick={onSelectSettings}
+        className="mt-4 w-full flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+        title="Settings"
+      >
+        <Cog6ToothIcon className="w-5 h-5" />
+        <span>Settings</span>
+      </button>
     </div>
   );
 }

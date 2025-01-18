@@ -25,11 +25,25 @@ function App() {
   const [newTodo, setNewTodo] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     loadTodos();
     loadLists();
+    // Load saved theme
+    const savedTheme = localStorage.getItem("theme") as "light" | "dark";
+    if (savedTheme) {
+      setTheme(savedTheme);
+      document.documentElement.classList.toggle("dark", savedTheme === "dark");
+    }
   }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.documentElement.classList.toggle("dark", newTheme === "dark");
+  };
 
   const loadLists = async () => {
     try {
@@ -172,33 +186,53 @@ function App() {
     return acc;
   }, {} as Record<string, number>);
 
-  if (loading) {
+  const renderContent = () => {
+    if (selectedList === "settings") {
+      return (
+        <div className="flex-1 p-8">
+          <div className="max-w-2xl mx-auto">
+            <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-8">
+              Settings
+            </h1>
+
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+                    Theme
+                  </h2>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Switch between light and dark mode
+                  </p>
+                </div>
+                <button
+                  onClick={toggleTheme}
+                  className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-purple-600 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <span className="sr-only">Toggle theme</span>
+                  <span
+                    className={clsx(
+                      "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                      theme === "dark" ? "translate-x-6" : "translate-x-1"
+                    )}
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
-      <Sidebar
-        lists={lists}
-        selectedList={selectedList}
-        onSelectList={setSelectedList}
-        onCreateList={createList}
-        onDeleteList={deleteList}
-        todoCountByList={todoCountByList}
-      />
-
       <div className="flex-1 p-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-800 mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-8">
             {lists.find((list) => list.id === selectedList)?.name || "Todos"}
           </h1>
 
           {error && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg text-red-600 dark:text-red-200">
               {error}
             </div>
           )}
@@ -209,7 +243,7 @@ function App() {
                 type="text"
                 value={newTodo}
                 onChange={(e) => setNewTodo(e.target.value)}
-                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Add a new todo..."
               />
               <button
@@ -227,7 +261,7 @@ function App() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center text-gray-500 py-8"
+                className="text-center text-gray-500 dark:text-gray-400 py-8"
               >
                 No todos yet. Add one above!
               </motion.div>
@@ -242,8 +276,8 @@ function App() {
                 >
                   <div
                     className={clsx(
-                      "p-4 rounded-lg bg-white shadow-sm border border-gray-100 flex items-center gap-4",
-                      todo.completed && "bg-gray-50"
+                      "p-4 rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4",
+                      todo.completed && "bg-gray-50 dark:bg-gray-900"
                     )}
                   >
                     <button
@@ -252,7 +286,7 @@ function App() {
                         "w-6 h-6 rounded-full border-2 flex items-center justify-center",
                         todo.completed
                           ? "border-green-500 bg-green-500"
-                          : "border-gray-300"
+                          : "border-gray-300 dark:border-gray-500"
                       )}
                     >
                       {todo.completed && (
@@ -263,20 +297,22 @@ function App() {
                     <div className="flex-1">
                       <p
                         className={clsx(
-                          "text-gray-800",
-                          todo.completed && "line-through text-gray-500"
+                          "text-gray-800 dark:text-gray-100",
+                          todo.completed &&
+                            "line-through text-gray-500 dark:text-gray-400"
                         )}
                       >
                         {todo.text}
                       </p>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
                         {format(new Date(todo.date), "MMM d, yyyy - HH:mm")}
                       </p>
                     </div>
 
                     <button
                       onClick={() => deleteTodo(todo.id)}
-                      className="p-2 text-gray-500 hover:text-red-500 rounded-lg hover:bg-red-50"
+                      className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
+                      title="Delete todo"
                     >
                       <TrashIcon className="w-5 h-5" />
                     </button>
@@ -287,6 +323,29 @@ function App() {
           </AnimatePresence>
         </div>
       </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 dark:from-gray-900 to-blue-50 dark:to-gray-800 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 dark:border-purple-400 border-t-transparent" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen bg-gradient-to-br from-purple-50 dark:from-gray-900 to-blue-50 dark:to-gray-800">
+      <Sidebar
+        lists={lists}
+        selectedList={selectedList}
+        onSelectList={setSelectedList}
+        onCreateList={createList}
+        onDeleteList={deleteList}
+        onSelectSettings={() => setSelectedList("settings")}
+        todoCountByList={todoCountByList}
+      />
+      {renderContent()}
     </div>
   );
 }
