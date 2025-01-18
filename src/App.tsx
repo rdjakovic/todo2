@@ -26,6 +26,8 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
+  const [sidebarWidth, setSidebarWidth] = useState(256);
 
   useEffect(() => {
     loadTodos();
@@ -357,8 +359,24 @@ function App() {
         onEditList={editList}
         onSelectSettings={() => setSelectedList("settings")}
         todoCountByList={todoCountByList}
+        isOpen={isSidebarOpen}
+        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        width={sidebarWidth}
+        onWidthChange={setSidebarWidth}
       />
-      {renderContent()}
+      <main
+        className="flex-1 transition-all duration-300"
+        style={{
+          marginLeft:
+            window.innerWidth >= 768
+              ? isSidebarOpen
+                ? `${sidebarWidth}px`
+                : "0"
+              : "0",
+        }}
+      >
+        {renderContent()}
+      </main>
     </div>
   );
 }
