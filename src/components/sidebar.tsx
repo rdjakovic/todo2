@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   HomeIcon,
   CheckCircleIcon,
@@ -9,6 +9,8 @@ import {
   XMarkIcon,
   TrashIcon,
   Cog6ToothIcon,
+  PencilIcon,
+  CheckIcon,
 } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import { TodoList } from "../types/todo";
@@ -19,6 +21,7 @@ interface SidebarProps {
   onSelectList: (listId: string) => void;
   onCreateList: (name: string) => Promise<void>;
   onDeleteList: (listId: string) => Promise<void>;
+  onEditList: (id: string, name: string) => Promise<void>;
   onSelectSettings: () => void;
   todoCountByList: Record<string, number>;
 }
@@ -29,11 +32,46 @@ export function Sidebar({
   onSelectList,
   onCreateList,
   onDeleteList,
+  onEditList,
   onSelectSettings,
   todoCountByList,
 }: SidebarProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [newListName, setNewListName] = useState("");
+  const [editingListId, setEditingListId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
+  const [width, setWidth] = useState(256); // 16 * 16 = 256px (w-64)
+  const [isResizing, setIsResizing] = useState(false);
+
+  const startResizing = useCallback((e: React.MouseEvent) => {
+    setIsResizing(true);
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  const resize = useCallback(
+    (e: MouseEvent) => {
+      if (isResizing) {
+        const newWidth = e.clientX;
+        if (newWidth >= 200 && newWidth <= 600) {
+          // Min and max width limits
+          setWidth(newWidth);
+        }
+      }
+    },
+    [isResizing]
+  );
+
+  useEffect(() => {
+    window.addEventListener("mousemove", resize);
+    window.addEventListener("mouseup", stopResizing);
+    return () => {
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
+    };
+  }, [resize, stopResizing]);
 
   const getIconForList = (icon: string) => {
     const props = { className: "w-5 h-5" };
@@ -61,35 +99,105 @@ export function Sidebar({
     }
   };
 
+  const handleEditList = (id: string) => {
+    if (id === "home" || id === "completed") {
+      return; // Don't allow editing default lists
+    }
+    const list = lists.find((l) => l.id === id);
+    if (list) {
+      setEditingListId(id);
+      setEditingName(list.name);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (editingListId && editingName.trim()) {
+      await onEditList(editingListId, editingName.trim());
+      setEditingListId(null);
+      setEditingName("");
+    }
+  };
+
   return (
-    <div className="w-64 bg-white dark:bg-gray-800 h-screen p-4 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-      <div className="flex-1 space-y-2">
+    <div
+      className="bg-white dark:bg-gray-800 h-screen border-r border-gray-200 dark:border-gray-700 flex flex-col relative"
+      style={{ width: width + "px" }}
+    >
+      <div className="p-4 flex-1 space-y-2">
         {lists.map((list) => (
           <div key={list.id} className="flex items-center justify-between">
-            <button
-              onClick={() => onSelectList(list.id)}
-              className={clsx(
-                "w-full flex items-center justify-between px-3 py-2 rounded-lg",
-                selectedList === list.id
-                  ? "bg-purple-100 dark:bg-purple-900 text-purple-900 dark:text-purple-100"
-                  : "hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                {getIconForList(list.icon)}
-                <span>{list.name}</span>
+            {editingListId === list.id ? (
+              <div className="flex-1 flex gap-2">
+                <input
+                  type="text"
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  className="flex-1 px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"
+                  placeholder="Enter list name"
+                  title="Edit list name"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSaveEdit();
+                    } else if (e.key === "Escape") {
+                      setEditingListId(null);
+                    }
+                  }}
+                />
+                <button
+                  onClick={handleSaveEdit}
+                  className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900 rounded-lg"
+                  title="Save"
+                >
+                  <CheckIcon className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setEditingListId(null)}
+                  className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                  title="Cancel"
+                >
+                  <XMarkIcon className="w-5 h-5" />
+                </button>
               </div>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
-                {todoCountByList[list.id] || 0}
-              </span>
-            </button>
-            <button
-              onClick={() => onDeleteList(list.id)}
-              className="ml-2 p-1 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
-              title="Delete list"
-            >
-              <TrashIcon className="w-5 h-5" />
-            </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => onSelectList(list.id)}
+                  className={clsx(
+                    "w-full flex items-center justify-between px-3 py-2 rounded-lg",
+                    selectedList === list.id
+                      ? "bg-purple-100 dark:bg-purple-900 text-purple-900 dark:text-purple-100"
+                      : "hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    {getIconForList(list.icon)}
+                    <span>{list.name}</span>
+                  </div>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {todoCountByList[list.id] || 0}
+                  </span>
+                </button>
+                <div className="flex">
+                  {list.id !== "home" && list.id !== "completed" && (
+                    <button
+                      onClick={() => handleEditList(list.id)}
+                      className="ml-2 p-1 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900"
+                      title="Edit list"
+                    >
+                      <PencilIcon className="w-5 h-5" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => onDeleteList(list.id)}
+                    className="ml-2 p-1 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
+                    title="Delete list"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>
@@ -138,6 +246,12 @@ export function Sidebar({
         <Cog6ToothIcon className="w-5 h-5" />
         <span>Settings</span>
       </button>
+
+      {/* Resize handle */}
+      <div
+        className="absolute right-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-purple-500 transition-colors"
+        onMouseDown={startResizing}
+      />
     </div>
   );
 }

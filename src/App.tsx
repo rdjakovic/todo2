@@ -167,6 +167,18 @@ function App() {
     await saveTodos(updatedTodos);
   };
 
+  const editList = async (id: string, newName: string) => {
+    if (id === "home" || id === "completed") {
+      setError("Cannot edit default lists");
+      return;
+    }
+    const updatedLists = lists.map((list) =>
+      list.id === id ? { ...list, name: newName } : list
+    );
+    setLists(updatedLists);
+    await saveList(updatedLists);
+  };
+
   const filteredTodos = todos.filter((todo) =>
     selectedList === "completed"
       ? todo.completed
@@ -342,6 +354,7 @@ function App() {
         onSelectList={setSelectedList}
         onCreateList={createList}
         onDeleteList={deleteList}
+        onEditList={editList}
         onSelectSettings={() => setSelectedList("settings")}
         todoCountByList={todoCountByList}
       />
