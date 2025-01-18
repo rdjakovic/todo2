@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { PlusIcon, TrashIcon, CheckIcon } from "@heroicons/react/24/outline";
+import {
+  PlusIcon,
+  TrashIcon,
+  CheckIcon,
+  PencilIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import clsx from "clsx";
@@ -198,6 +204,21 @@ function App() {
     await saveList(updatedLists);
   };
 
+  const editTodo = async (id: number, newText: string) => {
+    try {
+      const updatedTodos = todos.map((todo) =>
+        todo.id === id
+          ? { ...todo, text: newText, isEditing: false, editText: undefined }
+          : todo
+      );
+      setTodos(updatedTodos);
+      await saveTodos(updatedTodos);
+      setError(null);
+    } catch (err) {
+      setError("Failed to edit todo");
+    }
+  };
+
   const filteredTodos = todos.filter((todo) =>
     selectedList === "completed"
       ? todo.completed
@@ -326,27 +347,115 @@ function App() {
                     </button>
 
                     <div className="flex-1">
-                      <p
-                        className={clsx(
-                          "text-gray-800 dark:text-gray-100",
-                          todo.completed &&
-                            "line-through text-gray-500 dark:text-gray-400"
-                        )}
-                      >
-                        {todo.text}
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {format(new Date(todo.date), "MMM d, yyyy - HH:mm")}
-                      </p>
+                      {todo.isEditing ? (
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={todo.editText}
+                            onChange={(e) => {
+                              const updatedTodos = todos.map((t) =>
+                                t.id === todo.id
+                                  ? { ...t, editText: e.target.value }
+                                  : t
+                              );
+                              setTodos(updatedTodos);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && todo.editText?.trim()) {
+                                editTodo(todo.id, todo.editText);
+                              } else if (e.key === "Escape") {
+                                const updatedTodos = todos.map((t) =>
+                                  t.id === todo.id
+                                    ? {
+                                        ...t,
+                                        isEditing: false,
+                                        editText: undefined,
+                                      }
+                                    : t
+                                );
+                                setTodos(updatedTodos);
+                              }
+                            }}
+                            className="flex-1 px-3 py-2 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                            placeholder="Edit todo"
+                            title="Edit todo text"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => {
+                              if (todo.editText?.trim()) {
+                                editTodo(todo.id, todo.editText);
+                              }
+                            }}
+                            className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900 rounded-lg"
+                            title="Save"
+                          >
+                            <CheckIcon className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              const updatedTodos = todos.map((t) =>
+                                t.id === todo.id
+                                  ? {
+                                      ...t,
+                                      isEditing: false,
+                                      editText: undefined,
+                                    }
+                                  : t
+                              );
+                              setTodos(updatedTodos);
+                            }}
+                            className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                            title="Cancel"
+                          >
+                            <XMarkIcon className="w-5 h-5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <p
+                            className={clsx(
+                              "text-gray-800 dark:text-gray-100",
+                              todo.completed &&
+                                "line-through text-gray-500 dark:text-gray-400"
+                            )}
+                          >
+                            {todo.text}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {format(new Date(todo.date), "MMM d, yyyy - HH:mm")}
+                          </p>
+                        </>
+                      )}
                     </div>
 
-                    <button
-                      onClick={() => deleteTodo(todo.id)}
-                      className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
-                      title="Delete todo"
-                    >
-                      <TrashIcon className="w-5 h-5" />
-                    </button>
+                    {!todo.isEditing && (
+                      <div className="flex">
+                        {!todo.completed && (
+                          <button
+                            onClick={() => {
+                              const updatedTodos = todos.map((t) =>
+                                t.id === todo.id
+                                  ? { ...t, isEditing: true, editText: t.text }
+                                  : t
+                              );
+                              setTodos(updatedTodos);
+                            }}
+                            className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900"
+                            title="Edit todo"
+                          >
+                            <PencilIcon className="w-5 h-5" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteTodo(todo.id)}
+                          className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
+                          title="Delete todo"
+                        >
+                          <TrashIcon className="w-5 h-5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               ))

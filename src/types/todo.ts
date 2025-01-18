@@ -1,14 +1,15 @@
 export interface TodoList {
-    id: string;
-    name: string;
-    icon: string;
+  id: string;
+  name: string;
+  icon: string;
 }
 
 export interface Todo {
-    id: number;
-    text: string;
-    completed: boolean;
-    date: string;
-    listId: string;
+  id: number;
+  text: string;
+  completed: boolean;
+  date: string;
+  listId: string;
+  isEditing?: boolean;
+  editText?: string;
 }
-
