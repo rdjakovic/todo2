@@ -179,7 +179,7 @@ export function Sidebar({
                     type="text"
                     value={editingName}
                     onChange={(e) => setEditingName(e.target.value)}
-                    className="flex-1 px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"
+                    className="flex-1 w-0 min-w-0 px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"
                     placeholder="Enter list name"
                     title="Edit list name"
                     autoFocus
