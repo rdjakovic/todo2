@@ -13,6 +13,7 @@ struct StoragePathState(Mutex<String>);
 #[derive(Serialize, Deserialize)]
 struct AppConfig {
     storage_path: String,
+    theme: Option<String>,
 }
 
 fn get_app_dir() -> Result<PathBuf, String> {
@@ -34,7 +35,8 @@ fn load_or_create_config() -> Result<AppConfig, String> {
             .map_err(|e| e.to_string())
     } else {
         let config = AppConfig {
-            storage_path: String::new()
+            storage_path: String::new(),
+            theme: None,
         };
         let config_str = serde_json::to_string(&config)
             .map_err(|e| e.to_string())?;
@@ -44,10 +46,35 @@ fn load_or_create_config() -> Result<AppConfig, String> {
     }
 }
 
+fn save_config(config: &AppConfig) -> Result<(), String> {
+    let app_dir = get_app_dir()?;
+    let config_path = app_dir.join("config.json");
+    let config_str = serde_json::to_string(&config)
+        .map_err(|e| e.to_string())?;
+    fs::write(config_path, config_str)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn set_theme(theme: String) -> Result<(), String> {
+    let mut config = load_or_create_config()?;
+    config.theme = Some(theme);
+    save_config(&config)
+}
+
+#[tauri::command]
+async fn get_theme() -> Result<String, String> {
+    let config = load_or_create_config()?;
+    Ok(config.theme.unwrap_or_else(|| "light".to_string()))
+}
+
 #[tauri::command]
 async fn set_storage_path(path: String, state: State<'_, StoragePathState>) -> Result<(), String> {
     if path.is_empty() {
         *state.0.lock().unwrap() = String::new();
+        let mut config = load_or_create_config()?;
+        config.storage_path = String::new();
+        save_config(&config)?;
         return Ok(());
     }
 
@@ -59,16 +86,10 @@ async fn set_storage_path(path: String, state: State<'_, StoragePathState>) -> R
         return Err("Path is not a directory".to_string());
     }
 
-    // Save to config
-    let app_dir = get_app_dir()?;
-    let config_path = app_dir.join("config.json");
-    let config = AppConfig { storage_path: path.clone() };
-    let config_str = serde_json::to_string(&config)
-        .map_err(|e| e.to_string())?;
-    fs::write(config_path, config_str)
-        .map_err(|e| e.to_string())?;
-
-    // Update state
+    // Update config and state
+    let mut config = load_or_create_config()?;
+    config.storage_path = path.clone();
+    save_config(&config)?;
     *state.0.lock().unwrap() = path;
     Ok(())
 }
@@ -134,7 +155,10 @@ async fn load_storage_path() -> Result<String, String> {
 }
 
 fn main() {
-    let config = load_or_create_config().unwrap_or_else(|_| AppConfig { storage_path: String::new() });
+    let config = load_or_create_config().unwrap_or_else(|_| AppConfig {
+        storage_path: String::new(),
+        theme: None,
+    });
     let storage_path_state = StoragePathState(Mutex::new(config.storage_path));
 
     tauri::Builder::default()
@@ -145,7 +169,9 @@ fn main() {
             load_lists,
             save_lists,
             set_storage_path,
-            load_storage_path
+            load_storage_path,
+            set_theme,
+            get_theme
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

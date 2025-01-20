@@ -13,6 +13,7 @@ import clsx from "clsx";
 import { Sidebar } from "./components/sidebar";
 import { Todo, TodoList } from "./types/todo";
 import "./App.css";
+import { useTheme } from "./hooks/useTheme";
 
 const initialLists = [
   { id: "home", name: "Home", icon: "home" },
@@ -25,13 +26,13 @@ const initialLists = [
 ];
 
 function App() {
+  const { theme, toggleTheme } = useTheme();
   const [todos, setTodos] = useState<Todo[]>([]);
   const [lists, setLists] = useState<TodoList[]>(initialLists);
   const [selectedList, setSelectedList] = useState("home");
   const [newTodo, setNewTodo] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
   const [sidebarWidth, setSidebarWidth] = useState(256);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -45,16 +46,6 @@ function App() {
         console.log("Saved path:", savedPath);
         await loadLists();
         await loadTodos();
-
-        // Load saved theme
-        const savedTheme = localStorage.getItem("theme") as "light" | "dark";
-        if (savedTheme) {
-          setTheme(savedTheme);
-          document.documentElement.classList.toggle(
-            "dark",
-            savedTheme === "dark"
-          );
-        }
       } catch (err) {
         console.error("Error loading initial data:", err);
       }
@@ -78,13 +69,6 @@ function App() {
     handleResize(); // Call it initially
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    document.documentElement.classList.toggle("dark", newTheme === "dark");
-  };
 
   const loadLists = async () => {
     try {
@@ -256,7 +240,7 @@ function App() {
 
   const handleSetPath = async (path: string) => {
     try {
-      await invoke("save_storage_path", { path });
+      await invoke("set_storage_path", { path });
       console.log("Storage path saved:", path);
       setStoragePath(path);
     } catch (error) {
@@ -287,6 +271,9 @@ function App() {
                   <button
                     onClick={toggleTheme}
                     className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-purple-600 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    role="switch"
+                    aria-checked={theme === "dark" ? "true" : "false"}
+                    aria-label="Toggle dark mode"
                   >
                     <span className="sr-only">Toggle theme</span>
                     <span
