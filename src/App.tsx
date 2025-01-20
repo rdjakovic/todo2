@@ -38,18 +38,29 @@ function App() {
   const [storagePath, setStoragePath] = useState<string>("");
 
   useEffect(() => {
-    loadTodos();
-    loadLists();
-    // Load saved theme and storage path
-    const savedTheme = localStorage.getItem("theme") as "light" | "dark";
-    const savedPath = localStorage.getItem("storagePath") || "";
-    if (savedTheme) {
-      setTheme(savedTheme);
-      document.documentElement.classList.toggle("dark", savedTheme === "dark");
-    }
-    if (savedPath) {
-      setStoragePath(savedPath);
-    }
+    const loadInitialData = async () => {
+      try {
+        const savedPath = await invoke<string>("load_storage_path");
+        setStoragePath(savedPath);
+        console.log("Saved path:", savedPath);
+        await loadLists();
+        await loadTodos();
+
+        // Load saved theme
+        const savedTheme = localStorage.getItem("theme") as "light" | "dark";
+        if (savedTheme) {
+          setTheme(savedTheme);
+          document.documentElement.classList.toggle(
+            "dark",
+            savedTheme === "dark"
+          );
+        }
+      } catch (err) {
+        console.error("Error loading initial data:", err);
+      }
+    };
+
+    loadInitialData();
   }, []);
 
   useEffect(() => {
@@ -243,18 +254,13 @@ function App() {
     return acc;
   }, {} as Record<string, number>);
 
-  const saveStoragePath = async (path: string) => {
+  const handleSetPath = async (path: string) => {
     try {
-      await invoke("set_storage_path", { path });
+      await invoke("save_storage_path", { path });
+      console.log("Storage path saved:", path);
       setStoragePath(path);
-      localStorage.setItem("storagePath", path);
-      setError(null);
-      // Reload todos and lists after changing the path
-      await loadTodos();
-      await loadLists();
-    } catch (err) {
-      setError("Failed to set storage path");
-      console.error("Error setting storage path:", err);
+    } catch (error) {
+      console.error("Failed to save storage path:", error);
     }
   };
 
@@ -311,7 +317,7 @@ function App() {
                       placeholder="Enter storage path..."
                     />
                     <button
-                      onClick={() => saveStoragePath(storagePath)}
+                      onClick={() => handleSetPath(storagePath)}
                       className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
                       Save

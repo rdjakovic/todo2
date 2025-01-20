@@ -94,10 +94,8 @@ For tauri app
 
 ---
 
-### **Conclusion**
-
-After making these adjustments, try building the project again with:
+### We can also install Dependencies and Check for Errors Without Building:
 
 ```bash
-cargo build
+cargo check
 ```
