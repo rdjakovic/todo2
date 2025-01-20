@@ -38,3 +38,66 @@ For tauri app
 ## Build for production - release bundle
 
 `npm run tauri build`
+
+##
+
+### **Versions errors - Steps to Fix**
+
+1. **Verify the Available Versions**
+   Check the latest version of `tauri` available on crates.io by visiting its [crates.io page](https://crates.io/crates/tauri). At the time of this response, the latest version appears to be `2.2.3`. You cannot specify a version (`^2.2.5`) that does not exist.
+
+2. **Update `Cargo.toml`**
+   Modify your `Cargo.toml` file to match an existing version. For example:
+
+   ```toml
+   [dependencies]
+   tauri = "2.2.3"
+   ```
+
+   The `^2.2.3` constraint is also valid and will automatically allow updates to compatible patch versions (`2.2.x`).
+
+3. **Update the Cargo Index**
+   Sometimes the local cargo registry index might be outdated. Run the following command to update it:
+
+   ```bash
+   cargo update
+   ```
+
+   This will refresh the list of available crate versions.
+
+4. **Check for Tauri Pre-releases**
+   If you intended to use a pre-release or a specific branch, make sure to specify it explicitly in your `Cargo.toml`. For example:
+
+   ```toml
+   [dependencies]
+   tauri = { git = "https://github.com/tauri-apps/tauri", branch = "dev" }
+   ```
+
+   This pulls the latest code from the Tauri repository's `dev` branch.
+
+5. **Clear the Cargo Cache (Optional)**
+   If the issue persists, clear the Cargo cache and rebuild:
+
+   ```bash
+   cargo clean
+   cargo build
+   ```
+
+6. **Check Dependency Conflicts**
+   Ensure that no other dependencies are requiring an incompatible version of `tauri`. Run:
+
+   ```bash
+   cargo tree | grep tauri
+   ```
+
+   This will show how `tauri` is being resolved among dependencies.
+
+---
+
+### **Conclusion**
+
+After making these adjustments, try building the project again with:
+
+```bash
+cargo build
+```
