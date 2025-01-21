@@ -75,12 +75,36 @@ export function Sidebar({
     (e: MouseEvent) => {
       if (isResizing) {
         const newWidth = e.clientX;
+        const currentWidth = width; // Use current width to determine direction
+
         if (newWidth >= 200 && newWidth <= 600) {
+          const listItems = document.querySelectorAll(".list-item-container");
+          let hasOverflow = false;
+
+          // Only check for overflow if we're shrinking the sidebar
+          if (newWidth < currentWidth) {
+            listItems.forEach((item) => {
+              const containerWidth = newWidth - 32;
+              if (
+                item.clientWidth === containerWidth &&
+                item.scrollWidth > containerWidth
+              ) {
+                hasOverflow = true;
+              }
+            });
+
+            if (hasOverflow) {
+              onToggle(); // Close sidebar
+              setIsResizing(false);
+              return;
+            }
+          }
+
           onWidthChange(newWidth);
         }
       }
     },
-    [isResizing, onWidthChange]
+    [isResizing, onWidthChange, onToggle, width] // Added width to dependencies
   );
 
   useEffect(() => {
@@ -172,79 +196,81 @@ export function Sidebar({
       >
         <div className="p-4 flex-1 space-y-2 overflow-y-auto">
           {lists.map((list) => (
-            <div key={list.id} className="flex items-center justify-between">
-              {editingListId === list.id ? (
-                <div className="flex-1 flex gap-2">
-                  <input
-                    type="text"
-                    value={editingName}
-                    onChange={(e) => setEditingName(e.target.value)}
-                    className="flex-1 w-0 min-w-0 px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"
-                    placeholder="Enter list name"
-                    title="Edit list name"
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        handleSaveEdit();
-                      } else if (e.key === "Escape") {
-                        setEditingListId(null);
-                      }
-                    }}
-                  />
-                  <button
-                    onClick={handleSaveEdit}
-                    className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900 rounded-lg"
-                    title="Save"
-                  >
-                    <CheckIcon className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => setEditingListId(null)}
-                    className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                    title="Cancel"
-                  >
-                    <XMarkIcon className="w-5 h-5" />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <button
-                    onClick={() => onSelectList(list.id)}
-                    className={clsx(
-                      "w-full flex items-center justify-between px-3 py-2 rounded-lg",
-                      selectedList === list.id
-                        ? "bg-purple-100 dark:bg-purple-900 text-purple-900 dark:text-purple-100"
-                        : "hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      {getIconForList(list.icon)}
-                      <span>{list.name}</span>
-                    </div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {todoCountByList[list.id] || 0}
-                    </span>
-                  </button>
-                  <div className="flex">
-                    {list.id !== "home" && list.id !== "completed" && (
-                      <button
-                        onClick={() => handleEditList(list.id)}
-                        className="ml-2 p-1 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900"
-                        title="Edit list"
-                      >
-                        <PencilIcon className="w-5 h-5" />
-                      </button>
-                    )}
+            <div key={list.id} className="list-item-container relative group">
+              <div className="flex items-center justify-between">
+                {editingListId === list.id ? (
+                  <div className="flex-1 flex gap-2">
+                    <input
+                      type="text"
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      className="flex-1 w-0 min-w-0 px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"
+                      placeholder="Enter list name"
+                      title="Edit list name"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          handleSaveEdit();
+                        } else if (e.key === "Escape") {
+                          setEditingListId(null);
+                        }
+                      }}
+                    />
                     <button
-                      onClick={() => onDeleteList(list.id)}
-                      className="ml-2 p-1 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
-                      title="Delete list"
+                      onClick={handleSaveEdit}
+                      className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900 rounded-lg"
+                      title="Save"
                     >
-                      <TrashIcon className="w-5 h-5" />
+                      <CheckIcon className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setEditingListId(null)}
+                      className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                      title="Cancel"
+                    >
+                      <XMarkIcon className="w-5 h-5" />
                     </button>
                   </div>
-                </>
-              )}
+                ) : (
+                  <>
+                    <button
+                      onClick={() => onSelectList(list.id)}
+                      className={clsx(
+                        "flex items-center gap-2 px-3 py-2 w-full rounded-lg transition-colors",
+                        selectedList === list.id
+                          ? "bg-purple-100 dark:bg-purple-900 text-purple-900 dark:text-purple-100"
+                          : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        {getIconForList(list.icon)}
+                        <span>{list.name}</span>
+                      </div>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {todoCountByList[list.id] || 0}
+                      </span>
+                    </button>
+                    <div className="flex">
+                      {list.id !== "home" && list.id !== "completed" && (
+                        <button
+                          onClick={() => handleEditList(list.id)}
+                          className="ml-2 p-1 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900"
+                          title="Edit list"
+                        >
+                          <PencilIcon className="w-5 h-5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => onDeleteList(list.id)}
+                        className="ml-2 p-1 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
+                        title="Delete list"
+                      >
+                        <TrashIcon className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           ))}
         </div>
