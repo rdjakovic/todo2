@@ -394,47 +394,51 @@ function App() {
             </div>
           </form>
 
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence mode="sync">
             {filteredTodos.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
                 className="text-center text-gray-500 dark:text-gray-400 py-8"
               >
                 No todos yet. Add one above!
               </motion.div>
             ) : (
-              filteredTodos.map((todo) => (
-                <TodoItem
-                  key={todo.id}
-                  todo={todo}
-                  onToggle={toggleTodo}
-                  onDelete={deleteTodo}
-                  onEdit={editTodo}
-                  onEditStart={(id, text) => {
-                    const updatedTodos = todos.map((t) =>
-                      t.id === id
-                        ? { ...t, isEditing: true, editText: text }
-                        : t
-                    );
-                    setTodos(updatedTodos);
-                  }}
-                  onEditCancel={(id) => {
-                    const updatedTodos = todos.map((t) =>
-                      t.id === id
-                        ? { ...t, isEditing: false, editText: undefined }
-                        : t
-                    );
-                    setTodos(updatedTodos);
-                  }}
-                  onEditChange={(id, newText) => {
-                    const updatedTodos = todos.map((t) =>
-                      t.id === id ? { ...t, editText: newText } : t
-                    );
-                    setTodos(updatedTodos);
-                  }}
-                />
-              ))
+              <div className="space-y-2">
+                {filteredTodos.map((todo) => (
+                  <TodoItem
+                    key={todo.id}
+                    todo={todo}
+                    onToggle={toggleTodo}
+                    onDelete={deleteTodo}
+                    onEdit={editTodo}
+                    onEditStart={(id, text) => {
+                      const updatedTodos = todos.map((t) =>
+                        t.id === id
+                          ? { ...t, isEditing: true, editText: text }
+                          : t
+                      );
+                      setTodos(updatedTodos);
+                    }}
+                    onEditCancel={(id) => {
+                      const updatedTodos = todos.map((t) =>
+                        t.id === id
+                          ? { ...t, isEditing: false, editText: undefined }
+                          : t
+                      );
+                      setTodos(updatedTodos);
+                    }}
+                    onEditChange={(id, newText) => {
+                      const updatedTodos = todos.map((t) =>
+                        t.id === id ? { ...t, editText: newText } : t
+                      );
+                      setTodos(updatedTodos);
+                    }}
+                  />
+                ))}
+              </div>
             )}
           </AnimatePresence>
         </div>
