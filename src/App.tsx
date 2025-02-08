@@ -1,17 +1,11 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { confirm } from "@tauri-apps/plugin-dialog";
-import {
-  PlusIcon,
-  TrashIcon,
-  CheckIcon,
-  PencilIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import { PlusIcon } from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from "framer-motion";
-import { format } from "date-fns";
 import clsx from "clsx";
 import { Sidebar } from "./components/sidebar";
+import { TodoItem } from "./components/TodoItem";
 import { Todo, TodoList } from "./types/todo";
 import "./App.css";
 import { useTheme } from "./hooks/useTheme";
@@ -387,12 +381,12 @@ function App() {
                 type="text"
                 value={newTodo}
                 onChange={(e) => setNewTodo(e.target.value)}
-                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="flex-1 h-10 px-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Add a new todo..."
               />
               <button
                 type="submit"
-                className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center gap-2"
+                className="h-10 px-6 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2"
               >
                 <PlusIcon className="w-5 h-5" />
                 Add
@@ -411,145 +405,35 @@ function App() {
               </motion.div>
             ) : (
               filteredTodos.map((todo) => (
-                <motion.div
+                <TodoItem
                   key={todo.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, x: -100 }}
-                  className="mb-3"
-                >
-                  <div
-                    className={clsx(
-                      "p-4 rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4",
-                      todo.completed && "bg-gray-50 dark:bg-gray-900"
-                    )}
-                  >
-                    <button
-                      onClick={() => toggleTodo(todo.id)}
-                      className={clsx(
-                        "w-6 h-6 rounded-full border-2 flex items-center justify-center",
-                        todo.completed
-                          ? "border-green-500 bg-green-500"
-                          : "border-gray-300 dark:border-gray-500"
-                      )}
-                    >
-                      {todo.completed && (
-                        <CheckIcon className="w-4 h-4 text-white" />
-                      )}
-                    </button>
-
-                    <div className="flex-1">
-                      {todo.isEditing ? (
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={todo.editText}
-                            onChange={(e) => {
-                              const updatedTodos = todos.map((t) =>
-                                t.id === todo.id
-                                  ? { ...t, editText: e.target.value }
-                                  : t
-                              );
-                              setTodos(updatedTodos);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && todo.editText?.trim()) {
-                                editTodo(todo.id, todo.editText);
-                              } else if (e.key === "Escape") {
-                                const updatedTodos = todos.map((t) =>
-                                  t.id === todo.id
-                                    ? {
-                                        ...t,
-                                        isEditing: false,
-                                        editText: undefined,
-                                      }
-                                    : t
-                                );
-                                setTodos(updatedTodos);
-                              }
-                            }}
-                            className="flex-1 px-3 py-2 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                            placeholder="Edit todo"
-                            title="Edit todo text"
-                            autoFocus
-                          />
-                          <button
-                            onClick={() => {
-                              if (todo.editText?.trim()) {
-                                editTodo(todo.id, todo.editText);
-                              }
-                            }}
-                            className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900 rounded-lg"
-                            title="Save"
-                          >
-                            <CheckIcon className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              const updatedTodos = todos.map((t) =>
-                                t.id === todo.id
-                                  ? {
-                                      ...t,
-                                      isEditing: false,
-                                      editText: undefined,
-                                    }
-                                  : t
-                              );
-                              setTodos(updatedTodos);
-                            }}
-                            className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                            title="Cancel"
-                          >
-                            <XMarkIcon className="w-5 h-5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <p
-                            className={clsx(
-                              "text-gray-800 dark:text-gray-100",
-                              todo.completed &&
-                                "line-through text-gray-500 dark:text-gray-400"
-                            )}
-                          >
-                            {todo.text}
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {format(new Date(todo.date), "MMM d, yyyy - HH:mm")}
-                          </p>
-                        </>
-                      )}
-                    </div>
-
-                    {!todo.isEditing && (
-                      <div className="flex">
-                        {!todo.completed && (
-                          <button
-                            onClick={() => {
-                              const updatedTodos = todos.map((t) =>
-                                t.id === todo.id
-                                  ? { ...t, isEditing: true, editText: t.text }
-                                  : t
-                              );
-                              setTodos(updatedTodos);
-                            }}
-                            className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900"
-                            title="Edit todo"
-                          >
-                            <PencilIcon className="w-5 h-5" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => deleteTodo(todo.id)}
-                          className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
-                          title="Delete todo"
-                        >
-                          <TrashIcon className="w-5 h-5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
+                  todo={todo}
+                  onToggle={toggleTodo}
+                  onDelete={deleteTodo}
+                  onEdit={editTodo}
+                  onEditStart={(id, text) => {
+                    const updatedTodos = todos.map((t) =>
+                      t.id === id
+                        ? { ...t, isEditing: true, editText: text }
+                        : t
+                    );
+                    setTodos(updatedTodos);
+                  }}
+                  onEditCancel={(id) => {
+                    const updatedTodos = todos.map((t) =>
+                      t.id === id
+                        ? { ...t, isEditing: false, editText: undefined }
+                        : t
+                    );
+                    setTodos(updatedTodos);
+                  }}
+                  onEditChange={(id, newText) => {
+                    const updatedTodos = todos.map((t) =>
+                      t.id === id ? { ...t, editText: newText } : t
+                    );
+                    setTodos(updatedTodos);
+                  }}
+                />
               ))
             )}
           </AnimatePresence>
