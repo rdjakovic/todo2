@@ -13,6 +13,7 @@
     "@headlessui/react": "2.2.0",
     "@heroicons/react": "^2.0.18",
     "@tauri-apps/api": "^2.0.0-alpha.11",
+    "@tauri-apps/plugin-dialog": "^2.2.0",
     "clsx": "^2.0.0",
     "date-fns": "4.1.0",
     "framer-motion": "11.18.1",

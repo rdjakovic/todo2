@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { confirm } from "@tauri-apps/plugin-dialog";
 import {
   PlusIcon,
   TrashIcon,
@@ -181,15 +182,36 @@ function App() {
       setError("Cannot delete default lists");
       return;
     }
-    const updatedLists = lists.filter((list) => list.id !== id);
-    setLists(updatedLists);
-    await saveList(updatedLists);
-    if (selectedList === id) {
-      setSelectedList("home");
+
+    try {
+      // Check if list has todos before deleting
+      const hasTodos = await invoke<boolean>("has_todos_in_list", {
+        listId: id,
+      });
+      console.log(hasTodos ? "ima" : "nema");
+      if (hasTodos) {
+        const confirmed = await confirm(
+          "This list contains todos. Are you sure you want to delete it?",
+          { title: "Delete List" }
+        );
+        if (!confirmed) {
+          return;
+        }
+      }
+
+      const updatedLists = lists.filter((list) => list.id !== id);
+      setLists(updatedLists);
+      await saveList(updatedLists);
+      if (selectedList === id) {
+        setSelectedList("home");
+      }
+      const updatedTodos = todos.filter((todo) => todo.listId !== id);
+      setTodos(updatedTodos);
+      await saveTodos(updatedTodos);
+    } catch (error) {
+      setError("Failed to delete list");
+      console.error("Error deleting list:", error);
     }
-    const updatedTodos = todos.filter((todo) => todo.listId !== id);
-    setTodos(updatedTodos);
-    await saveTodos(updatedTodos);
   };
 
   const editList = async (id: string, newName: string) => {

@@ -6,7 +6,9 @@ const LISTS_FILE_PATH: &str = "lists.txt";
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![save_todos, load_todos, save_lists, load_lists])
+        .invoke_handler(tauri::generate_handler![
+            save_todos, load_todos, save_lists, load_lists
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -15,7 +17,7 @@ pub fn run() {
 fn save_todos(todo: String) -> Result<(), String> {
     match fs::write(TODOS_FILE_PATH, todo) {
         Ok(_) => Ok(()),
-        Err(e) => Err(e.to_string())
+        Err(e) => Err(e.to_string()),
     }
 }
 
@@ -23,7 +25,7 @@ fn save_todos(todo: String) -> Result<(), String> {
 fn save_lists(lists: String) -> Result<(), String> {
     match fs::write(LISTS_FILE_PATH, lists) {
         Ok(_) => Ok(()),
-        Err(e) => Err(e.to_string())
+        Err(e) => Err(e.to_string()),
     }
 }
 

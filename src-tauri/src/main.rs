@@ -1,11 +1,11 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::State;
-use std::path::PathBuf;
-use std::fs;
-use serde::{Serialize, Deserialize};
 
 // Add a struct to hold the storage path
 struct StoragePathState(Mutex<String>);
@@ -29,19 +29,15 @@ fn load_or_create_config() -> Result<AppConfig, String> {
     let config_path = app_dir.join("config.json");
 
     if config_path.exists() {
-        let config_str = fs::read_to_string(&config_path)
-            .map_err(|e| e.to_string())?;
-        serde_json::from_str(&config_str)
-            .map_err(|e| e.to_string())
+        let config_str = fs::read_to_string(&config_path).map_err(|e| e.to_string())?;
+        serde_json::from_str(&config_str).map_err(|e| e.to_string())
     } else {
         let config = AppConfig {
             storage_path: String::new(),
             theme: None,
         };
-        let config_str = serde_json::to_string(&config)
-            .map_err(|e| e.to_string())?;
-        fs::write(&config_path, config_str)
-            .map_err(|e| e.to_string())?;
+        let config_str = serde_json::to_string(&config).map_err(|e| e.to_string())?;
+        fs::write(&config_path, config_str).map_err(|e| e.to_string())?;
         Ok(config)
     }
 }
@@ -49,10 +45,8 @@ fn load_or_create_config() -> Result<AppConfig, String> {
 fn save_config(config: &AppConfig) -> Result<(), String> {
     let app_dir = get_app_dir()?;
     let config_path = app_dir.join("config.json");
-    let config_str = serde_json::to_string(&config)
-        .map_err(|e| e.to_string())?;
-    fs::write(config_path, config_str)
-        .map_err(|e| e.to_string())
+    let config_str = serde_json::to_string(&config).map_err(|e| e.to_string())?;
+    fs::write(config_path, config_str).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -154,6 +148,20 @@ async fn load_storage_path() -> Result<String, String> {
     Ok(config.storage_path)
 }
 
+#[tauri::command]
+async fn has_todos_in_list(list_id: String, state: State<'_, StoragePathState>) -> Result<bool, String> {
+    let todos_str = load_todos(state).await?;
+    let todos: Vec<serde_json::Value> = serde_json::from_str(&todos_str)
+        .map_err(|e| e.to_string())?;
+
+    Ok(todos.iter().any(|todo| {
+        todo.get("listId")
+            .and_then(|id| id.as_str())
+            .map(|id| id == list_id)
+            .unwrap_or(false)
+    }))
+}
+
 fn main() {
     let config = load_or_create_config().unwrap_or_else(|_| AppConfig {
         storage_path: String::new(),
@@ -162,6 +170,7 @@ fn main() {
     let storage_path_state = StoragePathState(Mutex::new(config.storage_path));
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .manage(storage_path_state)
         .invoke_handler(tauri::generate_handler![
             load_todos,
@@ -171,7 +180,8 @@ fn main() {
             set_storage_path,
             load_storage_path,
             set_theme,
-            get_theme
+            get_theme,
+            has_todos_in_list
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
