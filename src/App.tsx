@@ -38,6 +38,7 @@ function App() {
   const [sidebarWidth, setSidebarWidth] = useState(256);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [storagePath, setStoragePath] = useState<string>("");
+  const [hideCompleted, setHideCompleted] = useState(false);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -240,13 +241,18 @@ function App() {
     }
   };
 
-  const filteredTodos = todos.filter((todo) =>
-    selectedList === "completed"
-      ? todo.completed
-      : selectedList === "home"
-      ? !todo.completed
-      : todo.listId === selectedList
-  );
+  const filteredTodos = todos.filter((todo) => {
+    if (selectedList === "completed") {
+      return todo.completed;
+    }
+    if (selectedList === "home") {
+      return !todo.completed;
+    }
+    if (hideCompleted) {
+      return todo.listId === selectedList && !todo.completed;
+    }
+    return todo.listId === selectedList;
+  });
 
   const todoCountByList = todos.reduce((acc, todo) => {
     if (todo.completed) {
@@ -342,9 +348,32 @@ function App() {
     return (
       <div className="flex-1 p-8">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-8">
-            {lists.find((list) => list.id === selectedList)?.name || "Todos"}
-          </h1>
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
+              {lists.find((list) => list.id === selectedList)?.name || "Todos"}
+            </h1>
+
+            {selectedList !== "completed" && selectedList !== "home" && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600 dark:text-gray-300">
+                  {hideCompleted ? "Show completed" : "Hide completed"}
+                </span>
+                <button
+                  onClick={() => setHideCompleted(!hideCompleted)}
+                  className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  role="switch"
+                  aria-checked={hideCompleted}
+                >
+                  <span
+                    className={clsx(
+                      "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                      hideCompleted ? "translate-x-6" : "translate-x-1"
+                    )}
+                  />
+                </button>
+              </div>
+            )}
+          </div>
 
           {error && (
             <div className="mb-4 p-4 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg text-red-600 dark:text-red-200">
