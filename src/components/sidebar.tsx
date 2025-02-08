@@ -239,7 +239,7 @@ export function Sidebar({
                         "flex items-center gap-2 px-3 py-2 w-full rounded-lg transition-colors",
                         selectedList === list.id
                           ? "bg-purple-100 dark:bg-purple-900 text-purple-900 dark:text-purple-100"
-                          : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                          : "hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100"
                       )}
                     >
                       <div className="flex items-center gap-3">
