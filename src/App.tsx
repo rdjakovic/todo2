@@ -188,11 +188,10 @@ function App() {
       const hasTodos = await invoke<boolean>("has_todos_in_list", {
         listId: id,
       });
-      console.log(hasTodos ? "ima" : "nema");
       if (hasTodos) {
         const confirmed = await confirm(
           "This list contains todos. Are you sure you want to delete it?",
-          { title: "Delete List" }
+          { title: "Delete List", kind: "warning" }
         );
         if (!confirmed) {
           return;
