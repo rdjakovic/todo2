@@ -394,7 +394,7 @@ function App() {
             </div>
           </form>
 
-          <AnimatePresence mode="sync">
+          <AnimatePresence mode="popLayout">
             {filteredTodos.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0 }}
