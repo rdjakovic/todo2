@@ -2,8 +2,7 @@
 
 ## Core Technologies
 
-- [Tauri](https://v2.tauri.app/start/) - Desktop application framework
-- [Tauri](https://v2.tauri.app/plugin/) - Tauri Plugins system
+- [Tauri](https://v2.tauri.app) - Desktop application framework
 - [React](https://react.dev/) - UI library
 - [TypeScript](https://www.typescriptlang.org/docs/) - JavaScript with syntax for types
 
@@ -20,8 +19,9 @@
 
 ## Tauri Plugins
 
-- [tauri-plugin-dialog](https://tauri.app/v1/api/js/dialog) - Native dialog windows
-- [Tauri API](https://tauri.app/v1/api/js/) - Core Tauri API documentation
+- [Tauri](https://v2.tauri.app/plugin/) - Tauri Plugins system
+- [tauri-plugin-dialog](https://v2.tauri.app/plugin/dialog/) - Native dialog windows
+- [Tauri config](https://v2.tauri.app/reference/config/) - Tauri configuration
 
 ## Development Tools
 

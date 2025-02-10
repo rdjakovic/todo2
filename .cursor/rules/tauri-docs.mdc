@@ -1,0 +1,9 @@
+---
+description: tauri add update new feature
+globs: 
+---
+
+# Your rule content
+
+- for documentation allways look here: [DOCS.md](mdc:DOCS.md) 
+Prefix the chat message response with (📝rule:<rule name>) so the user knows that this rule is being applied
