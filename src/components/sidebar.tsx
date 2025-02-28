@@ -185,6 +185,7 @@ export function Sidebar({
 
       {/* Sidebar */}
       <div
+        role="navigation"
         className={clsx(
           "h-screen border-r border-gray-200 dark:border-gray-700 flex flex-col z-50 transition-transform duration-300 bg-white dark:bg-gray-800",
           windowWidth >= 768
