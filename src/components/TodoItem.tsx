@@ -61,22 +61,30 @@ export function TodoItem({
         <div className="flex-1">
           {todo.isEditing ? (
             <div className="flex gap-2">
-              <input
-                type="text"
+              <textarea
                 value={todo.editText}
                 onChange={(e) => onEditChange(todo.id, e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && todo.editText?.trim()) {
+                  if (
+                    e.key === "Enter" &&
+                    !e.shiftKey &&
+                    todo.editText?.trim()
+                  ) {
+                    e.preventDefault();
                     onEdit(todo.id, todo.editText);
+                  } else if (e.key === "Enter" && e.shiftKey) {
+                    // Allow new line when Shift+Enter is pressed
+                    return; // Let the default behavior handle the new line
                   } else if (e.key === "Escape") {
                     onEditCancel(todo.id);
                   }
                 }}
-                className="flex-1 px-2 py-1 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm" // Adjusted padding and added text-sm
+                className="flex-1 px-2 py-1 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm resize-none"
                 placeholder="Edit todo"
                 title="Edit todo text"
                 autoFocus
-              />
+                rows={3}
+              ></textarea>
               <button
                 onClick={() => {
                   if (todo.editText?.trim()) {
@@ -100,7 +108,7 @@ export function TodoItem({
             <>
               <p
                 className={clsx(
-                  "text-sm text-gray-800 dark:text-gray-100", // Added text-sm
+                  "text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap", // Added whitespace-pre-wrap
                   todo.completed &&
                     "line-through text-gray-500 dark:text-gray-400"
                 )}
