@@ -2,6 +2,7 @@ export interface TodoList {
   id: string;
   name: string;
   icon: string;
+  todos: Todo[];
 }
 
 export interface Todo {

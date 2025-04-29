@@ -25,19 +25,18 @@ import { Todo, TodoList } from "./types/todo";
 import "./App.css";
 import { useTheme } from "./hooks/useTheme";
 
-const initialLists = [
-  { id: "home", name: "Home", icon: "home" },
-  { id: "completed", name: "Completed", icon: "check" },
-  { id: "personal", name: "Personal", icon: "user" },
-  { id: "work", name: "Work", icon: "briefcase" },
-  { id: "diet", name: "Diet", icon: "diet" },
-  { id: "books", name: "List of Book", icon: "book" },
-  { id: "roadtrip", name: "Road trip list", icon: "car" },
+const initialLists: TodoList[] = [
+  { id: "home", name: "Home", icon: "home", todos: [] },
+  { id: "completed", name: "Completed", icon: "check", todos: [] },
+  { id: "personal", name: "Personal", icon: "user", todos: [] },
+  { id: "work", name: "Work", icon: "briefcase", todos: [] },
+  { id: "diet", name: "Diet", icon: "diet", todos: [] },
+  { id: "books", name: "List of Book", icon: "book", todos: [] },
+  { id: "roadtrip", name: "Road trip list", icon: "car", todos: [] },
 ];
 
 function App() {
   const { theme, toggleTheme } = useTheme();
-  const [todos, setTodos] = useState<Todo[]>([]);
   const [lists, setLists] = useState<TodoList[]>(initialLists);
   const [selectedList, setSelectedList] = useState("home");
   const [newTodo, setNewTodo] = useState("");
@@ -60,7 +59,9 @@ function App() {
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    const draggedTodo = todos.find((todo) => todo.id === active.id);
+    const draggedTodo = lists
+      .flatMap((list) => list.todos)
+      .find((todo) => todo.id === active.id);
     if (draggedTodo) {
       setActiveDraggedTodo(draggedTodo);
     }
@@ -72,26 +73,55 @@ function App() {
     if (!over) return;
 
     const todoId = Number(active.id);
-    const draggedTodo = todos.find((todo) => todo.id === todoId);
+    let sourceTodo: Todo | undefined;
+    let sourceListId: string | undefined;
 
-    if (!draggedTodo) return;
+    // Find the todo and its source list
+    lists.forEach((list) => {
+      const todo = list.todos.find((t) => t.id === todoId);
+      if (todo) {
+        sourceTodo = todo;
+        sourceListId = list.id;
+      }
+    });
 
-    // If dropping on a list in the sidebar
-    if (typeof over.id === "string" && over.id !== draggedTodo.listId) {
-      const updatedTodos = todos.map((todo) =>
-        todo.id === todoId ? { ...todo, listId: over.id as string } : todo
-      );
-      setTodos(updatedTodos);
-      await saveTodos(updatedTodos);
+    if (!sourceTodo || !sourceListId) return;
+
+    // If dropping on a different list
+    if (typeof over.id === "string" && over.id !== sourceListId) {
+      const updatedLists = lists.map((list) => {
+        if (list.id === sourceListId) {
+          return {
+            ...list,
+            todos: list.todos.filter((t) => t.id !== todoId),
+          };
+        }
+        if (list.id === over.id) {
+          return {
+            ...list,
+            todos: [...list.todos, { ...sourceTodo!, listId: over.id }],
+          };
+        }
+        return list;
+      });
+      setLists(updatedLists);
+      await saveList(updatedLists);
     }
     // If reordering within the same list
     else if (typeof over.id === "number" && active.id !== over.id) {
-      const oldIndex = todos.findIndex((t) => t.id === active.id);
-      const newIndex = todos.findIndex((t) => t.id === over.id);
+      const list = lists.find((l) => l.id === sourceListId)!;
+      const oldIndex = list.todos.findIndex((t) => t.id === active.id);
+      const newIndex = list.todos.findIndex((t) => t.id === over.id);
 
-      const reorderedTodos = arrayMove(todos, oldIndex, newIndex);
-      setTodos(reorderedTodos);
-      await saveTodos(reorderedTodos);
+      const updatedLists = lists.map((l) => {
+        if (l.id === sourceListId) {
+          const reorderedTodos = arrayMove(l.todos, oldIndex, newIndex);
+          return { ...l, todos: reorderedTodos };
+        }
+        return l;
+      });
+      setLists(updatedLists);
+      await saveList(updatedLists);
     }
 
     setActiveDraggedTodo(null);
@@ -104,7 +134,6 @@ function App() {
         setStoragePath(savedPath);
         console.log("Saved path:", savedPath);
         await loadLists();
-        await loadTodos();
       } catch (err) {
         console.error("Error loading initial data:", err);
       }
@@ -131,6 +160,7 @@ function App() {
 
   const loadLists = async () => {
     try {
+      setLoading(true);
       const loadedLists = await invoke<string>("load_lists");
       const parsedLists = JSON.parse(loadedLists);
       if (parsedLists && parsedLists.length > 0) {
@@ -139,21 +169,11 @@ function App() {
         setLists(initialLists);
         await saveList(initialLists);
       }
+      setError(null);
     } catch (err) {
       console.error("Error loading lists:", err);
       setLists(initialLists);
-    }
-  };
-
-  const loadTodos = async () => {
-    try {
-      setLoading(true);
-      const loadedTodos = await invoke<string>("load_todos");
-      setTodos(JSON.parse(loadedTodos) || []);
-      setError(null);
-    } catch (err) {
-      setError("Failed to load todos");
-      console.error("Error loading todos:", err);
+      setError("Failed to load lists");
     } finally {
       setLoading(false);
     }
@@ -162,18 +182,10 @@ function App() {
   const saveList = async (updatedLists: TodoList[]) => {
     try {
       await invoke("save_lists", { lists: JSON.stringify(updatedLists) });
-    } catch (err) {
-      console.error("Error saving lists:", err);
-    }
-  };
-
-  const saveTodos = async (updatedTodos: Todo[]) => {
-    try {
-      await invoke("save_todos", { todo: JSON.stringify(updatedTodos) });
       setError(null);
     } catch (err) {
-      setError("Failed to save todos");
-      console.error("Error saving todos:", err);
+      console.error("Error saving lists:", err);
+      setError("Failed to save lists");
     }
   };
 
@@ -190,9 +202,13 @@ function App() {
     };
 
     try {
-      const updatedTodos = [...todos, newTodoItem];
-      setTodos(updatedTodos);
-      await saveTodos(updatedTodos);
+      const updatedLists = lists.map((list) =>
+        list.id === selectedList
+          ? { ...list, todos: [...list.todos, newTodoItem] }
+          : list
+      );
+      setLists(updatedLists);
+      await saveList(updatedLists);
       setNewTodo("");
       setError(null);
     } catch (err) {
@@ -202,11 +218,14 @@ function App() {
 
   const toggleTodo = async (id: number) => {
     try {
-      const updatedTodos = todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      );
-      setTodos(updatedTodos);
-      await saveTodos(updatedTodos);
+      const updatedLists = lists.map((list) => ({
+        ...list,
+        todos: list.todos.map((todo) =>
+          todo.id === id ? { ...todo, completed: !todo.completed } : todo
+        ),
+      }));
+      setLists(updatedLists);
+      await saveList(updatedLists);
       setError(null);
     } catch (err) {
       setError("Failed to update todo");
@@ -215,9 +234,12 @@ function App() {
 
   const deleteTodo = async (id: number) => {
     try {
-      const updatedTodos = todos.filter((todo) => todo.id !== id);
-      setTodos(updatedTodos);
-      await saveTodos(updatedTodos);
+      const updatedLists = lists.map((list) => ({
+        ...list,
+        todos: list.todos.filter((todo) => todo.id !== id),
+      }));
+      setLists(updatedLists);
+      await saveList(updatedLists);
       setError(null);
     } catch (err) {
       setError("Failed to delete todo");
@@ -229,6 +251,7 @@ function App() {
       id: `list-${Date.now()}`,
       name,
       icon: "home",
+      todos: [],
     };
     const updatedLists = [...lists, newList];
     setLists(updatedLists);
@@ -242,11 +265,8 @@ function App() {
     }
 
     try {
-      // Check if list has todos before deleting
-      const hasTodos = await invoke<boolean>("has_todos_in_list", {
-        listId: id,
-      });
-      if (hasTodos) {
+      const listToDelete = lists.find((list) => list.id === id);
+      if (listToDelete && listToDelete.todos.length > 0) {
         const confirmed = await confirm(
           "This list contains todos. Are you sure you want to delete it?",
           { title: "Delete List", kind: "warning" }
@@ -262,9 +282,6 @@ function App() {
       if (selectedList === id) {
         setSelectedList("home");
       }
-      const updatedTodos = todos.filter((todo) => todo.listId !== id);
-      setTodos(updatedTodos);
-      await saveTodos(updatedTodos);
     } catch (error) {
       setError("Failed to delete list");
       console.error("Error deleting list:", error);
@@ -285,42 +302,52 @@ function App() {
 
   const editTodo = async (id: number, newText: string) => {
     try {
-      const updatedTodos = todos.map((todo) =>
-        todo.id === id
-          ? { ...todo, text: newText, isEditing: false, editText: undefined }
-          : todo
-      );
-      setTodos(updatedTodos);
-      await saveTodos(updatedTodos);
+      const updatedLists = lists.map((list) => ({
+        ...list,
+        todos: list.todos.map((todo) =>
+          todo.id === id
+            ? { ...todo, text: newText, isEditing: false, editText: undefined }
+            : todo
+        ),
+      }));
+      setLists(updatedLists);
+      await saveList(updatedLists);
       setError(null);
     } catch (err) {
       setError("Failed to edit todo");
     }
   };
 
-  const filteredTodos = todos.filter((todo) => {
-    if (selectedList === "completed") {
-      return todo.completed;
-    }
-    if (selectedList === "home") {
-      return !todo.completed;
-    }
-    if (hideCompleted) {
-      return todo.listId === selectedList && !todo.completed;
-    }
-    return todo.listId === selectedList;
-  });
+  const filteredTodos =
+    selectedList === "completed"
+      ? lists
+          .filter((list) => list && list.todos)
+          .flatMap((list) => list.todos.filter((todo) => todo.completed))
+      : selectedList === "home"
+      ? lists
+          .filter((list) => list && list.todos)
+          .flatMap((list) => list.todos.filter((todo) => !todo.completed))
+      : lists
+          .find((list) => list && list.id === selectedList)
+          ?.todos?.filter((todo) => !hideCompleted || !todo.completed) ?? [];
 
-  const todoCountByList = todos.reduce((acc, todo) => {
-    if (todo.completed) {
-      acc["completed"] = (acc["completed"] || 0) + 1;
-    }
-    if (!todo.completed) {
-      acc["home"] = (acc["home"] || 0) + 1;
-    }
-    acc[todo.listId] = (acc[todo.listId] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const todoCountByList = lists
+    .filter((list) => list && list.todos)
+    .reduce((acc, list) => {
+      // Count completed todos
+      const completedCount = list.todos.filter((todo) => todo.completed).length;
+      acc["completed"] = (acc["completed"] || 0) + completedCount;
+
+      // Count incomplete todos
+      const incompleteCount = list.todos.filter(
+        (todo) => !todo.completed
+      ).length;
+      acc["home"] = (acc["home"] || 0) + incompleteCount;
+
+      // Count all todos in the list
+      acc[list.id] = list.todos.length;
+      return acc;
+    }, {} as Record<string, number>);
 
   const handleSetPath = async (path: string) => {
     try {
@@ -483,26 +510,35 @@ function App() {
                       onDelete={deleteTodo}
                       onEdit={editTodo}
                       onEditStart={(id, text) => {
-                        const updatedTodos = todos.map((t) =>
-                          t.id === id
-                            ? { ...t, isEditing: true, editText: text }
-                            : t
-                        );
-                        setTodos(updatedTodos);
+                        const updatedTodos = lists.map((list) => ({
+                          ...list,
+                          todos: list.todos.map((t) =>
+                            t.id === id
+                              ? { ...t, isEditing: true, editText: text }
+                              : t
+                          ),
+                        }));
+                        setLists(updatedTodos);
                       }}
                       onEditCancel={(id) => {
-                        const updatedTodos = todos.map((t) =>
-                          t.id === id
-                            ? { ...t, isEditing: false, editText: undefined }
-                            : t
-                        );
-                        setTodos(updatedTodos);
+                        const updatedTodos = lists.map((list) => ({
+                          ...list,
+                          todos: list.todos.map((t) =>
+                            t.id === id
+                              ? { ...t, isEditing: false, editText: undefined }
+                              : t
+                          ),
+                        }));
+                        setLists(updatedTodos);
                       }}
                       onEditChange={(id, newText) => {
-                        const updatedTodos = todos.map((t) =>
-                          t.id === id ? { ...t, editText: newText } : t
-                        );
-                        setTodos(updatedTodos);
+                        const updatedTodos = lists.map((list) => ({
+                          ...list,
+                          todos: list.todos.map((t) =>
+                            t.id === id ? { ...t, editText: newText } : t
+                          ),
+                        }));
+                        setLists(updatedTodos);
                       }}
                     />
                   ))}
