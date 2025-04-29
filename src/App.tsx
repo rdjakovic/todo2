@@ -497,53 +497,65 @@ function App() {
                 No todos yet. Add one above!
               </motion.div>
             ) : (
-              <SortableContext
-                items={filteredTodos.map((t) => t.id)}
-                strategy={verticalListSortingStrategy}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                layout
               >
-                <div className="space-y-2">
-                  {filteredTodos.map((todo) => (
-                    <TodoItem
-                      key={todo.id}
-                      todo={todo}
-                      onToggle={toggleTodo}
-                      onDelete={deleteTodo}
-                      onEdit={editTodo}
-                      onEditStart={(id, text) => {
-                        const updatedTodos = lists.map((list) => ({
-                          ...list,
-                          todos: list.todos.map((t) =>
-                            t.id === id
-                              ? { ...t, isEditing: true, editText: text }
-                              : t
-                          ),
-                        }));
-                        setLists(updatedTodos);
-                      }}
-                      onEditCancel={(id) => {
-                        const updatedTodos = lists.map((list) => ({
-                          ...list,
-                          todos: list.todos.map((t) =>
-                            t.id === id
-                              ? { ...t, isEditing: false, editText: undefined }
-                              : t
-                          ),
-                        }));
-                        setLists(updatedTodos);
-                      }}
-                      onEditChange={(id, newText) => {
-                        const updatedTodos = lists.map((list) => ({
-                          ...list,
-                          todos: list.todos.map((t) =>
-                            t.id === id ? { ...t, editText: newText } : t
-                          ),
-                        }));
-                        setLists(updatedTodos);
-                      }}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
+                <SortableContext
+                  items={filteredTodos.map((t) => t.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-2">
+                    {filteredTodos.map((todo) => (
+                      <TodoItem
+                        key={todo.id}
+                        todo={todo}
+                        onToggle={toggleTodo}
+                        onDelete={deleteTodo}
+                        onEdit={editTodo}
+                        onEditStart={(id, text) => {
+                          const updatedTodos = lists.map((list) => ({
+                            ...list,
+                            todos: list.todos.map((t) =>
+                              t.id === id
+                                ? { ...t, isEditing: true, editText: text }
+                                : t
+                            ),
+                          }));
+                          setLists(updatedTodos);
+                        }}
+                        onEditCancel={(id) => {
+                          const updatedTodos = lists.map((list) => ({
+                            ...list,
+                            todos: list.todos.map((t) =>
+                              t.id === id
+                                ? {
+                                    ...t,
+                                    isEditing: false,
+                                    editText: undefined,
+                                  }
+                                : t
+                            ),
+                          }));
+                          setLists(updatedTodos);
+                        }}
+                        onEditChange={(id, newText) => {
+                          const updatedTodos = lists.map((list) => ({
+                            ...list,
+                            todos: list.todos.map((t) =>
+                              t.id === id ? { ...t, editText: newText } : t
+                            ),
+                          }));
+                          setLists(updatedTodos);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </motion.div>
             )}
           </AnimatePresence>
         </div>

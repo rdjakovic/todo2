@@ -44,7 +44,7 @@ export const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
       listeners,
       setNodeRef,
       transform,
-      transition,
+      transition: sortableTransition,
       isDragging: isSortableDragging,
     } = useSortable({
       id: todo.id,
@@ -53,7 +53,7 @@ export const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
 
     const style = {
       transform: CSS.Transform.toString(transform),
-      transition,
+      transition: sortableTransition,
     };
 
     return (
@@ -70,13 +70,16 @@ export const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
         className="mb-2"
         {...attributes}
         {...listeners}
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, x: -10 }}
+        exit={{ opacity: 0, x: -20 }}
         transition={{
-          duration: 0.2,
-          ease: [0.4, 0, 0.2, 1],
+          type: "spring",
+          stiffness: 500,
+          damping: 30,
+          mass: 1,
         }}
+        layout
       >
         <div
           className={clsx(
