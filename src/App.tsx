@@ -4,6 +4,15 @@ import { confirm } from "@tauri-apps/plugin-dialog";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  useSensor,
+  useSensors,
+  PointerSensor,
+} from "@dnd-kit/core";
 import { Sidebar } from "./components/sidebar";
 import { TodoItem } from "./components/TodoItem";
 import { Todo, TodoList } from "./types/todo";
@@ -33,6 +42,44 @@ function App() {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [storagePath, setStoragePath] = useState<string>("");
   const [hideCompleted, setHideCompleted] = useState(false);
+  const [activeDraggedTodo, setActiveDraggedTodo] = useState<Todo | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const draggedTodo = todos.find((todo) => todo.id === active.id);
+    if (draggedTodo) {
+      setActiveDraggedTodo(draggedTodo);
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over) return;
+
+    const todoId = Number(active.id);
+    const targetListId = String(over.id);
+    const draggedTodo = todos.find((todo) => todo.id === todoId);
+
+    if (draggedTodo && draggedTodo.listId !== targetListId) {
+      const updatedTodos = todos.map((todo) =>
+        todo.id === todoId ? { ...todo, listId: targetListId } : todo
+      );
+
+      setTodos(updatedTodos);
+      await saveTodos(updatedTodos);
+    }
+
+    setActiveDraggedTodo(null);
+  };
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -293,7 +340,7 @@ function App() {
                     onClick={toggleTheme}
                     className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-purple-600 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
                     role="switch"
-                    aria-checked={theme === "dark" ? "true" : "false"}
+                    aria-checked={theme === "dark"}
                     aria-label="Toggle dark mode"
                   >
                     <span className="sr-only">Toggle theme</span>
@@ -357,6 +404,7 @@ function App() {
                   className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
                   role="switch"
                   aria-checked={hideCompleted}
+                  aria-label="Toggle completed todos visibility"
                 >
                   <span
                     className={clsx(
@@ -455,36 +503,56 @@ function App() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-purple-50 dark:from-gray-900 to-blue-50 dark:to-gray-800">
-      <Sidebar
-        lists={lists}
-        selectedList={selectedList}
-        onSelectList={setSelectedList}
-        onCreateList={createList}
-        onDeleteList={deleteList}
-        onEditList={editList}
-        onSelectSettings={() => setSelectedList("settings")}
-        todoCountByList={todoCountByList}
-        isOpen={isSidebarOpen}
-        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-        width={sidebarWidth}
-        onWidthChange={setSidebarWidth}
-      />
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className={clsx("app", theme)}>
+        <div className="flex min-h-screen bg-gradient-to-br from-purple-50 dark:from-gray-900 to-blue-50 dark:to-gray-800">
+          <Sidebar
+            lists={lists}
+            selectedList={selectedList}
+            onSelectList={setSelectedList}
+            onCreateList={createList}
+            onDeleteList={deleteList}
+            onEditList={editList}
+            onSelectSettings={() => setSelectedList("settings")}
+            todoCountByList={todoCountByList}
+            isOpen={isSidebarOpen}
+            onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+            width={sidebarWidth}
+            onWidthChange={setSidebarWidth}
+          />
 
-      <main
-        className="flex-1 transition-all duration-300"
-        style={{
-          marginLeft:
-            windowWidth >= 768 && isSidebarOpen ? `${sidebarWidth}px` : "0",
-          paddingTop:
-            (!isSidebarOpen && windowWidth >= 768) || windowWidth < 768
-              ? "4rem"
-              : "1rem",
-        }}
-      >
-        {renderContent()}
-      </main>
-    </div>
+          <main
+            className="flex-1 transition-all duration-300"
+            style={{
+              marginLeft:
+                windowWidth >= 768 && isSidebarOpen ? `${sidebarWidth}px` : "0",
+              paddingTop:
+                (!isSidebarOpen && windowWidth >= 768) || windowWidth < 768
+                  ? "4rem"
+                  : "1rem",
+            }}
+          >
+            {renderContent()}
+          </main>
+        </div>
+        <DragOverlay>
+          {activeDraggedTodo ? (
+            <div className="dragged-todo-overlay">
+              <TodoItem
+                todo={activeDraggedTodo}
+                onToggle={async () => {}}
+                onDelete={async () => {}}
+                onEdit={async () => {}}
+              />
+            </div>
+          ) : null}
+        </DragOverlay>
+      </div>
+    </DndContext>
   );
 }
 

@@ -6,6 +6,7 @@ import {
   TrashIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { useDraggable } from "@dnd-kit/core";
 import clsx from "clsx";
 import { Todo } from "../types/todo";
 
@@ -14,9 +15,10 @@ interface TodoItemProps {
   onToggle: (id: number) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
   onEdit: (id: number, newText: string) => Promise<void>;
-  onEditStart: (id: number, text: string) => void;
-  onEditCancel: (id: number) => void;
-  onEditChange: (id: number, newText: string) => void;
+  onEditStart?: (id: number, text: string) => void;
+  onEditCancel?: (id: number) => void;
+  onEditChange?: (id: number, newText: string) => void;
+  isDragging?: boolean;
 }
 
 export function TodoItem({
@@ -24,12 +26,26 @@ export function TodoItem({
   onToggle,
   onDelete,
   onEdit,
-  onEditStart,
-  onEditCancel,
-  onEditChange,
+  onEditStart = () => {},
+  onEditCancel = () => {},
+  onEditChange = () => {},
+  isDragging,
 }: TodoItemProps) {
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
+    id: todo.id,
+    data: todo,
+  });
+
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+      }
+    : undefined;
+
   return (
     <motion.div
+      ref={setNodeRef}
+      style={style}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -10 }}
@@ -38,24 +54,26 @@ export function TodoItem({
         ease: [0.4, 0, 0.2, 1],
       }}
       className="mb-2"
+      {...attributes}
+      {...listeners}
     >
       <div
         className={clsx(
-          "py-2 px-3 rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-3", // Changed padding and gap
-          todo.completed && "bg-gray-50 dark:bg-gray-900"
+          "py-2 px-3 rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-3 cursor-move",
+          todo.completed && "bg-gray-50 dark:bg-gray-900",
+          isDragging && "opacity-50"
         )}
       >
         <button
           onClick={() => onToggle(todo.id)}
           className={clsx(
-            "w-5 h-5 rounded-full border-2 flex items-center justify-center", // Changed from w-6 h-6
+            "w-5 h-5 rounded-full border-2 flex items-center justify-center",
             todo.completed
               ? "border-green-500 bg-green-500"
               : "border-gray-300 dark:border-gray-500"
           )}
         >
           {todo.completed && <CheckIcon className="w-3 h-3 text-white" />}{" "}
-          {/* Changed from w-4 h-4 */}
         </button>
 
         <div className="flex-1">
@@ -73,8 +91,7 @@ export function TodoItem({
                     e.preventDefault();
                     onEdit(todo.id, todo.editText);
                   } else if (e.key === "Enter" && e.shiftKey) {
-                    // Allow new line when Shift+Enter is pressed
-                    return; // Let the default behavior handle the new line
+                    return;
                   } else if (e.key === "Escape") {
                     onEditCancel(todo.id);
                   }
@@ -108,7 +125,7 @@ export function TodoItem({
             <>
               <p
                 className={clsx(
-                  "text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap", // Added whitespace-pre-wrap
+                  "text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap",
                   todo.completed &&
                     "line-through text-gray-500 dark:text-gray-400"
                 )}
@@ -116,8 +133,6 @@ export function TodoItem({
                 {todo.text}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {" "}
-                {/* Changed from text-sm */}
                 {format(new Date(todo.date), "MMM d, yyyy - HH:mm")}
               </p>
             </>
@@ -126,23 +141,21 @@ export function TodoItem({
 
         {!todo.isEditing && (
           <div className="flex gap-1">
-            {" "}
-            {/* Added gap-1 */}
             {!todo.completed && (
               <button
                 onClick={() => onEditStart(todo.id, todo.text)}
-                className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900" // Changed from p-2
+                className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900"
                 title="Edit todo"
               >
-                <PencilIcon className="w-4 h-4" /> {/* Changed from w-5 h-5 */}
+                <PencilIcon className="w-4 h-4" />
               </button>
             )}
             <button
               onClick={() => onDelete(todo.id)}
-              className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900" // Changed from p-2
+              className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
               title="Delete todo"
             >
-              <TrashIcon className="w-4 h-4" /> {/* Changed from w-5 h-5 */}
+              <TrashIcon className="w-4 h-4" />
             </button>
           </div>
         )}
