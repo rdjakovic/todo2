@@ -54,7 +54,6 @@ const getIconForList = (icon: string) => {
 
 function ListItem({
   list,
-  isEditing,
   onSelect,
   selected,
   onEdit,
@@ -62,7 +61,6 @@ function ListItem({
   todoCount,
 }: {
   list: TodoList;
-  isEditing: boolean;
   onSelect: () => void;
   selected: boolean;
   onEdit: () => void;
@@ -306,7 +304,6 @@ export function Sidebar({
               <ListItem
                 key={list.id}
                 list={list}
-                isEditing={editingListId === list.id}
                 onSelect={() => onSelectList(list.id)}
                 selected={selectedList === list.id}
                 onEdit={() => handleEditList(list.id)}
