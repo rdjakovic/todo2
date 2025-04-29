@@ -12,7 +12,13 @@ import {
   useSensor,
   useSensors,
   PointerSensor,
+  closestCenter,
 } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
 import { Sidebar } from "./components/sidebar";
 import { TodoItem } from "./components/TodoItem";
 import { Todo, TodoList } from "./types/todo";
@@ -66,16 +72,26 @@ function App() {
     if (!over) return;
 
     const todoId = Number(active.id);
-    const targetListId = String(over.id);
     const draggedTodo = todos.find((todo) => todo.id === todoId);
 
-    if (draggedTodo && draggedTodo.listId !== targetListId) {
-      const updatedTodos = todos.map((todo) =>
-        todo.id === todoId ? { ...todo, listId: targetListId } : todo
-      );
+    if (!draggedTodo) return;
 
+    // If dropping on a list in the sidebar
+    if (typeof over.id === "string" && over.id !== draggedTodo.listId) {
+      const updatedTodos = todos.map((todo) =>
+        todo.id === todoId ? { ...todo, listId: over.id as string } : todo
+      );
       setTodos(updatedTodos);
       await saveTodos(updatedTodos);
+    }
+    // If reordering within the same list
+    else if (typeof over.id === "number" && active.id !== over.id) {
+      const oldIndex = todos.findIndex((t) => t.id === active.id);
+      const newIndex = todos.findIndex((t) => t.id === over.id);
+
+      const reorderedTodos = arrayMove(todos, oldIndex, newIndex);
+      setTodos(reorderedTodos);
+      await saveTodos(reorderedTodos);
     }
 
     setActiveDraggedTodo(null);
@@ -454,39 +470,44 @@ function App() {
                 No todos yet. Add one above!
               </motion.div>
             ) : (
-              <div className="space-y-2">
-                {filteredTodos.map((todo) => (
-                  <TodoItem
-                    key={todo.id}
-                    todo={todo}
-                    onToggle={toggleTodo}
-                    onDelete={deleteTodo}
-                    onEdit={editTodo}
-                    onEditStart={(id, text) => {
-                      const updatedTodos = todos.map((t) =>
-                        t.id === id
-                          ? { ...t, isEditing: true, editText: text }
-                          : t
-                      );
-                      setTodos(updatedTodos);
-                    }}
-                    onEditCancel={(id) => {
-                      const updatedTodos = todos.map((t) =>
-                        t.id === id
-                          ? { ...t, isEditing: false, editText: undefined }
-                          : t
-                      );
-                      setTodos(updatedTodos);
-                    }}
-                    onEditChange={(id, newText) => {
-                      const updatedTodos = todos.map((t) =>
-                        t.id === id ? { ...t, editText: newText } : t
-                      );
-                      setTodos(updatedTodos);
-                    }}
-                  />
-                ))}
-              </div>
+              <SortableContext
+                items={filteredTodos.map((t) => t.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2">
+                  {filteredTodos.map((todo) => (
+                    <TodoItem
+                      key={todo.id}
+                      todo={todo}
+                      onToggle={toggleTodo}
+                      onDelete={deleteTodo}
+                      onEdit={editTodo}
+                      onEditStart={(id, text) => {
+                        const updatedTodos = todos.map((t) =>
+                          t.id === id
+                            ? { ...t, isEditing: true, editText: text }
+                            : t
+                        );
+                        setTodos(updatedTodos);
+                      }}
+                      onEditCancel={(id) => {
+                        const updatedTodos = todos.map((t) =>
+                          t.id === id
+                            ? { ...t, isEditing: false, editText: undefined }
+                            : t
+                        );
+                        setTodos(updatedTodos);
+                      }}
+                      onEditChange={(id, newText) => {
+                        const updatedTodos = todos.map((t) =>
+                          t.id === id ? { ...t, editText: newText } : t
+                        );
+                        setTodos(updatedTodos);
+                      }}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
             )}
           </AnimatePresence>
         </div>
@@ -505,6 +526,7 @@ function App() {
   return (
     <DndContext
       sensors={sensors}
+      collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
