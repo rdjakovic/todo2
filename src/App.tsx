@@ -26,13 +26,55 @@ import "./App.css";
 import { useTheme } from "./hooks/useTheme";
 
 const initialLists: TodoList[] = [
-  { id: "home", name: "Home", icon: "home", todos: [] },
-  { id: "completed", name: "Completed", icon: "check", todos: [] },
-  { id: "personal", name: "Personal", icon: "user", todos: [] },
-  { id: "work", name: "Work", icon: "briefcase", todos: [] },
-  { id: "diet", name: "Diet", icon: "diet", todos: [] },
-  { id: "books", name: "List of Book", icon: "book", todos: [] },
-  { id: "roadtrip", name: "Road trip list", icon: "car", todos: [] },
+  {
+    id: "home",
+    name: "Home",
+    icon: "home",
+    todos: [],
+    isCompletedHidden: false,
+  },
+  {
+    id: "completed",
+    name: "Completed",
+    icon: "check",
+    todos: [],
+    isCompletedHidden: false,
+  },
+  {
+    id: "personal",
+    name: "Personal",
+    icon: "user",
+    todos: [],
+    isCompletedHidden: false,
+  },
+  {
+    id: "work",
+    name: "Work",
+    icon: "briefcase",
+    todos: [],
+    isCompletedHidden: false,
+  },
+  {
+    id: "diet",
+    name: "Diet",
+    icon: "diet",
+    todos: [],
+    isCompletedHidden: false,
+  },
+  {
+    id: "books",
+    name: "List of Book",
+    icon: "book",
+    todos: [],
+    isCompletedHidden: false,
+  },
+  {
+    id: "roadtrip",
+    name: "Road trip list",
+    icon: "car",
+    todos: [],
+    isCompletedHidden: false,
+  },
 ];
 
 function App() {
@@ -56,6 +98,24 @@ function App() {
       },
     })
   );
+
+  useEffect(() => {
+    const currentList = lists.find((list) => list.id === selectedList);
+    setHideCompleted(currentList?.isCompletedHidden || false);
+  }, [selectedList, lists]);
+
+  const handleHideCompletedToggle = async () => {
+    const newHideCompleted = !hideCompleted;
+    setHideCompleted(newHideCompleted);
+
+    const updatedLists = lists.map((list) =>
+      list.id === selectedList
+        ? { ...list, isCompletedHidden: newHideCompleted }
+        : list
+    );
+    setLists(updatedLists);
+    await saveList(updatedLists);
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -252,6 +312,7 @@ function App() {
       name,
       icon: "home",
       todos: [],
+      isCompletedHidden: false,
     };
     const updatedLists = [...lists, newList];
     setLists(updatedLists);
@@ -448,7 +509,7 @@ function App() {
                   {hideCompleted ? "Show completed" : "Hide completed"}
                 </span>
                 <button
-                  onClick={() => setHideCompleted(!hideCompleted)}
+                  onClick={handleHideCompletedToggle}
                   className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
                   role="switch"
                   aria-checked={hideCompleted}

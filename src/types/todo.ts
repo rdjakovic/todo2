@@ -3,6 +3,7 @@ export interface TodoList {
   name: string;
   icon: string;
   todos: Todo[];
+  isCompletedHidden?: boolean;
 }
 
 export interface Todo {
