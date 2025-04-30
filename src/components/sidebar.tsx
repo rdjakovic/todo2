@@ -12,8 +12,6 @@ import {
   PencilIcon,
   CheckIcon,
   Bars3Icon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
 } from "@heroicons/react/24/outline";
 import { useDroppable } from "@dnd-kit/core";
 import clsx from "clsx";
