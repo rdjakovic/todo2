@@ -334,18 +334,23 @@ function App() {
   const todoCountByList = lists
     .filter((list) => list && list.todos)
     .reduce((acc, list) => {
-      // Count completed todos
+      // Count completed todos for the Completed list
       const completedCount = list.todos.filter((todo) => todo.completed).length;
       acc["completed"] = (acc["completed"] || 0) + completedCount;
 
-      // Count incomplete todos
+      // Count incomplete todos for the Home list
       const incompleteCount = list.todos.filter(
         (todo) => !todo.completed
       ).length;
       acc["home"] = (acc["home"] || 0) + incompleteCount;
 
-      // Count all todos in the list
-      acc[list.id] = list.todos.length;
+      // For other lists, count based on hideCompleted state
+      if (list.id !== "home" && list.id !== "completed") {
+        acc[list.id] = hideCompleted
+          ? list.todos.filter((todo) => !todo.completed).length // Only count incomplete if hideCompleted is true
+          : list.todos.length; // Count all if hideCompleted is false
+      }
+
       return acc;
     }, {} as Record<string, number>);
 
