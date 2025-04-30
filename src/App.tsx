@@ -405,11 +405,11 @@ function App() {
       ).length;
       acc["home"] = (acc["home"] || 0) + incompleteCount;
 
-      // For other lists, count based on hideCompleted state
+      // For other lists, count based on list's isCompletedHidden property
       if (list.id !== "home" && list.id !== "completed") {
-        acc[list.id] = hideCompleted
-          ? list.todos.filter((todo) => !todo.completed).length // Only count incomplete if hideCompleted is true
-          : list.todos.length; // Count all if hideCompleted is false
+        acc[list.id] = list.isCompletedHidden
+          ? list.todos.filter((todo) => !todo.completed).length // Only count incomplete if isCompletedHidden is true
+          : list.todos.length; // Count all if isCompletedHidden is false
       }
 
       return acc;
