@@ -1,0 +1,91 @@
+| File    | save_lists purpose                 | Uses Tauri state? | Path flexibility | Async? | 
+|---------|------------------------------------|-------------------|------------------|--------| 
+| lib.rs  | Write to fixed path                | No                | No               | No     | 
+| main.rs | Write to dynamic path (from state) | Yes               | Yes              | Yes    |
+
+@lib.rs#L24-30 @main.rs#L133-143 This is Tauri v2 application. I have function save_lists in both files, main.rs and lib.rs. Do I need both and why?
+
+To answer your question about whether you need both save_lists functions in main.rs and lib.rs, and why, let's analyze their purpose and usage.
+
+What to Check
+Function Purpose: Are both functions doing the same thing, or do they serve different roles (e.g., one is a wrapper, one is the actual implementation)?
+How They're Used: Is one called by Tauri commands and the other is a utility function? Or are they both used independently?
+Code Duplication: Is there unnecessary duplication, or is there a clear separation of concerns (e.g., lib.rs for logic, main.rs for Tauri/command wiring)?
+Next Steps
+I'll examine the implementations and usages of save_lists in both files to determine:
+
+If both are necessary.
+If one can be removed or refactored for clarity.
+Let's review the relevant code in both files.
+
+Analyzed
+lib.rs:(25-30)
+Analyzed
+main.rs:(134-143)
+Here’s an analysis of the two save_lists functions in your Tauri v2 app:
+
+1. lib.rs
+rust
+CopyInsert
+fn save_lists(lists: String) -> Result<(), String> {
+    match fs::write(LISTS_FILE_PATH, lists) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e.to_string()),
+    }
+}
+Purpose: Simple utility function to write lists to a fixed file path (LISTS_FILE_PATH).
+Scope: Pure logic, no async, no Tauri state/context.
+2. main.rs
+rust
+CopyInsert
+async fn save_lists(lists: String, state: State<'_, StoragePathState>) -> Result<(), String> {
+    let storage_path = state.0.lock().unwrap();
+    let path = if storage_path.is_empty() {
+        get_app_dir()?.join("lists.json")
+    } else {
+        PathBuf::from(&*storage_path).join("lists.json")
+    };
+
+    std::fs::write(path, lists).map_err(|e| e.to_string())
+}
+Purpose: Writes lists to a path determined at runtime, based on application state (user’s chosen directory or default).
+Scope: Uses Tauri’s state management, async, and dynamic file paths.
+Do You Need Both?
+If your app only ever writes to a single, fixed file location:
+You only need the lib.rs version.
+If you want to support dynamic storage paths (user choice, multi-user, etc.):
+You need the main.rs version, which is more flexible and Tauri-specific.
+Typical Tauri Structure:
+lib.rs is for pure, reusable logic (no Tauri dependencies).
+main.rs is for Tauri commands, state, and async operations.
+Sometimes, main.rs's command just calls into lib.rs for the logic, passing the correct path.
+Recommendation
+If you only use the dynamic path, you can remove the lib.rs function.
+If you want to keep logic separate, refactor so lib.rs has a generic save function (taking a path), and main.rs handles state, then calls into lib.rs.
+Avoid code duplication: Don’t maintain two different implementations unless there’s a clear, justified reason.
+
+------------------------------
+Analysis of Function Usage
+Based on the provided code excerpts:
+
+Unused Functions:
+All functions in lib.rs:
+save_todos
+save_lists
+load_todos
+load_lists
+These functions are registered in the Tauri invoke handler in lib.rs, but they're not actually called from anywhere in the Rust code. The React code is using the versions from main.rs instead, as evidenced by the React code using async functions and passing storage path state.
+
+Used Functions (from main.rs):
+From React code in App.tsx:
+load_todos - Called in React via  invoke
+save_todos - Called in React via  invoke
+load_lists - Called in React via  invoke
+save_lists - Called in React via  invoke
+set_storage_path - Called via  handleSetPath function
+load_storage_path - Called in  loadInitialData
+get_theme - Used by the  useTheme hook
+set_theme - Used by the  useTheme hook
+has_todos_in_list - Called when deleting lists
+Conclusion:
+The functions in lib.rs are completely unused and can be safely removed. The application is using the more advanced versions in main.rs that support dynamic storage paths and Tauri state management.
