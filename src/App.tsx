@@ -505,7 +505,7 @@ function App() {
 
             {selectedList !== "completed" && selectedList !== "home" && (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 dark:text-gray-300">
+                <span className="text-sm text-gray-600 dark:text-gray-300 text-right">
                   {hideCompleted ? "Show completed" : "Hide completed"}
                 </span>
                 <button
