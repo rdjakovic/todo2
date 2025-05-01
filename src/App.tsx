@@ -538,7 +538,7 @@ function App() {
                 type="text"
                 value={newTodo}
                 onChange={(e) => setNewTodo(e.target.value)}
-                className="flex-1 h-10 px-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="flex-1 min-h-10 px-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Add a new todo..."
               />
               <button
