@@ -159,7 +159,7 @@ function App() {
         if (list.id === over.id) {
           return {
             ...list,
-            todos: [...list.todos, { ...sourceTodo!, listId: over.id }],
+            todos: [...list.todos, { ...sourceTodo! }],
           };
         }
         return list;
@@ -258,7 +258,6 @@ function App() {
       text: newTodo,
       completed: false,
       date: new Date().toISOString(),
-      listId: selectedList,
     };
 
     try {

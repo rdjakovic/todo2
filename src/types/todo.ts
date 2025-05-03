@@ -11,7 +11,6 @@ export interface Todo {
   text: string;
   completed: boolean;
   date: string;
-  listId: string;
   isEditing?: boolean;
   editText?: string;
 }

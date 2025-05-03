@@ -150,14 +150,19 @@ async fn load_storage_path() -> Result<String, String> {
 
 #[tauri::command]
 async fn has_todos_in_list(list_id: String, state: State<'_, StoragePathState>) -> Result<bool, String> {
-    let todos_str = load_todos(state).await?;
-    let todos: Vec<serde_json::Value> = serde_json::from_str(&todos_str)
+    let lists_str = load_lists(state.clone()).await?;
+    let lists: Vec<serde_json::Value> = serde_json::from_str(&lists_str)
         .map_err(|e| e.to_string())?;
 
-    Ok(todos.iter().any(|todo| {
-        todo.get("listId")
+    // Find the list with the given ID and check if it has todos
+    Ok(lists.iter().any(|list| {
+        list.get("id")
             .and_then(|id| id.as_str())
             .map(|id| id == list_id)
+            .unwrap_or(false) &&
+        list.get("todos")
+            .and_then(|todos| todos.as_array())
+            .map(|todos| !todos.is_empty())
             .unwrap_or(false)
     }))
 }
