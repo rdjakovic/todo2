@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,6 +23,7 @@ import { TodoItem } from "./components/TodoItem";
 import { Todo, TodoList } from "./types/todo";
 import "./App.css";
 import { useTheme } from "./hooks/useTheme";
+import { isTauri } from "./utils/environment";
 
 const initialLists: TodoList[] = [
   {
@@ -190,12 +190,27 @@ function App() {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        const savedPath = await invoke<string>("load_storage_path");
-        setStoragePath(savedPath);
-        console.log("Saved path:", savedPath);
-        await loadLists();
+        if (isTauri()) {
+          // Tauri-specific code
+          const savedPath = await import("@tauri-apps/api/core").then(
+            ({ invoke }) => invoke<string>("load_storage_path")
+          );
+          setStoragePath(await savedPath);
+          await loadLists();
+        } else {
+          // Web-specific code (e.g., using localStorage)
+          const savedLists = localStorage.getItem("lists");
+          if (savedLists) {
+            setLists(JSON.parse(savedLists));
+          } else {
+            setLists(initialLists);
+            localStorage.setItem("lists", JSON.stringify(initialLists));
+          }
+          setLoading(false);
+        }
       } catch (err) {
         console.error("Error loading initial data:", err);
+        setLoading(false);
       }
     };
 
@@ -221,8 +236,10 @@ function App() {
   const loadLists = async () => {
     try {
       setLoading(true);
-      const loadedLists = await invoke<string>("load_lists");
-      const parsedLists = JSON.parse(loadedLists);
+      const loadedLists = await import("@tauri-apps/api/core").then(
+        ({ invoke }) => invoke<string>("load_lists")
+      );
+      const parsedLists = JSON.parse(await loadedLists);
       if (parsedLists && parsedLists.length > 0) {
         setLists(parsedLists);
       } else {
@@ -241,7 +258,12 @@ function App() {
 
   const saveList = async (updatedLists: TodoList[]) => {
     try {
-      await invoke("save_lists", { lists: JSON.stringify(updatedLists) });
+      if (isTauri()) {
+        const { invoke } = await import("@tauri-apps/api/core");
+        await invoke("save_lists", { lists: JSON.stringify(updatedLists) });
+      } else {
+        localStorage.setItem("lists", JSON.stringify(updatedLists));
+      }
       setError(null);
     } catch (err) {
       console.error("Error saving lists:", err);
@@ -416,7 +438,10 @@ function App() {
 
   const handleSetPath = async (path: string) => {
     try {
-      await invoke("set_storage_path", { path });
+      if (isTauri()) {
+        const { invoke } = await import("@tauri-apps/api/core");
+        await invoke("set_storage_path", { path });
+      }
       console.log("Storage path saved:", path);
       setStoragePath(path);
     } catch (error) {
@@ -462,32 +487,34 @@ function App() {
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-                <div>
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    Storage Location
-                  </h2>
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">
-                    Set custom path for storing todos and lists (leave empty for
-                    default location)
-                  </p>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={storagePath}
-                      onChange={(e) => setStoragePath(e.target.value)}
-                      className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      placeholder="Enter storage path..."
-                    />
-                    <button
-                      onClick={() => handleSetPath(storagePath)}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    >
-                      Save
-                    </button>
+              {isTauri() && (
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+                  <div>
+                    <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      Storage Location
+                    </h2>
+                    <p className="text-gray-500 dark:text-gray-400 mb-4">
+                      Set custom path for storing todos and lists (leave empty
+                      for default location)
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={storagePath}
+                        onChange={(e) => setStoragePath(e.target.value)}
+                        className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Enter storage path..."
+                      />
+                      <button
+                        onClick={() => handleSetPath(storagePath)}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      >
+                        Save
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
