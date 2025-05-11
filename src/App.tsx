@@ -21,12 +21,21 @@ import {
 import { Sidebar } from "./components/sidebar";
 const TodoItem = lazy(() => import("./components/TodoItem"));
 const EditTodoDialog = lazy(() => import("./components/EditTodoDialog"));
+import LoadingIndicator from "./components/LoadingIndicator";
+import SettingsView from "./components/SettingsView";
+import TodoListView from "./components/TodoListView"; // Added import
 import { Todo, TodoList } from "./types/todo";
 import "./App.css";
 import { useTheme } from "./hooks/useTheme";
 import { isTauri } from "./utils/environment";
 import { initialLists } from "./const/initialLists";
-import { isValidNativeDate } from "./utils/helper";
+import {
+  isValidNativeDate,
+  processLoadedLists,
+  serializeListsForSave,
+  getFilteredTodos,
+  calculateTodoCountByList, // Added calculateTodoCountByList
+} from "./utils/helper";
 
 function App() {
   const { theme, toggleTheme } = useTheme();
@@ -154,42 +163,36 @@ function App() {
           // Web-specific code (e.g., using localStorage)
           const savedLists = localStorage.getItem("lists");
           if (savedLists) {
-            const parsedLists = JSON.parse(savedLists).map(
-              (list: TodoList) => ({
-                ...list,
-                todos: list.todos.map((todo: any) => ({
-                  ...todo,
-                  dateCreated: new Date(todo.dateCreated),
-                  dueDate: todo.dueDate ? new Date(todo.dueDate) : undefined,
-                  dateOfCompletion: todo.dateOfCompletion
-                    ? new Date(todo.dateOfCompletion)
-                    : undefined,
-                })),
-              })
-            );
+            const parsedLists = processLoadedLists(JSON.parse(savedLists));
             setLists(parsedLists);
           } else {
             // For initialLists, ensure dates are Date objects if they are strings
-            const processedInitialLists = initialLists.map((list) => ({
-              ...list,
-              todos: list.todos.map((todo) => ({
-                ...todo,
-                dateCreated:
-                  typeof todo.dateCreated === "string"
-                    ? new Date(todo.dateCreated)
-                    : todo.dateCreated,
-                dueDate:
-                  typeof todo.dueDate === "string"
-                    ? new Date(todo.dueDate)
-                    : todo.dueDate,
-                dateOfCompletion:
-                  typeof todo.dateOfCompletion === "string"
-                    ? new Date(todo.dateOfCompletion)
-                    : todo.dateOfCompletion,
-              })),
-            }));
+            const processedInitialLists = processLoadedLists(
+              initialLists.map((list) => ({
+                ...list,
+                todos: list.todos.map((todo) => ({ ...todo })),
+              }))
+            ); // Ensure deep copy for processing
             setLists(processedInitialLists);
-            localStorage.setItem("lists", JSON.stringify(initialLists));
+            // Save the processed initial lists, not the original initialLists which might have string dates
+            localStorage.setItem(
+              "lists",
+              JSON.stringify(
+                processedInitialLists.map((list) => ({
+                  ...list,
+                  todos: list.todos.map((todo) => ({
+                    ...todo,
+                    dateCreated: todo.dateCreated.toISOString(),
+                    dueDate: todo.dueDate
+                      ? todo.dueDate.toISOString()
+                      : undefined,
+                    dateOfCompletion: todo.dateOfCompletion
+                      ? todo.dateOfCompletion.toISOString()
+                      : undefined,
+                  })),
+                }))
+              )
+            );
           }
           setLoading(false);
         }
@@ -226,40 +229,18 @@ function App() {
       );
       const rawLists = JSON.parse(await loadedListsString);
 
-      const processedLists = rawLists.map((list: TodoList) => ({
-        ...list,
-        todos: list.todos.map((todo: any) => ({
-          ...todo,
-          dateCreated: new Date(todo.dateCreated),
-          dueDate: todo.dueDate ? new Date(todo.dueDate) : undefined,
-          dateOfCompletion: todo.dateOfCompletion
-            ? new Date(todo.dateOfCompletion)
-            : undefined,
-        })),
-      }));
+      const loadedAndProcessedLists = processLoadedLists(rawLists);
 
-      if (processedLists && processedLists.length > 0) {
-        setLists(processedLists);
+      if (loadedAndProcessedLists && loadedAndProcessedLists.length > 0) {
+        setLists(loadedAndProcessedLists);
       } else {
         // For initialLists, ensure dates are Date objects if they are strings
-        const processedInitialLists = initialLists.map((list) => ({
-          ...list,
-          todos: list.todos.map((todo) => ({
-            ...todo,
-            dateCreated:
-              typeof todo.dateCreated === "string"
-                ? new Date(todo.dateCreated)
-                : todo.dateCreated,
-            dueDate:
-              typeof todo.dueDate === "string"
-                ? new Date(todo.dueDate)
-                : todo.dueDate,
-            dateOfCompletion:
-              typeof todo.dateOfCompletion === "string"
-                ? new Date(todo.dateOfCompletion)
-                : todo.dateOfCompletion,
-          })),
-        }));
+        const processedInitialLists = processLoadedLists(
+          initialLists.map((list) => ({
+            ...list,
+            todos: list.todos.map((todo) => ({ ...todo })),
+          }))
+        ); // Ensure deep copy
         setLists(processedInitialLists);
         await saveList(processedInitialLists); // Save the processed initial lists
       }
@@ -275,23 +256,7 @@ function App() {
 
   const saveList = async (listsToSave: TodoList[]) => {
     try {
-      const serializableLists = listsToSave.map((list) => ({
-        ...list,
-        todos: list.todos.map((todo) => ({
-          ...todo,
-          dateCreated: isValidNativeDate(todo.dateCreated)
-            ? todo.dateCreated.toISOString()
-            : undefined,
-          dueDate:
-            todo.dueDate && isValidNativeDate(todo.dueDate)
-              ? todo.dueDate.toISOString()
-              : undefined,
-          dateOfCompletion:
-            todo.dateOfCompletion && isValidNativeDate(todo.dateOfCompletion)
-              ? todo.dateOfCompletion.toISOString()
-              : undefined,
-        })),
-      }));
+      const serializableLists = serializeListsForSave(listsToSave);
 
       if (isTauri()) {
         const { invoke } = await import("@tauri-apps/api/core");
@@ -484,41 +449,9 @@ function App() {
     handleCloseEditDialog();
   };
 
-  const filteredTodos =
-    selectedList === "completed"
-      ? lists
-          .filter((list) => list && list.todos)
-          .flatMap((list) => list.todos.filter((todo) => todo.completed))
-      : selectedList === "home"
-      ? lists
-          .filter((list) => list && list.todos)
-          .flatMap((list) => list.todos.filter((todo) => !todo.completed))
-      : lists
-          .find((list) => list && list.id === selectedList)
-          ?.todos?.filter((todo) => !hideCompleted || !todo.completed) ?? [];
+  const filteredTodos = getFilteredTodos(lists, selectedList, hideCompleted);
 
-  const todoCountByList = lists
-    .filter((list) => list && list.todos)
-    .reduce((acc, list) => {
-      // Count completed todos for the Completed list
-      const completedCount = list.todos.filter((todo) => todo.completed).length;
-      acc["completed"] = (acc["completed"] || 0) + completedCount;
-
-      // Count incomplete todos for the Home list
-      const incompleteCount = list.todos.filter(
-        (todo) => !todo.completed
-      ).length;
-      acc["home"] = (acc["home"] || 0) + incompleteCount;
-
-      // For other lists, count based on list's isCompletedHidden property
-      if (list.id !== "home" && list.id !== "completed") {
-        acc[list.id] = list.isCompletedHidden
-          ? list.todos.filter((todo) => !todo.completed).length // Only count incomplete if isCompletedHidden is true
-          : list.todos.length; // Count all if isCompletedHidden is false
-      }
-
-      return acc;
-    }, {} as Record<string, number>);
+  const todoCountByList = calculateTodoCountByList(lists);
 
   const handleSetPath = async (path: string) => {
     try {
@@ -536,183 +469,37 @@ function App() {
   const renderContent = () => {
     if (selectedList === "settings") {
       return (
-        <div className="flex-1 p-8">
-          <div className="max-w-2xl mx-auto">
-            <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-8">
-              Settings
-            </h1>
-
-            <div className="space-y-6">
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-                      Theme
-                    </h2>
-                    <p className="text-gray-500 dark:text-gray-400">
-                      Switch between light and dark mode
-                    </p>
-                  </div>
-                  <button
-                    onClick={toggleTheme}
-                    className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-purple-600 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    role="switch"
-                    aria-checked={theme === "dark"}
-                    aria-label="Toggle dark mode"
-                  >
-                    <span className="sr-only">Toggle theme</span>
-                    <span
-                      className={clsx(
-                        "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-                        theme === "dark" ? "translate-x-6" : "translate-x-1"
-                      )}
-                    />
-                  </button>
-                </div>
-              </div>
-
-              {isTauri() && (
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
-                  <div>
-                    <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                      Storage Location
-                    </h2>
-                    <p className="text-gray-500 dark:text-gray-400 mb-4">
-                      Set custom path for storing todos and lists (leave empty
-                      for default location)
-                    </p>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={storagePath}
-                        onChange={(e) => setStoragePath(e.target.value)}
-                        className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        placeholder="Enter storage path..."
-                      />
-                      <button
-                        onClick={() => handleSetPath(storagePath)}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      >
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <SettingsView
+          theme={theme}
+          toggleTheme={toggleTheme}
+          storagePath={storagePath}
+          setStoragePath={setStoragePath}
+          handleSetPath={handleSetPath}
+        />
       );
     }
 
     return (
-      <div className="flex-1 p-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
-              {lists.find((list) => list.id === selectedList)?.name || "Todos"}
-            </h1>
-
-            {selectedList !== "completed" && selectedList !== "home" && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600 dark:text-gray-300 text-right">
-                  {hideCompleted ? "Show completed" : "Hide completed"}
-                </span>
-                <button
-                  onClick={handleHideCompletedToggle}
-                  className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  role="switch"
-                  aria-checked={hideCompleted}
-                  aria-label="Toggle completed todos visibility"
-                >
-                  <span
-                    className={clsx(
-                      "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-                      hideCompleted ? "translate-x-6" : "translate-x-1"
-                    )}
-                  />
-                </button>
-              </div>
-            )}
-          </div>
-
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg text-red-600 dark:text-red-200">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={addTodo} className="mb-8">
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                type="text"
-                value={newTodo}
-                onChange={(e) => setNewTodo(e.target.value)}
-                className="flex-1 min-h-10 px-4 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Add a new todo..."
-              />
-              <button
-                type="submit"
-                className="h-10 px-6 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2"
-              >
-                <PlusIcon className="w-5 h-5" />
-                Add
-              </button>
-            </div>
-          </form>
-
-          <AnimatePresence mode="popLayout">
-            {filteredTodos.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="text-center text-gray-500 dark:text-gray-400 py-8"
-              >
-                No todos yet. Add one above!
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                layout
-              >
-                <SortableContext
-                  items={filteredTodos.map((t) => t.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-2">
-                    <Suspense fallback={<div>Loading todos...</div>}>
-                      {filteredTodos.map((todo) => (
-                        <TodoItem
-                          key={todo.id}
-                          todo={todo}
-                          onToggle={toggleTodo}
-                          onDelete={deleteTodo}
-                          onEdit={editTodo} // This prop is for the actual save operation
-                          onOpenEditDialog={handleOpenEditDialog} // New prop
-                        />
-                      ))}
-                    </Suspense>
-                  </div>
-                </SortableContext>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
+      <TodoListView
+        lists={lists}
+        selectedList={selectedList}
+        hideCompleted={hideCompleted}
+        handleHideCompletedToggle={handleHideCompletedToggle}
+        error={error}
+        addTodo={addTodo}
+        newTodo={newTodo}
+        setNewTodo={setNewTodo}
+        filteredTodos={filteredTodos}
+        toggleTodo={toggleTodo}
+        deleteTodo={deleteTodo}
+        editTodo={editTodo}
+        handleOpenEditDialog={handleOpenEditDialog}
+      />
     );
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 dark:from-gray-900 to-blue-50 dark:to-gray-800 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 dark:border-purple-400 border-t-transparent" />
-      </div>
-    );
+    return <LoadingIndicator />;
   }
 
   return (

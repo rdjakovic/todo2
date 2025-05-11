@@ -44,3 +44,29 @@ Updated the date display logic for `todo.dateCreated` and `todo.dateOfCompletion
 Date: 2025-05-11
 Description: Refactored helper functions into a separate file.
 Summary: Created `src/utils/helper.ts` and moved `isValidNativeDate` and `formatNativeDate` functions from `src/components/TodoItem.tsx` to this new file. Updated `src/components/TodoItem.tsx` to import these functions from `src/utils/helper.ts`.
+
+---
+
+Date: 2025-05-11
+Description: Refactored App.tsx to improve modularity and readability.
+Summary:
+Extracted UI sections from `App.tsx` into new, more focused components:
+
+- `src/components/LoadingIndicator.tsx`: Displays a loading spinner.
+- `src/components/SettingsView.tsx`: Renders the settings page content.
+- `src/components/TodoForm.tsx`: Handles the form for adding new todos.
+- `src/components/TodoListItems.tsx`: Renders the sortable list of todo items.
+- `src/components/TodoListView.tsx`: Manages the main todo list view, incorporating `TodoForm` and `TodoListItems`.
+  Moved several utility/helper functions from `App.tsx` to `src/utils/helper.ts`:
+- `processLoadedLists`: Converts raw list data from storage into the `TodoList[]` format.
+- `serializeListsForSave`: Prepares `TodoList[]` for saving by converting `Date` objects to ISO strings.
+- `getFilteredTodos`: Computes the `filteredTodos` array based on the current `selectedList` and `hideCompleted` status.
+- `calculateTodoCountByList`: Computes the `todoCountByList` object.
+  Updated `App.tsx` to import and use these new components and helper functions, significantly reducing its size and complexity.
+
+---
+
+Date: 2025-05-11
+Description: Fixed Framer Motion warning in TodoListItems component.
+Summary:
+Modified `src/components/TodoListItems.tsx` to correctly use `React.forwardRef`. This resolves the console warning "Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?" that occurred when using `AnimatePresence` with `mode="popLayout"`. The component now properly forwards refs to the underlying `motion.div` element.
