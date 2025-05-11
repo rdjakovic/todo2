@@ -16,10 +16,8 @@ interface TodoItemProps {
   todo: Todo;
   onToggle: (id: number) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
-  onEdit: (id: number, newText: string) => Promise<void>;
-  onEditStart?: (id: number, text: string) => void;
-  onEditCancel?: (id: number) => void;
-  onEditChange?: (id: number, newText: string) => void;
+  onEdit: (id: number, newText: string) => Promise<void>; // This will be used by the dialog via App.tsx
+  onOpenEditDialog: (todo: Todo) => void; // New prop to open the dialog
   isDragging?: boolean;
 }
 
@@ -31,10 +29,8 @@ export const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
       todo,
       onToggle,
       onDelete,
-      onEdit,
-      onEditStart = () => {},
-      onEditCancel = () => {},
-      onEditChange = () => {},
+      // onEdit is not directly called here anymore but passed up
+      onOpenEditDialog,
       isDragging,
     },
     ref
@@ -101,88 +97,43 @@ export const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
           </button>
 
           <div className="flex-1">
-            {todo.isEditing ? (
-              <div className="flex gap-2">
-                <textarea
-                  value={todo.editText}
-                  onChange={(e) => onEditChange(todo.id, e.target.value)}
-                  onKeyDown={(e) => {
-                    if (
-                      e.key === "Enter" &&
-                      !e.shiftKey &&
-                      todo.editText?.trim()
-                    ) {
-                      e.preventDefault();
-                      onEdit(todo.id, todo.editText);
-                    } else if (e.key === "Enter" && e.shiftKey) {
-                      return;
-                    } else if (e.key === "Escape") {
-                      onEditCancel(todo.id);
-                    }
-                  }}
-                  className="flex-1 px-2 py-1 rounded border dark:border-gray-600 dark:bg-gray-700 dark:text-white text-sm resize-none"
-                  placeholder="Edit todo"
-                  title="Edit todo text"
-                  autoFocus
-                  rows={3}
-                />
-                <button
-                  onClick={() => {
-                    if (todo.editText?.trim()) {
-                      onEdit(todo.id, todo.editText);
-                    }
-                  }}
-                  className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900 rounded-lg"
-                  title="Save"
-                >
-                  <CheckIcon className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => onEditCancel(todo.id)}
-                  className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                  title="Cancel"
-                >
-                  <XMarkIcon className="w-5 h-5" />
-                </button>
-              </div>
-            ) : (
-              <>
-                <p
-                  className={clsx(
-                    "text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap",
-                    todo.completed &&
-                      "line-through text-gray-500 dark:text-gray-400"
-                  )}
-                >
-                  {todo.text}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {format(new Date(todo.date), "MMM d, yyyy - HH:mm")}
-                </p>
-              </>
-            )}
+            {/* Inline editing UI removed */}
+            <>
+              <p
+                className={clsx(
+                  "text-sm text-gray-800 dark:text-gray-100 whitespace-pre-wrap",
+                  todo.completed &&
+                    "line-through text-gray-500 dark:text-gray-400"
+                )}
+              >
+                {todo.text}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {format(new Date(todo.dateCreated), "MMM d, yyyy - HH:mm")}
+              </p>
+            </>
           </div>
 
-          {!todo.isEditing && (
-            <div className="flex gap-1">
-              {!todo.completed && (
-                <button
-                  onClick={() => onEditStart(todo.id, todo.text)}
-                  className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900"
-                  title="Edit todo"
-                >
-                  <PencilIcon className="w-4 h-4" />
-                </button>
-              )}
+          {/* Action buttons - Edit button now opens dialog */}
+          <div className="flex gap-1">
+            {!todo.completed && (
               <button
-                onClick={() => onDelete(todo.id)}
-                className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
-                title="Delete todo"
+                onClick={() => onOpenEditDialog(todo)} // Changed onClick handler
+                className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900"
+                title="Edit todo"
               >
-                <TrashIcon className="w-4 h-4" />
+                <PencilIcon className="w-4 h-4" />
               </button>
-            </div>
-          )}
+            )}
+            <button
+              onClick={() => onDelete(todo.id)}
+              className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
+              title="Delete todo"
+            >
+              <TrashIcon className="w-4 h-4" />
+            </button>
+          </div>
+          {/* Removed the erroneous closing parenthesis and brace */}
         </div>
       </MotionDiv>
     );

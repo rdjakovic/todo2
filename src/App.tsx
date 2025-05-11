@@ -20,62 +20,12 @@ import {
 } from "@dnd-kit/sortable";
 import { Sidebar } from "./components/sidebar";
 import { TodoItem } from "./components/TodoItem";
+import { EditTodoDialog } from "./components/EditTodoDialog"; // Added import
 import { Todo, TodoList } from "./types/todo";
 import "./App.css";
 import { useTheme } from "./hooks/useTheme";
 import { isTauri } from "./utils/environment";
-
-const initialLists: TodoList[] = [
-  {
-    id: "home",
-    name: "Home",
-    icon: "home",
-    todos: [],
-    isCompletedHidden: false,
-  },
-  {
-    id: "completed",
-    name: "Completed",
-    icon: "check",
-    todos: [],
-    isCompletedHidden: false,
-  },
-  {
-    id: "personal",
-    name: "Personal",
-    icon: "user",
-    todos: [],
-    isCompletedHidden: false,
-  },
-  {
-    id: "work",
-    name: "Work",
-    icon: "briefcase",
-    todos: [],
-    isCompletedHidden: false,
-  },
-  {
-    id: "diet",
-    name: "Diet",
-    icon: "diet",
-    todos: [],
-    isCompletedHidden: false,
-  },
-  {
-    id: "books",
-    name: "List of Book",
-    icon: "book",
-    todos: [],
-    isCompletedHidden: false,
-  },
-  {
-    id: "roadtrip",
-    name: "Road trip list",
-    icon: "car",
-    todos: [],
-    isCompletedHidden: false,
-  },
-];
+import { initialLists } from "./const/initialLists";
 
 function App() {
   const { theme, toggleTheme } = useTheme();
@@ -90,6 +40,8 @@ function App() {
   const [storagePath, setStoragePath] = useState<string>("");
   const [hideCompleted, setHideCompleted] = useState(false);
   const [activeDraggedTodo, setActiveDraggedTodo] = useState<Todo | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // Added state
+  const [todoToEditDialog, setTodoToEditDialog] = useState<Todo | null>(null); // Added state
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -278,8 +230,12 @@ function App() {
     const newTodoItem: Todo = {
       id: Date.now(),
       text: newTodo,
+      notes: "", // Added
       completed: false,
-      date: new Date().toISOString(),
+      dateCreated: new Date().toISOString(),
+      priority: "medium", // Added default
+      dueDate: undefined, // Added
+      dateOfCompletion: undefined, // Added
     };
 
     try {
@@ -302,7 +258,15 @@ function App() {
       const updatedLists = lists.map((list) => ({
         ...list,
         todos: list.todos.map((todo) =>
-          todo.id === id ? { ...todo, completed: !todo.completed } : todo
+          todo.id === id
+            ? {
+                ...todo,
+                completed: !todo.completed,
+                dateOfCompletion: !todo.completed // Set dateOfCompletion if todo is now completed
+                  ? new Date().toISOString()
+                  : undefined, // Clear if todo is now incomplete
+              }
+            : todo
         ),
       }));
       setLists(updatedLists);
@@ -382,13 +346,25 @@ function App() {
     await saveList(updatedLists);
   };
 
-  const editTodo = async (id: number, newText: string) => {
+  const editTodo = async (
+    id: number,
+    newText: string,
+    newNotes?: string,
+    newPriority?: "low" | "medium" | "high",
+    newDueDate?: string
+  ) => {
     try {
       const updatedLists = lists.map((list) => ({
         ...list,
         todos: list.todos.map((todo) =>
           todo.id === id
-            ? { ...todo, text: newText, isEditing: false, editText: undefined }
+            ? {
+                ...todo,
+                text: newText,
+                notes: newNotes ?? todo.notes,
+                priority: newPriority ?? todo.priority,
+                dueDate: newDueDate ?? todo.dueDate,
+              }
             : todo
         ),
       }));
@@ -396,8 +372,31 @@ function App() {
       await saveList(updatedLists);
       setError(null);
     } catch (err) {
+      // Fixed: Added opening brace
       setError("Failed to edit todo");
     }
+  };
+
+  // Dialog handlers
+  const handleOpenEditDialog = (todo: Todo) => {
+    setTodoToEditDialog(todo);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setTodoToEditDialog(null);
+    setIsEditDialogOpen(false);
+  };
+
+  const handleSaveEditDialog = async (
+    id: number,
+    newText: string,
+    newNotes?: string,
+    newPriority?: "low" | "medium" | "high",
+    newDueDate?: string
+  ) => {
+    await editTodo(id, newText, newNotes, newPriority, newDueDate);
+    handleCloseEditDialog();
   };
 
   const filteredTodos =
@@ -607,42 +606,8 @@ function App() {
                         todo={todo}
                         onToggle={toggleTodo}
                         onDelete={deleteTodo}
-                        onEdit={editTodo}
-                        onEditStart={(id, text) => {
-                          const updatedTodos = lists.map((list) => ({
-                            ...list,
-                            todos: list.todos.map((t) =>
-                              t.id === id
-                                ? { ...t, isEditing: true, editText: text }
-                                : t
-                            ),
-                          }));
-                          setLists(updatedTodos);
-                        }}
-                        onEditCancel={(id) => {
-                          const updatedTodos = lists.map((list) => ({
-                            ...list,
-                            todos: list.todos.map((t) =>
-                              t.id === id
-                                ? {
-                                    ...t,
-                                    isEditing: false,
-                                    editText: undefined,
-                                  }
-                                : t
-                            ),
-                          }));
-                          setLists(updatedTodos);
-                        }}
-                        onEditChange={(id, newText) => {
-                          const updatedTodos = lists.map((list) => ({
-                            ...list,
-                            todos: list.todos.map((t) =>
-                              t.id === id ? { ...t, editText: newText } : t
-                            ),
-                          }));
-                          setLists(updatedTodos);
-                        }}
+                        onEdit={editTodo} // This prop is for the actual save operation
+                        onOpenEditDialog={handleOpenEditDialog} // New prop
                       />
                     ))}
                   </div>
@@ -708,11 +673,18 @@ function App() {
                 todo={activeDraggedTodo}
                 onToggle={async () => {}}
                 onDelete={async () => {}}
-                onEdit={async () => {}}
+                onEdit={async () => {}} // editTodo is the actual save function
+                onOpenEditDialog={() => {}} // No-op for dragged item
               />
             </div>
           ) : null}
         </DragOverlay>
+        <EditTodoDialog
+          isOpen={isEditDialogOpen}
+          todoToEdit={todoToEditDialog}
+          onSave={handleSaveEditDialog}
+          onCancel={handleCloseEditDialog}
+        />
       </div>
     </DndContext>
   );

@@ -9,8 +9,12 @@ export interface TodoList {
 export interface Todo {
   id: number;
   text: string;
+  notes?: string;
   completed: boolean;
-  date: string;
+  dateCreated: string;
   isEditing?: boolean;
   editText?: string;
+  priority?: "low" | "medium" | "high";
+  dueDate?: string;
+  dateOfCompletion?: string;
 }

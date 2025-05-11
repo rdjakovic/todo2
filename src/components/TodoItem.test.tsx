@@ -9,18 +9,18 @@ describe("TodoItem", () => {
     id: 1,
     text: "Test Todo",
     completed: false,
-    date: new Date().toISOString(),
-    listId: "home",
+    dateCreated: new Date().toISOString(),
     isEditing: false,
     editText: "",
   };
 
   const mockOnToggle = vi.fn();
   const mockOnDelete = vi.fn();
-  const mockOnEdit = vi.fn();
-  const mockOnEditStart = vi.fn();
-  const mockOnEditCancel = vi.fn();
-  const mockOnEditChange = vi.fn();
+  const mockOnEdit = vi.fn(); // This prop is still passed to TodoItem, for App.tsx to use with the dialog
+  // const mockOnEditStart = vi.fn(); // Removed
+  // const mockOnEditCancel = vi.fn(); // Removed
+  // const mockOnEditChange = vi.fn(); // Removed
+  const mockOnOpenEditDialog = vi.fn(); // Added
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -30,9 +30,8 @@ describe("TodoItem", () => {
         onToggle={mockOnToggle}
         onDelete={mockOnDelete}
         onEdit={mockOnEdit}
-        onEditStart={mockOnEditStart}
-        onEditCancel={mockOnEditCancel}
-        onEditChange={mockOnEditChange}
+        onOpenEditDialog={mockOnOpenEditDialog} // Added
+        // onEditStart, onEditCancel, onEditChange removed
       />
     );
   });
@@ -53,9 +52,9 @@ describe("TodoItem", () => {
     expect(mockOnDelete).toHaveBeenCalledWith(mockTodo.id);
   });
 
-  test("calls onEditStart when edit button is clicked", () => {
+  test("calls onOpenEditDialog when edit button is clicked", () => {
     const editButton = screen.getByTitle("Edit todo");
     fireEvent.click(editButton);
-    expect(mockOnEditStart).toHaveBeenCalledWith(mockTodo.id, mockTodo.text);
+    expect(mockOnOpenEditDialog).toHaveBeenCalledWith(mockTodo); // Changed assertion
   });
 });
