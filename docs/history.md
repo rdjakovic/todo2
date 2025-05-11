@@ -22,3 +22,25 @@ Modified `src/components/TodoItem.tsx` to correctly format `Date` objects for di
 Adjusted `src/components/EditTodoDialog.tsx` to handle `Date` objects for `dueDate`, including formatting `Date` to string for the input field and parsing the input string back to a `Date` object on save.
 Updated `src/components/TodoItem.test.tsx` to use `Date` objects in mock data.
 All related TypeScript errors were resolved.
+
+---
+
+Date: 2025-05-11
+Description: Added display of `dateOfCompletion` in the TodoItem component and made it responsive.
+Summary:
+Modified `src/components/TodoItem.tsx` to display the `dateOfCompletion` next to the `dateCreated`. The `dateOfCompletion` is only shown if the todo is marked as completed and the `dateOfCompletion` is set. The dates are displayed using flexbox with `justify-between` to position them on opposite sides on larger screens (sm and up), and stack vertically (`flex-col`) on smaller screens.
+
+---
+
+Date: 2025-05-11
+Description: Fixed "Invalid time value" error in Edge browser using native JavaScript date handling.
+Summary:
+Removed `date-fns` dependency from `src/components/TodoItem.tsx`.
+Implemented helper functions `isValidNativeDate` (using `d instanceof Date && !isNaN(d.getTime())`) and `formatNativeDate` (to format dates as "MMM d, yyyy - HH:mm") within `src/components/TodoItem.tsx`.
+Updated the date display logic for `todo.dateCreated` and `todo.dateOfCompletion` to use these native helper functions. This resolves the `RangeError: Invalid time value` in Edge without external libraries.
+
+---
+
+Date: 2025-05-11
+Description: Refactored helper functions into a separate file.
+Summary: Created `src/utils/helper.ts` and moved `isValidNativeDate` and `formatNativeDate` functions from `src/components/TodoItem.tsx` to this new file. Updated `src/components/TodoItem.tsx` to import these functions from `src/utils/helper.ts`.

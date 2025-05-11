@@ -26,6 +26,7 @@ import "./App.css";
 import { useTheme } from "./hooks/useTheme";
 import { isTauri } from "./utils/environment";
 import { initialLists } from "./const/initialLists";
+import { isValidNativeDate } from "./utils/helper";
 
 function App() {
   const { theme, toggleTheme } = useTheme();
@@ -278,18 +279,17 @@ function App() {
         ...list,
         todos: list.todos.map((todo) => ({
           ...todo,
-          dateCreated:
-            todo.dateCreated instanceof Date
-              ? todo.dateCreated.toISOString()
-              : todo.dateCreated,
+          dateCreated: isValidNativeDate(todo.dateCreated)
+            ? todo.dateCreated.toISOString()
+            : undefined,
           dueDate:
-            todo.dueDate instanceof Date
+            todo.dueDate && isValidNativeDate(todo.dueDate)
               ? todo.dueDate.toISOString()
-              : todo.dueDate,
+              : undefined,
           dateOfCompletion:
-            todo.dateOfCompletion instanceof Date
+            todo.dateOfCompletion && isValidNativeDate(todo.dateOfCompletion)
               ? todo.dateOfCompletion.toISOString()
-              : todo.dateOfCompletion,
+              : undefined,
         })),
       }));
 

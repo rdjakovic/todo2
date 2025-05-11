@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { format } from "date-fns";
 import { CheckIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { isValidNativeDate, formatNativeDate } from "../utils/helper";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import clsx from "clsx";
@@ -109,12 +109,22 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
               >
                 {todo.text}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                {/* Ensure todo.dateCreated is a Date object before formatting */}
-                {todo.dateCreated instanceof Date
-                  ? format(todo.dateCreated, "MMM d, yyyy - HH:mm")
-                  : "Invalid date"}
-              </p>
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {/* Ensure todo.dateCreated is a Date object before formatting */}
+                  {isValidNativeDate(todo.dateCreated)
+                    ? formatNativeDate(todo.dateCreated)
+                    : "Invalid creation date"}
+                </p>
+                {todo.completed && todo.dateOfCompletion && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Completed:{" "}
+                    {isValidNativeDate(todo.dateOfCompletion)
+                      ? formatNativeDate(todo.dateOfCompletion)
+                      : "Invalid completion date"}
+                  </p>
+                )}
+              </div>
             </>
           </div>
 
