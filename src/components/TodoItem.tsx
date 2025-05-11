@@ -11,7 +11,13 @@ interface TodoItemProps {
   todo: Todo;
   onToggle: (id: number) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
-  onEdit: (id: number, newText: string) => Promise<void>; // This will be used by the dialog via App.tsx
+  onEdit: (
+    id: number,
+    newText: string,
+    newNotes?: string,
+    newPriority?: "low" | "medium" | "high",
+    newDueDate?: Date
+  ) => Promise<void>; // Match App.tsx's editTodo signature
   onOpenEditDialog: (todo: Todo) => void; // New prop to open the dialog
   isDragging?: boolean;
 }
@@ -104,7 +110,10 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
                 {todo.text}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {format(new Date(todo.dateCreated), "MMM d, yyyy - HH:mm")}
+                {/* Ensure todo.dateCreated is a Date object before formatting */}
+                {todo.dateCreated instanceof Date
+                  ? format(todo.dateCreated, "MMM d, yyyy - HH:mm")
+                  : "Invalid date"}
               </p>
             </>
           </div>

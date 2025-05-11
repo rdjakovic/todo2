@@ -153,9 +153,41 @@ function App() {
           // Web-specific code (e.g., using localStorage)
           const savedLists = localStorage.getItem("lists");
           if (savedLists) {
-            setLists(JSON.parse(savedLists));
+            const parsedLists = JSON.parse(savedLists).map(
+              (list: TodoList) => ({
+                ...list,
+                todos: list.todos.map((todo: any) => ({
+                  ...todo,
+                  dateCreated: new Date(todo.dateCreated),
+                  dueDate: todo.dueDate ? new Date(todo.dueDate) : undefined,
+                  dateOfCompletion: todo.dateOfCompletion
+                    ? new Date(todo.dateOfCompletion)
+                    : undefined,
+                })),
+              })
+            );
+            setLists(parsedLists);
           } else {
-            setLists(initialLists);
+            // For initialLists, ensure dates are Date objects if they are strings
+            const processedInitialLists = initialLists.map((list) => ({
+              ...list,
+              todos: list.todos.map((todo) => ({
+                ...todo,
+                dateCreated:
+                  typeof todo.dateCreated === "string"
+                    ? new Date(todo.dateCreated)
+                    : todo.dateCreated,
+                dueDate:
+                  typeof todo.dueDate === "string"
+                    ? new Date(todo.dueDate)
+                    : todo.dueDate,
+                dateOfCompletion:
+                  typeof todo.dateOfCompletion === "string"
+                    ? new Date(todo.dateOfCompletion)
+                    : todo.dateOfCompletion,
+              })),
+            }));
+            setLists(processedInitialLists);
             localStorage.setItem("lists", JSON.stringify(initialLists));
           }
           setLoading(false);
@@ -188,15 +220,47 @@ function App() {
   const loadLists = async () => {
     try {
       setLoading(true);
-      const loadedLists = await import("@tauri-apps/api/core").then(
+      const loadedListsString = await import("@tauri-apps/api/core").then(
         ({ invoke }) => invoke<string>("load_lists")
       );
-      const parsedLists = JSON.parse(await loadedLists);
-      if (parsedLists && parsedLists.length > 0) {
-        setLists(parsedLists);
+      const rawLists = JSON.parse(await loadedListsString);
+
+      const processedLists = rawLists.map((list: TodoList) => ({
+        ...list,
+        todos: list.todos.map((todo: any) => ({
+          ...todo,
+          dateCreated: new Date(todo.dateCreated),
+          dueDate: todo.dueDate ? new Date(todo.dueDate) : undefined,
+          dateOfCompletion: todo.dateOfCompletion
+            ? new Date(todo.dateOfCompletion)
+            : undefined,
+        })),
+      }));
+
+      if (processedLists && processedLists.length > 0) {
+        setLists(processedLists);
       } else {
-        setLists(initialLists);
-        await saveList(initialLists);
+        // For initialLists, ensure dates are Date objects if they are strings
+        const processedInitialLists = initialLists.map((list) => ({
+          ...list,
+          todos: list.todos.map((todo) => ({
+            ...todo,
+            dateCreated:
+              typeof todo.dateCreated === "string"
+                ? new Date(todo.dateCreated)
+                : todo.dateCreated,
+            dueDate:
+              typeof todo.dueDate === "string"
+                ? new Date(todo.dueDate)
+                : todo.dueDate,
+            dateOfCompletion:
+              typeof todo.dateOfCompletion === "string"
+                ? new Date(todo.dateOfCompletion)
+                : todo.dateOfCompletion,
+          })),
+        }));
+        setLists(processedInitialLists);
+        await saveList(processedInitialLists); // Save the processed initial lists
       }
       setError(null);
     } catch (err) {
@@ -208,13 +272,34 @@ function App() {
     }
   };
 
-  const saveList = async (updatedLists: TodoList[]) => {
+  const saveList = async (listsToSave: TodoList[]) => {
     try {
+      const serializableLists = listsToSave.map((list) => ({
+        ...list,
+        todos: list.todos.map((todo) => ({
+          ...todo,
+          dateCreated:
+            todo.dateCreated instanceof Date
+              ? todo.dateCreated.toISOString()
+              : todo.dateCreated,
+          dueDate:
+            todo.dueDate instanceof Date
+              ? todo.dueDate.toISOString()
+              : todo.dueDate,
+          dateOfCompletion:
+            todo.dateOfCompletion instanceof Date
+              ? todo.dateOfCompletion.toISOString()
+              : todo.dateOfCompletion,
+        })),
+      }));
+
       if (isTauri()) {
         const { invoke } = await import("@tauri-apps/api/core");
-        await invoke("save_lists", { lists: JSON.stringify(updatedLists) });
+        await invoke("save_lists", {
+          lists: JSON.stringify(serializableLists),
+        });
       } else {
-        localStorage.setItem("lists", JSON.stringify(updatedLists));
+        localStorage.setItem("lists", JSON.stringify(serializableLists));
       }
       setError(null);
     } catch (err) {
@@ -232,7 +317,7 @@ function App() {
       text: newTodo,
       notes: "", // Added
       completed: false,
-      dateCreated: new Date().toISOString(),
+      dateCreated: new Date(),
       priority: "medium", // Added default
       dueDate: undefined, // Added
       dateOfCompletion: undefined, // Added
@@ -263,7 +348,7 @@ function App() {
                 ...todo,
                 completed: !todo.completed,
                 dateOfCompletion: !todo.completed // Set dateOfCompletion if todo is now completed
-                  ? new Date().toISOString()
+                  ? new Date()
                   : undefined, // Clear if todo is now incomplete
               }
             : todo
@@ -351,7 +436,7 @@ function App() {
     newText: string,
     newNotes?: string,
     newPriority?: "low" | "medium" | "high",
-    newDueDate?: string
+    newDueDate?: Date // Changed from string to Date
   ) => {
     try {
       const updatedLists = lists.map((list) => ({
@@ -363,7 +448,7 @@ function App() {
                 text: newText,
                 notes: newNotes ?? todo.notes,
                 priority: newPriority ?? todo.priority,
-                dueDate: newDueDate ?? todo.dueDate,
+                dueDate: newDueDate !== undefined ? newDueDate : todo.dueDate, // Ensure newDueDate is used if provided
               }
             : todo
         ),
@@ -393,7 +478,7 @@ function App() {
     newText: string,
     newNotes?: string,
     newPriority?: "low" | "medium" | "high",
-    newDueDate?: string
+    newDueDate?: Date // Changed from string to Date
   ) => {
     await editTodo(id, newText, newNotes, newPriority, newDueDate);
     handleCloseEditDialog();
@@ -678,7 +763,7 @@ function App() {
                   todo={activeDraggedTodo}
                   onToggle={async () => {}}
                   onDelete={async () => {}}
-                  onEdit={async () => {}} // editTodo is the actual save function
+                  onEdit={async (_id, _text, _notes, _priority, _dueDate) => {}} // Matched signature
                   onOpenEditDialog={() => {}} // No-op for dragged item
                 />
               )}

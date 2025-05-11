@@ -11,10 +11,10 @@ export interface Todo {
   text: string;
   notes?: string;
   completed: boolean;
-  dateCreated: string;
+  dateCreated: Date;
   isEditing?: boolean;
   editText?: string;
   priority?: "low" | "medium" | "high";
-  dueDate?: string;
-  dateOfCompletion?: string;
+  dueDate?: Date;
+  dateOfCompletion?: Date;
 }

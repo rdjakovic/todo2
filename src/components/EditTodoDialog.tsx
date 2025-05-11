@@ -10,7 +10,7 @@ interface EditTodoDialogProps {
     newText: string,
     newNotes?: string,
     newPriority?: "low" | "medium" | "high",
-    newDueDate?: string
+    newDueDate?: Date | undefined // Changed to Date
   ) => void;
   onCancel: () => void;
 }
@@ -33,7 +33,12 @@ const EditTodoDialog = ({
       setEditText(todoToEdit.text);
       setEditNotes(todoToEdit.notes || "");
       setEditPriority(todoToEdit.priority || "medium");
-      setEditDueDate(todoToEdit.dueDate || "");
+      // Format Date to YYYY-MM-DD string for input, or empty string
+      setEditDueDate(
+        todoToEdit.dueDate instanceof Date
+          ? todoToEdit.dueDate.toISOString().split("T")[0]
+          : ""
+      );
     } else {
       setEditText("");
       setEditNotes("");
@@ -53,7 +58,8 @@ const EditTodoDialog = ({
         editText.trim(),
         editNotes.trim(),
         editPriority,
-        editDueDate.trim()
+        // Parse string to Date or undefined
+        editDueDate.trim() ? new Date(editDueDate.trim()) : undefined
       );
     }
   };

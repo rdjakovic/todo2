@@ -9,7 +9,7 @@ describe("TodoItem", () => {
     id: 1,
     text: "Test Todo",
     completed: false,
-    dateCreated: new Date().toISOString(),
+    dateCreated: new Date(),
     isEditing: false,
     editText: "",
   };
