@@ -19,7 +19,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { Sidebar } from "./components/sidebar";
-const TodoItem = lazy(() => import("./components/TodoItem"));
+import TodoItem from "./components/TodoItem"; // Changed from lazy import
 const EditTodoDialog = lazy(() => import("./components/EditTodoDialog"));
 import LoadingIndicator from "./components/LoadingIndicator";
 import SettingsView from "./components/SettingsView";

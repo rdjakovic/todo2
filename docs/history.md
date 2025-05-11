@@ -70,3 +70,10 @@ Date: 2025-05-11
 Description: Fixed Framer Motion warning in TodoListItems component.
 Summary:
 Modified `src/components/TodoListItems.tsx` to correctly use `React.forwardRef`. This resolves the console warning "Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?" that occurred when using `AnimatePresence` with `mode="popLayout"`. The component now properly forwards refs to the underlying `motion.div` element.
+
+---
+
+Date: 2025-05-11
+Description: Fixed drag and drop error related to lazy loading.
+Task Completed:
+Changed the import of `TodoItem` in `src/App.tsx` from a lazy-loaded component (`React.lazy`) to a direct import. This resolves the "A component suspended while responding to synchronous input" error that occurred during drag-and-drop operations when `DragOverlay` attempted to render the lazy-loaded `TodoItem`.
