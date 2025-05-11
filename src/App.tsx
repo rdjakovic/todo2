@@ -279,7 +279,7 @@ function App() {
 
     const newTodoItem: Todo = {
       id: Date.now(),
-      text: newTodo,
+      title: newTodo,
       notes: "", // Added
       completed: false,
       dateCreated: new Date(),
@@ -398,7 +398,7 @@ function App() {
 
   const editTodo = async (
     id: number,
-    newText: string,
+    newTitle: string,
     newNotes?: string,
     newPriority?: "low" | "medium" | "high",
     newDueDate?: Date // Changed from string to Date
@@ -410,7 +410,7 @@ function App() {
           todo.id === id
             ? {
                 ...todo,
-                text: newText,
+                title: newTitle,
                 notes: newNotes ?? todo.notes,
                 priority: newPriority ?? todo.priority,
                 dueDate: newDueDate !== undefined ? newDueDate : todo.dueDate, // Ensure newDueDate is used if provided
@@ -440,12 +440,12 @@ function App() {
 
   const handleSaveEditDialog = async (
     id: number,
-    newText: string,
+    newTitle: string,
     newNotes?: string,
     newPriority?: "low" | "medium" | "high",
     newDueDate?: Date // Changed from string to Date
   ) => {
-    await editTodo(id, newText, newNotes, newPriority, newDueDate);
+    await editTodo(id, newTitle, newNotes, newPriority, newDueDate);
     handleCloseEditDialog();
   };
 

@@ -107,7 +107,7 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
                     "line-through text-gray-500 dark:text-gray-400"
                 )}
               >
-                {todo.text}
+                {todo.title}
               </p>
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
                 <p className="text-xs text-gray-500 dark:text-gray-400">

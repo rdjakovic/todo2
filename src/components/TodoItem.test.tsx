@@ -7,11 +7,9 @@ import { Todo } from "../types/todo";
 describe("TodoItem", () => {
   const mockTodo: Todo = {
     id: 1,
-    text: "Test Todo",
+    title: "Test Todo",
     completed: false,
     dateCreated: new Date(),
-    isEditing: false,
-    editText: "",
   };
 
   const mockOnToggle = vi.fn();

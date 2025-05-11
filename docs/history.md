@@ -77,3 +77,31 @@ Date: 2025-05-11
 Description: Fixed drag and drop error related to lazy loading.
 Task Completed:
 Changed the import of `TodoItem` in `src/App.tsx` from a lazy-loaded component (`React.lazy`) to a direct import. This resolves the "A component suspended while responding to synchronous input" error that occurred during drag-and-drop operations when `DragOverlay` attempted to render the lazy-loaded `TodoItem`.
+
+---
+
+Date: 2025-05-11
+Description: Removed unused `isEditing` property from the Todo interface.
+Task Completed:
+Analyzed the codebase to determine where the `isEditing?: boolean;` property, defined in the `Todo` interface in `src/types/todo.ts`, is used. The analysis found no usages of this property. Consequently, the `isEditing` property was removed from the `Todo` interface in `src/types/todo.ts`.
+
+---
+
+Date: 2025-05-11
+Description: Removed unused `editText` property from the Todo interface.
+Task Completed:
+Analyzed the codebase to determine where the `editText?: string;` property, defined in the `Todo` interface in `src/types/todo.ts`, is used. The analysis found no usages of this property. Consequently, the `editText` property was removed from the `Todo` interface in `src/types/todo.ts`.
+
+---
+
+Date: 2025-05-11
+Description: Renamed 'text' field to 'title' in Todo interface and updated all references.
+Task Completed:
+Renamed the `text` field to `title` in the `Todo` interface in `src/types/todo.ts`.
+Updated all references to this field in the following files:
+
+- `src/App.tsx`: Changed `text` to `title` in `addTodo`, `editTodo`, and `handleSaveEditDialog`.
+- `src/components/TodoItem.tsx`: Changed `todo.text` to `todo.title` for displaying the todo.
+- `src/components/EditTodoDialog.tsx`: Changed `newText` to `newTitle` in `onSave` prop and updated `todoToEdit.text` to `todoToEdit.title` in `useEffect`.
+- `src/components/TodoItem.test.tsx`: Changed `text` to `title` in `mockTodo`.
+  All TypeScript errors related to this change were resolved.

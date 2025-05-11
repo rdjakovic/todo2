@@ -7,7 +7,7 @@ interface EditTodoDialogProps {
   todoToEdit: Todo | null;
   onSave: (
     id: number,
-    newText: string,
+    newTitle: string,
     newNotes?: string,
     newPriority?: "low" | "medium" | "high",
     newDueDate?: Date | undefined // Changed to Date
@@ -30,7 +30,7 @@ const EditTodoDialog = ({
 
   useEffect(() => {
     if (todoToEdit) {
-      setEditText(todoToEdit.text);
+      setEditText(todoToEdit.title);
       setEditNotes(todoToEdit.notes || "");
       setEditPriority(todoToEdit.priority || "medium");
       // Format Date to YYYY-MM-DD string for input, or empty string
