@@ -1,5 +1,5 @@
-import React, { Suspense, lazy, forwardRef } from "react"; // Added forwardRef
-import { motion, HTMLMotionProps } from "framer-motion"; // Added HTMLMotionProps
+import { Suspense, lazy, forwardRef } from "react";
+import { motion } from "framer-motion";
 import {
   SortableContext,
   verticalListSortingStrategy,

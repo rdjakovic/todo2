@@ -1,7 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { confirm } from "@tauri-apps/plugin-dialog";
-import { PlusIcon } from "@heroicons/react/24/outline";
-import { motion, AnimatePresence } from "framer-motion";
 import clsx from "clsx";
 import {
   DndContext,
@@ -13,11 +11,7 @@ import {
   PointerSensor,
   closestCenter,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  arrayMove,
-} from "@dnd-kit/sortable";
+import { arrayMove } from "@dnd-kit/sortable";
 import { Sidebar } from "./components/sidebar";
 import TodoItem from "./components/TodoItem"; // Changed from lazy import
 const EditTodoDialog = lazy(() => import("./components/EditTodoDialog"));
@@ -30,7 +24,6 @@ import { useTheme } from "./hooks/useTheme";
 import { isTauri } from "./utils/environment";
 import { initialLists } from "./const/initialLists";
 import {
-  isValidNativeDate,
   processLoadedLists,
   serializeListsForSave,
   getFilteredTodos,

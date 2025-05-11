@@ -1,6 +1,5 @@
 import React from "react";
-import { PlusIcon } from "@heroicons/react/24/outline";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import clsx from "clsx";
 import { Todo, TodoList } from "../types/todo";
 import TodoForm from "./TodoForm";
