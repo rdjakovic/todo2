@@ -280,12 +280,12 @@ function App() {
     const newTodoItem: Todo = {
       id: Date.now(),
       title: newTodo,
-      notes: "", // Added
+      notes: "",
       completed: false,
       dateCreated: new Date(),
       priority: "medium", // Added default
-      dueDate: undefined, // Added
-      dateOfCompletion: undefined, // Added
+      dueDate: undefined,
+      dateOfCompletion: undefined,
     };
 
     try {
@@ -543,14 +543,18 @@ function App() {
         <DragOverlay>
           {activeDraggedTodo ? (
             <div className="dragged-todo-overlay">
-              {/* TodoItem in DragOverlay cannot be lazy-loaded easily without more complex state management for the overlay's content source */}
-              {/* For now, we'll assume the non-lazy TodoItem is small enough or this is an acceptable trade-off */}
               {activeDraggedTodo && (
                 <TodoItem
                   todo={activeDraggedTodo}
                   onToggle={async () => {}}
                   onDelete={async () => {}}
-                  onEdit={async (_id, _text, _notes, _priority, _dueDate) => {}} // Matched signature
+                  onEdit={async (
+                    _id,
+                    _title,
+                    _notes,
+                    _priority,
+                    _dueDate
+                  ) => {}} // Matched signature
                   onOpenEditDialog={() => {}} // No-op for dragged item
                 />
               )}
