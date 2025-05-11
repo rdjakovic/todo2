@@ -1,11 +1,6 @@
 import { motion } from "framer-motion";
 import { format } from "date-fns";
-import {
-  CheckIcon,
-  PencilIcon,
-  TrashIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+import { CheckIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import clsx from "clsx";
@@ -23,7 +18,7 @@ interface TodoItemProps {
 
 const MotionDiv = motion.div;
 
-export const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
+const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
   (
     {
       todo,
@@ -139,3 +134,5 @@ export const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
     );
   }
 );
+
+export default TodoItem;

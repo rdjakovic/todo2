@@ -15,7 +15,7 @@ interface EditTodoDialogProps {
   onCancel: () => void;
 }
 
-export const EditTodoDialog = ({
+const EditTodoDialog = ({
   isOpen,
   todoToEdit,
   onSave,
@@ -184,3 +184,5 @@ export const EditTodoDialog = ({
     </div>
   );
 };
+
+export default EditTodoDialog;

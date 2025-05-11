@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { confirm } from "@tauri-apps/plugin-dialog";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,8 +19,8 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { Sidebar } from "./components/sidebar";
-import { TodoItem } from "./components/TodoItem";
-import { EditTodoDialog } from "./components/EditTodoDialog"; // Added import
+const TodoItem = lazy(() => import("./components/TodoItem"));
+const EditTodoDialog = lazy(() => import("./components/EditTodoDialog"));
 import { Todo, TodoList } from "./types/todo";
 import "./App.css";
 import { useTheme } from "./hooks/useTheme";
@@ -600,16 +600,18 @@ function App() {
                   strategy={verticalListSortingStrategy}
                 >
                   <div className="space-y-2">
-                    {filteredTodos.map((todo) => (
-                      <TodoItem
-                        key={todo.id}
-                        todo={todo}
-                        onToggle={toggleTodo}
-                        onDelete={deleteTodo}
-                        onEdit={editTodo} // This prop is for the actual save operation
-                        onOpenEditDialog={handleOpenEditDialog} // New prop
-                      />
-                    ))}
+                    <Suspense fallback={<div>Loading todos...</div>}>
+                      {filteredTodos.map((todo) => (
+                        <TodoItem
+                          key={todo.id}
+                          todo={todo}
+                          onToggle={toggleTodo}
+                          onDelete={deleteTodo}
+                          onEdit={editTodo} // This prop is for the actual save operation
+                          onOpenEditDialog={handleOpenEditDialog} // New prop
+                        />
+                      ))}
+                    </Suspense>
                   </div>
                 </SortableContext>
               </motion.div>
@@ -669,22 +671,28 @@ function App() {
         <DragOverlay>
           {activeDraggedTodo ? (
             <div className="dragged-todo-overlay">
-              <TodoItem
-                todo={activeDraggedTodo}
-                onToggle={async () => {}}
-                onDelete={async () => {}}
-                onEdit={async () => {}} // editTodo is the actual save function
-                onOpenEditDialog={() => {}} // No-op for dragged item
-              />
+              {/* TodoItem in DragOverlay cannot be lazy-loaded easily without more complex state management for the overlay's content source */}
+              {/* For now, we'll assume the non-lazy TodoItem is small enough or this is an acceptable trade-off */}
+              {activeDraggedTodo && (
+                <TodoItem
+                  todo={activeDraggedTodo}
+                  onToggle={async () => {}}
+                  onDelete={async () => {}}
+                  onEdit={async () => {}} // editTodo is the actual save function
+                  onOpenEditDialog={() => {}} // No-op for dragged item
+                />
+              )}
             </div>
           ) : null}
         </DragOverlay>
-        <EditTodoDialog
-          isOpen={isEditDialogOpen}
-          todoToEdit={todoToEditDialog}
-          onSave={handleSaveEditDialog}
-          onCancel={handleCloseEditDialog}
-        />
+        <Suspense fallback={<div>Loading dialog...</div>}>
+          <EditTodoDialog
+            isOpen={isEditDialogOpen}
+            todoToEdit={todoToEditDialog}
+            onSave={handleSaveEditDialog}
+            onCancel={handleCloseEditDialog}
+          />
+        </Suspense>
       </div>
     </DndContext>
   );

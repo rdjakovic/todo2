@@ -1,12 +1,35 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import viteCompression from "vite-plugin-compression";
+import { visualizer } from "rollup-plugin-visualizer";
 
-// @ts-expect-error process is a nodejs global
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-  plugins: [react()],
+  plugins: [
+    react(),
+    viteCompression({
+      verbose: true, // Output compression statistics
+      disable: false, // Enable compression
+      threshold: 10240, // Only compress files larger than 10kb
+      algorithm: "gzip",
+      ext: ".gz",
+    }),
+    viteCompression({
+      verbose: true,
+      disable: false,
+      threshold: 10240,
+      algorithm: "brotliCompress",
+      ext: ".br",
+    }),
+    visualizer({
+      filename: "./dist/stats.html", // Output file for the report
+      open: true, // Automatically open the report in the browser after build
+      gzipSize: true, // Show Gzip size
+      brotliSize: true, // Show Brotli size
+    }),
+  ],
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
@@ -15,7 +38,8 @@ export default defineConfig(async () => ({
   // 2. tauri expects a fixed port, fail if that port is not available
   server: {
     port: 1420,
-    strictPort: true,
+    strictPort: false, // Allow Vite to find a new port if 1420 is busy
+    open: true, // Automatically open in browser
     host: host || false,
     hmr: host
       ? {
