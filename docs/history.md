@@ -105,3 +105,10 @@ Updated all references to this field in the following files:
 - `src/components/EditTodoDialog.tsx`: Changed `newText` to `newTitle` in `onSave` prop and updated `todoToEdit.text` to `todoToEdit.title` in `useEffect`.
 - `src/components/TodoItem.test.tsx`: Changed `text` to `title` in `mockTodo`.
   All TypeScript errors related to this change were resolved.
+
+---
+
+Date: 2025-05-12
+Description: Extracted ListItem component from Sidebar.
+Task Completed:
+Extracted the `ListItem` component and the `getIconForList` helper function from `src/components/sidebar.tsx` into a new file `src/components/ListItem.tsx`. Updated `src/components/sidebar.tsx` to remove the extracted code and import the `ListItem` component from the new file. This improves modularity by separating the list item rendering logic from the main sidebar component.
