@@ -12,7 +12,7 @@ import {
   closestCenter,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import { Sidebar } from "./components/sidebar";
+import { Sidebar } from "./components/Sidebar.tsx";
 import TodoItem from "./components/TodoItem"; // Changed from lazy import
 const EditTodoDialog = lazy(() => import("./components/EditTodoDialog"));
 import LoadingIndicator from "./components/LoadingIndicator";
