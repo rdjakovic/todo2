@@ -28,7 +28,7 @@ const TodoListItems = forwardRef<HTMLDivElement, TodoListItemsProps>(
     if (filteredTodos.length === 0) {
       return (
         <motion.div
-          ref={ref} // Added ref
+          ref={ref}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -42,7 +42,7 @@ const TodoListItems = forwardRef<HTMLDivElement, TodoListItemsProps>(
 
     return (
       <motion.div
-        ref={ref} // Added ref
+        ref={ref}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}

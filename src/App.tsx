@@ -13,11 +13,11 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { Sidebar } from "./components/Sidebar.tsx";
-import TodoItem from "./components/TodoItem"; // Changed from lazy import
+import TodoItem from "./components/TodoItem";
 const EditTodoDialog = lazy(() => import("./components/EditTodoDialog"));
 import LoadingIndicator from "./components/LoadingIndicator";
 import SettingsView from "./components/SettingsView";
-import TodoListView from "./components/TodoListView"; // Added import
+import TodoListView from "./components/TodoListView";
 import { Todo, TodoList } from "./types/todo";
 import "./App.css";
 import { useTheme } from "./hooks/useTheme";
@@ -27,13 +27,22 @@ import {
   processLoadedLists,
   serializeListsForSave,
   getFilteredTodos,
-  calculateTodoCountByList, // Added calculateTodoCountByList
+  calculateTodoCountByList,
 } from "./utils/helper";
 
 function App() {
   const { theme, toggleTheme } = useTheme();
   const [lists, setLists] = useState<TodoList[]>(initialLists);
-  const [selectedList, setSelectedList] = useState("home");
+  const [selectedListId, setSelectedListId] = useState<number>(
+    initialLists[0].id
+  );
+  // const filteredTodos = useMemo(() => {
+  //   const currentList = getListById(lists, selectedList);
+  //   if (!currentList) return [];
+  //   return getFilteredTodos(lists, selectedList, currentList.showCompleted);
+  // }, [lists, selectedList]);
+
+  // const todoCounts = useMemo(() => calculateTodoCountByList(lists), [lists]);
   const [newTodo, setNewTodo] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,22 +64,22 @@ function App() {
   );
 
   useEffect(() => {
-    const currentList = lists.find((list) => list.id === selectedList);
-    setHideCompleted(currentList?.isCompletedHidden || false);
-  }, [selectedList, lists]);
+    const currentList = lists.find((list) => list.id === selectedListId);
+    setHideCompleted(!currentList?.showCompleted || false);
+  }, [selectedListId, lists]);
 
-  const handleHideCompletedToggle = async () => {
-    const newHideCompleted = !hideCompleted;
-    setHideCompleted(newHideCompleted);
+  // const handleHideCompletedToggle = async () => {
+  //   const newHideCompleted = !hideCompleted;
+  //   setHideCompleted(newHideCompleted);
 
-    const updatedLists = lists.map((list) =>
-      list.id === selectedList
-        ? { ...list, isCompletedHidden: newHideCompleted }
-        : list
-    );
-    setLists(updatedLists);
-    await saveList(updatedLists);
-  };
+  //   const updatedLists = lists.map((list) =>
+  //     list.id === selectedList
+  //       ? { ...list, isCompletedHidden: newHideCompleted }
+  //       : list
+  //   );
+  //   setLists(updatedLists);
+  //   await saveList(updatedLists);
+  // };
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -89,7 +98,7 @@ function App() {
 
     const todoId = Number(active.id);
     let sourceTodo: Todo | undefined;
-    let sourceListId: string | undefined;
+    let sourceListId: number | undefined;
 
     // Find the todo and its source list
     lists.forEach((list) => {
@@ -103,7 +112,7 @@ function App() {
     if (!sourceTodo || !sourceListId) return;
 
     // If dropping on a different list
-    if (typeof over.id === "string" && over.id !== sourceListId) {
+    if (over.id !== sourceListId) {
       const updatedLists = lists.map((list) => {
         if (list.id === sourceListId) {
           return {
@@ -283,7 +292,7 @@ function App() {
 
     try {
       const updatedLists = lists.map((list) =>
-        list.id === selectedList
+        list.id === selectedListId
           ? { ...list, todos: [...list.todos, newTodoItem] }
           : list
       );
@@ -336,19 +345,21 @@ function App() {
 
   const createList = async (name: string) => {
     const newList: TodoList = {
-      id: `list-${Date.now()}`,
+      id: Date.now(),
       name,
       icon: "home",
       todos: [],
-      isCompletedHidden: false,
+      showCompleted: false,
     };
     const updatedLists = [...lists, newList];
     setLists(updatedLists);
     await saveList(updatedLists);
   };
 
-  const deleteList = async (id: string) => {
-    if (id === "home" || id === "completed") {
+  const deleteList = async (id: number) => {
+    const listName = lists.find((list) => list.id === id)?.name;
+    if (!listName) return;
+    if (listName === "home" || listName === "completed") {
       setError("Cannot delete default lists");
       return;
     }
@@ -368,8 +379,8 @@ function App() {
       const updatedLists = lists.filter((list) => list.id !== id);
       setLists(updatedLists);
       await saveList(updatedLists);
-      if (selectedList === id) {
-        setSelectedList("home");
+      if (selectedListId === id) {
+        setSelectedListId(lists[0].id);
       }
     } catch (error) {
       setError("Failed to delete list");
@@ -377,8 +388,9 @@ function App() {
     }
   };
 
-  const editList = async (id: string, newName: string) => {
-    if (id === "home" || id === "completed") {
+  const editList = async (id: number, newName: string) => {
+    // TODO : default lists to enum (home, completed)
+    if (id === 1 || id === 2) {
       setError("Cannot edit default lists");
       return;
     }
@@ -442,7 +454,7 @@ function App() {
     handleCloseEditDialog();
   };
 
-  const filteredTodos = getFilteredTodos(lists, selectedList, hideCompleted);
+  const filteredTodos = getFilteredTodos(lists, selectedListId, hideCompleted);
 
   const todoCountByList = calculateTodoCountByList(lists);
 
@@ -460,7 +472,8 @@ function App() {
   };
 
   const renderContent = () => {
-    if (selectedList === "settings") {
+    //TODO : handle settings differently - it's not a list
+    if (selectedListId === 1000) {
       return (
         <SettingsView
           theme={theme}
@@ -475,9 +488,8 @@ function App() {
     return (
       <TodoListView
         lists={lists}
-        selectedList={selectedList}
-        hideCompleted={hideCompleted}
-        handleHideCompletedToggle={handleHideCompletedToggle}
+        setLists={setLists}
+        selectedList={selectedListId}
         error={error}
         addTodo={addTodo}
         newTodo={newTodo}
@@ -506,12 +518,12 @@ function App() {
         <div className="flex min-h-screen bg-gradient-to-br from-purple-50 dark:from-gray-900 to-blue-50 dark:to-gray-800">
           <Sidebar
             lists={lists}
-            selectedList={selectedList}
-            onSelectList={setSelectedList}
+            selectedList={selectedListId}
+            onSelectList={setSelectedListId}
             onCreateList={createList}
             onDeleteList={deleteList}
             onEditList={editList}
-            onSelectSettings={() => setSelectedList("settings")}
+            onSelectSettings={() => setSelectedListId(1000)}
             todoCountByList={todoCountByList}
             isOpen={isSidebarOpen}
             onToggle={() => setIsSidebarOpen(!isSidebarOpen)}

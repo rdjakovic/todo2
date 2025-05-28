@@ -98,7 +98,6 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
           </button>
 
           <div className="flex-1">
-            {/* Inline editing UI removed */}
             <>
               <p
                 className={clsx(

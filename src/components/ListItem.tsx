@@ -35,12 +35,11 @@ interface ListItemProps {
   list: TodoList;
   onSelect: () => void;
   selected: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
+  onEdit: (id: number) => void;
+  onDelete: (id: number) => void;
   todoCount: number;
 }
 
-// Export the ListItem component
 export function ListItem({
   list,
   onSelect,
@@ -80,17 +79,17 @@ export function ListItem({
             {todoCount}
           </span>
         </button>
-        {list.id !== "home" && list.id !== "completed" && (
+        {list.name !== "home" && list.name !== "completed" && (
           <div className="absolute right-2 hidden group-hover:flex gap-1">
             <button
-              onClick={onEdit}
+              onClick={() => onEdit(list.id)}
               className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900"
               title="Edit list"
             >
               <PencilIcon className="w-4 h-4" />
             </button>
             <button
-              onClick={onDelete}
+              onClick={() => onDelete(list.id)}
               className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
               title="Delete list"
             >

@@ -2,31 +2,31 @@ import { TodoList } from "../types/todo";
 
 export const initialLists: TodoList[] = [
   {
-    id: "home",
+    id: 1,
     name: "Home",
     icon: "home",
     todos: [],
-    isCompletedHidden: false,
+    showCompleted: true,
   },
   {
-    id: "completed",
+    id: 2,
     name: "Completed",
     icon: "check",
     todos: [],
-    isCompletedHidden: false,
+    showCompleted: true,
   },
   {
-    id: "personal",
+    id: 3,
     name: "Personal",
     icon: "user",
     todos: [],
-    isCompletedHidden: false,
+    showCompleted: true,
   },
   {
-    id: "work",
+    id: 4,
     name: "Work",
     icon: "briefcase",
     todos: [],
-    isCompletedHidden: false,
+    showCompleted: true,
   },
 ];

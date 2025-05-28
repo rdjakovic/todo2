@@ -1,20 +1,16 @@
 import React from "react";
 import { AnimatePresence } from "framer-motion";
-import clsx from "clsx";
 import { Todo, TodoList } from "../types/todo";
 import TodoForm from "./TodoForm";
 import TodoListItems from "./TodoListItems";
+import { getListById } from "../utils/helper";
+import clsx from "clsx";
 
 interface TodoListViewProps {
-  lists: TodoList[];
-  selectedList: string;
-  hideCompleted: boolean;
-  handleHideCompletedToggle: () => Promise<void>;
-  error: string | null;
-  addTodo: (e: React.FormEvent) => Promise<void>;
-  newTodo: string;
-  setNewTodo: (value: string) => void;
+  selectedList: number;
   filteredTodos: Todo[];
+  lists: TodoList[];
+  setLists: React.Dispatch<React.SetStateAction<TodoList[]>>;
   toggleTodo: (id: number) => Promise<void>;
   deleteTodo: (id: number) => Promise<void>;
   editTodo: (
@@ -25,23 +21,39 @@ interface TodoListViewProps {
     newDueDate?: Date
   ) => Promise<void>;
   handleOpenEditDialog: (todo: Todo) => void;
+  addTodo: (e: React.FormEvent) => Promise<void>;
+  newTodo: string;
+  setNewTodo: (value: string) => void;
+  error: string | null;
 }
 
 const TodoListView: React.FC<TodoListViewProps> = ({
-  lists,
   selectedList,
-  hideCompleted,
-  handleHideCompletedToggle,
-  error,
-  addTodo,
-  newTodo,
-  setNewTodo,
   filteredTodos,
+  lists,
+  setLists,
   toggleTodo,
   deleteTodo,
   editTodo,
   handleOpenEditDialog,
+  addTodo,
+  newTodo,
+  setNewTodo,
+  error,
 }) => {
+  const currentList = getListById(lists, selectedList);
+
+  const handleToggleShowCompleted = () => {
+    if (currentList) {
+      const updatedLists = lists.map((list) =>
+        list.id === selectedList
+          ? { ...list, showCompleted: !list.showCompleted }
+          : list
+      );
+      setLists(updatedLists);
+    }
+  };
+
   return (
     <div className="flex-1 p-8">
       <div className="max-w-2xl mx-auto">
@@ -50,27 +62,29 @@ const TodoListView: React.FC<TodoListViewProps> = ({
             {lists.find((list) => list.id === selectedList)?.name || "Todos"}
           </h1>
 
-          {selectedList !== "completed" && selectedList !== "home" && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600 dark:text-gray-300 text-right">
-                {hideCompleted ? "Show completed" : "Hide completed"}
-              </span>
-              <button
-                onClick={handleHideCompletedToggle}
-                className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
-                role="switch"
-                aria-checked={hideCompleted}
-                aria-label="Toggle completed todos visibility"
-              >
-                <span
-                  className={clsx(
-                    "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-                    hideCompleted ? "translate-x-6" : "translate-x-1"
-                  )}
-                />
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600 dark:text-gray-300 text-right">
+              {currentList?.showCompleted ? "Show Completed" : "Hide Completed"}
+            </span>
+            <button
+              onClick={handleToggleShowCompleted}
+              className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+              role="switch"
+              aria-checked={currentList?.showCompleted}
+              aria-label="Toggle completed todos visibility"
+            >
+              <span
+                className={clsx(
+                  "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                  currentList?.showCompleted ? "translate-x-6" : "translate-x-1"
+                )}
+              />
+            </button>
+          </div>
+
+          {/* <button onClick={handleToggleShowCompleted}>
+            {currentList?.showCompleted ? "Hide Completed" : "Show Completed"}
+          </button> */}
         </div>
 
         {error && (

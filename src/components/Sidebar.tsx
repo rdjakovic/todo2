@@ -9,16 +9,17 @@ import {
 import clsx from "clsx";
 import { TodoList } from "../types/todo";
 import { ListItem } from "./ListItem"; // Import the new component
+import { getListNameById } from "../utils/helper";
 
 interface SidebarProps {
   lists: TodoList[];
-  selectedList: string;
-  onSelectList: (listId: string) => void;
+  selectedList: number;
+  onSelectList: (listId: number) => void;
   onCreateList: (name: string) => Promise<void>;
-  onDeleteList: (listId: string) => Promise<void>;
-  onEditList: (id: string, name: string) => Promise<void>;
+  onDeleteList: (listId: number) => Promise<void>;
+  onEditList: (id: number, name: string) => Promise<void>;
   onSelectSettings: () => void;
-  todoCountByList: Record<string, number>;
+  todoCountByList: Record<number, number>;
   isOpen: boolean;
   onToggle: () => void;
   width: number;
@@ -41,7 +42,7 @@ export function Sidebar({
 }: SidebarProps) {
   const [isCreating, setIsCreating] = useState(false);
   const [newListName, setNewListName] = useState("");
-  const [editingListId, setEditingListId] = useState<string | null>(null);
+  const [editingListId, setEditingListId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
   const [isResizing, setIsResizing] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -116,8 +117,9 @@ export function Sidebar({
     }
   };
 
-  const handleEditList = (id: string) => {
-    if (id === "home" || id === "completed") {
+  const handleEditList = (id: number) => {
+    const listName = getListNameById(lists, id);
+    if (listName === "home" || listName === "completed") {
       return; // Don't allow editing default lists
     }
     const list = lists.find((l) => l.id === id);

@@ -1,9 +1,9 @@
 export interface TodoList {
-  id: string;
+  id: number;
   name: string;
   icon: string;
   todos: Todo[];
-  isCompletedHidden?: boolean;
+  showCompleted: boolean;
 }
 
 export interface Todo {
