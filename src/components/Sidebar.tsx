@@ -15,13 +15,13 @@ import { useAuthStore } from "../store/authStore";
 
 interface SidebarProps {
   lists: TodoList[];
-  selectedList: number;
-  onSelectList: (listId: number) => void;
+  selectedList: string;
+  onSelectList: (listId: string) => void;
   onCreateList: (name: string) => Promise<void>;
-  onDeleteList: (listId: number) => Promise<void>;
-  onEditList: (id: number, name: string) => Promise<void>;
+  onDeleteList: (listId: string) => Promise<void>;
+  onEditList: (id: string, name: string) => Promise<void>;
   onSelectSettings: () => void;
-  todoCountByList: Record<number, number>;
+  todoCountByList: Record<string, number>;
   isOpen: boolean;
   onToggle: () => void;
   width: number;
@@ -45,7 +45,7 @@ export function Sidebar({
   const { signOut } = useAuthStore();
   const [isCreating, setIsCreating] = useState(false);
   const [newListName, setNewListName] = useState("");
-  const [editingListId, setEditingListId] = useState<number | null>(null);
+  const [editingListId, setEditingListId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [isResizing, setIsResizing] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -119,7 +119,7 @@ export function Sidebar({
     }
   };
 
-  const handleEditList = (id: number) => {
+  const handleEditList = (id: string) => {
     const listName = getListNameById(lists, id);
     if (listName === "home" || listName === "completed") {
       return;
@@ -276,7 +276,7 @@ export function Sidebar({
           </button>
           <button
             onClick={signOut}
-            className="p-4 flex items-center gap-2 w-full hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 text-red-600 dark:text-red-400"
+            className="p-4 flex items-center gap-2 w-full hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400"
           >
             <ArrowLeftOnRectangleIcon className="w-5 h-5" />
             <span>Sign Out</span>

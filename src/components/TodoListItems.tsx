@@ -11,10 +11,10 @@ const TodoItem = lazy(() => import("./TodoItem"));
 
 interface TodoListItemsProps {
   filteredTodos: Todo[];
-  onToggle: (id: number) => Promise<void>;
-  onDelete: (id: number) => Promise<void>;
+  onToggle: (id: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
   onEdit: (
-    id: number,
+    id: string,
     newText: string,
     newNotes?: string,
     newPriority?: "low" | "medium" | "high",
