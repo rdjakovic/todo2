@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { TodoList, Todo } from '../types/todo';
 import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
 
 interface TodoState {
   lists: TodoList[];
@@ -64,14 +65,23 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       }));
 
       set({ lists, loading: false, error: null });
+      toast.success('Connection to database successful!');
+      localStorage.setItem('lists', JSON.stringify(lists));
     } catch (error) {
-      set({ error: (error as Error).message, loading: false });
+      console.error('Failed to fetch from Supabase:', error);
+      const localData = localStorage.getItem('lists');
+      if (localData) {
+        const lists = JSON.parse(localData);
+        set({ lists, loading: false, error: null });
+        toast.warning('Cannot connect to database. Using local data!');
+      } else {
+        set({ error: 'Failed to load data', loading: false });
+      }
     }
   },
 
   saveLists: async (lists) => {
     try {
-      // Update lists
       const { error: listsError } = await supabase
         .from('lists')
         .upsert(
@@ -80,7 +90,6 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
       if (listsError) throw listsError;
 
-      // Update todos
       const todos = lists.flatMap(list =>
         list.todos.map(todo => ({
           ...todo,
@@ -97,9 +106,13 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
       if (todosError) throw todosError;
 
+      localStorage.setItem('lists', JSON.stringify(lists));
       set({ error: null });
     } catch (error) {
-      set({ error: (error as Error).message });
+      console.error('Failed to save to Supabase:', error);
+      localStorage.setItem('lists', JSON.stringify(lists));
+      set({ error: 'Failed to save to database, saved locally' });
+      toast.error('Failed to save to database, saved locally');
     }
   },
 
@@ -130,8 +143,16 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       );
 
       set({ lists: updatedLists, error: null });
+      localStorage.setItem('lists', JSON.stringify(updatedLists));
     } catch (error) {
-      set({ error: (error as Error).message });
+      const updatedLists = lists.map(list =>
+        list.id === listId
+          ? { ...list, todos: [...list.todos, newTodo] }
+          : list
+      );
+      set({ lists: updatedLists, error: 'Failed to save to database, saved locally' });
+      localStorage.setItem('lists', JSON.stringify(updatedLists));
+      toast.error('Failed to save to database, saved locally');
     }
   },
 
@@ -171,8 +192,21 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       );
 
       set({ lists: updatedLists, error: null });
+      localStorage.setItem('lists', JSON.stringify(updatedLists));
     } catch (error) {
-      set({ error: (error as Error).message });
+      const updatedLists = lists.map(list =>
+        list.id === listId
+          ? {
+              ...list,
+              todos: list.todos.map(t =>
+                t.id === todoId ? updatedTodo : t
+              ),
+            }
+          : list
+      );
+      set({ lists: updatedLists, error: 'Failed to save to database, saved locally' });
+      localStorage.setItem('lists', JSON.stringify(updatedLists));
+      toast.error('Failed to save to database, saved locally');
     }
   },
 
@@ -197,8 +231,19 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       );
 
       set({ lists: updatedLists, error: null });
+      localStorage.setItem('lists', JSON.stringify(updatedLists));
     } catch (error) {
-      set({ error: (error as Error).message });
+      const updatedLists = lists.map(list =>
+        list.id === listId
+          ? {
+              ...list,
+              todos: list.todos.filter(t => t.id !== todoId),
+            }
+          : list
+      );
+      set({ lists: updatedLists, error: 'Failed to save to database, saved locally' });
+      localStorage.setItem('lists', JSON.stringify(updatedLists));
+      toast.error('Failed to save to database, saved locally');
     }
   },
 
@@ -237,8 +282,21 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       );
 
       set({ lists: updatedLists, error: null });
+      localStorage.setItem('lists', JSON.stringify(updatedLists));
     } catch (error) {
-      set({ error: (error as Error).message });
+      const updatedLists = lists.map(list =>
+        list.id === listId
+          ? {
+              ...list,
+              todos: list.todos.map(t =>
+                t.id === todoId ? updatedTodo : t
+              ),
+            }
+          : list
+      );
+      set({ lists: updatedLists, error: 'Failed to save to database, saved locally' });
+      localStorage.setItem('lists', JSON.stringify(updatedLists));
+      toast.error('Failed to save to database, saved locally');
     }
   },
 }));

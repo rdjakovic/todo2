@@ -1,23 +1,27 @@
-## Authentication Implementation (2025-05-31)
+## Data Storage Migration (2025-05-31)
 
 ### Added Files
-- `src/components/LoginForm.tsx`: Created login form component with email/password authentication
-- `src/store/authStore.ts`: Added Zustand store for managing authentication state
-- `.env.example`: Added template for Supabase environment variables
+- None
 
 ### Modified Files
-- `src/lib/supabase.ts`: Updated to use environment variables and added connection test
-- `package.json`: Added Supabase Auth UI dependencies
-- `src/App.tsx`: Integrated authentication flow
-  - Added auth state management
-  - Added Supabase connection test
-  - Added conditional rendering for login form
-  - Cleaned up comments and code formatting
+- `src/store/todoStore.ts`: Implemented Supabase data storage with localStorage fallback
+- `package.json`: Added react-hot-toast for notifications
+- `src/App.tsx`: Removed Tauri file storage code, integrated Zustand todo store
 
 ### Features Added
-- Email/password authentication
-- Authentication state management with Zustand
-- Supabase connection testing
-- Protected main app behind authentication
-- Loading states for auth initialization
-- Error handling for auth failures
+- Supabase data persistence
+- Local storage fallback when offline
+- Toast notifications for connection status
+- Automatic data sync between Supabase and localStorage
+- Error handling for failed database operations
+
+### Removed
+- Tauri-specific file storage code
+- Direct file system interactions
+- Storage path setting (no longer needed)
+
+### Technical Details
+- Data is now primarily stored in Supabase
+- All database operations have fallback to localStorage
+- Toast notifications inform users of connection status
+- Automatic data synchronization between remote and local storage
