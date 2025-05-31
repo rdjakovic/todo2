@@ -261,8 +261,7 @@ function App() {
             selectedList={selectedListId}
             onSelectList={setSelectedListId}
             onCreateList={async (name) => {
-              const newList = {
-                id: Date.now(),
+              const newList: Partial<TodoList> = {
                 name,
                 icon: "home",
                 todos: [],
