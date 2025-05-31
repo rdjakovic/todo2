@@ -55,7 +55,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
             id: list.id,
             name: list.name,
             icon: list.icon,
-            is_completed_hidden: !list.showCompleted, // Convert from showCompleted to is_completed_hidden
+            show_completed: list.showCompleted,
             user_id: user.id
           })));
 
@@ -80,7 +80,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
       const lists = data.map(list => ({
         ...list,
-        showCompleted: !list.is_completed_hidden, // Convert from is_completed_hidden to showCompleted
+        showCompleted: list.show_completed,
         todos: todosData
           .filter(todo => todo.list_id === list.id)
           .map(todo => ({
