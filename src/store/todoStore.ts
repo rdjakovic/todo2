@@ -7,28 +7,28 @@ import { User } from '@supabase/supabase-js';
 
 interface TodoState {
   lists: TodoList[];
-  selectedListId: number;
+  selectedListId: string;
   loading: boolean;
   error: string | null;
   setLists: (lists: TodoList[]) => void;
-  setSelectedListId: (id: number) => void;
+  setSelectedListId: (id: string) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   fetchLists: (user: User) => Promise<void>;
   saveLists: (lists: TodoList[]) => Promise<void>;
-  addTodo: (listId: number, todo: Omit<Todo, 'id'>) => Promise<void>;
-  toggleTodo: (listId: number, todoId: number) => Promise<void>;
-  deleteTodo: (listId: number, todoId: number) => Promise<void>;
+  addTodo: (listId: string, todo: Omit<Todo, 'id'>) => Promise<void>;
+  toggleTodo: (listId: string, todoId: string) => Promise<void>;
+  deleteTodo: (listId: string, todoId: string) => Promise<void>;
   editTodo: (
-    listId: number,
-    todoId: number,
+    listId: string,
+    todoId: string,
     updates: Partial<Todo>
   ) => Promise<void>;
 }
 
 export const useTodoStore = create<TodoState>((set, get) => ({
   lists: [],
-  selectedListId: 1,
+  selectedListId: "",
   loading: false,
   error: null,
 
@@ -52,7 +52,6 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         const { error: insertError } = await supabase
           .from('lists')
           .insert(initialLists.map(list => ({
-            id: list.id,
             name: list.name,
             icon: list.icon,
             show_completed: list.showCompleted,
@@ -85,6 +84,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           .filter(todo => todo.list_id === list.id)
           .map(todo => ({
             ...todo,
+            id: todo.id,
             listId: todo.list_id,
             dateCreated: new Date(todo.date_created),
             dueDate: todo.due_date ? new Date(todo.due_date) : undefined,
@@ -92,7 +92,16 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           })),
       }));
 
-      set({ lists, loading: false, error: null });
+      // Set the selectedListId to the Home list's UUID
+      const homeList = lists.find(list => list.name.toLowerCase() === 'home');
+      
+      set({ 
+        lists, 
+        selectedListId: homeList?.id || "", 
+        loading: false, 
+        error: null 
+      });
+      
       toast.success('Connection to database successful!');
       localStorage.setItem('lists', JSON.stringify(lists));
     } catch (error) {
@@ -148,7 +157,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     const lists = get().lists;
     const newTodo = {
       ...todo,
-      id: Date.now(),
+      id: crypto.randomUUID(),
       listId,
     };
 
