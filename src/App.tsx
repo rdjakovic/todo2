@@ -14,6 +14,8 @@ import {
 import { arrayMove } from "@dnd-kit/sortable";
 import { Sidebar } from "./components/Sidebar.tsx";
 import TodoItem from "./components/TodoItem";
+import LoginForm from "./components/LoginForm";
+import { useAuthStore } from "./store/authStore";
 const EditTodoDialog = lazy(() => import("./components/EditTodoDialog"));
 import LoadingIndicator from "./components/LoadingIndicator";
 import SettingsView from "./components/SettingsView";
@@ -32,11 +34,10 @@ import {
 import { testConnection } from './lib/supabase';
 
 function App() {
+  const { user, loading: authLoading, initialize } = useAuthStore();
   const { theme, toggleTheme } = useTheme();
   const [lists, setLists] = useState<TodoList[]>(initialLists);
-  const [selectedListId, setSelectedListId] = useState<number>(
-    initialLists[0].id
-  );
+  const [selectedListId, setSelectedListId] = useState<number>(initialLists[0].id);
   const [newTodo, setNewTodo] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +57,10 @@ function App() {
       },
     })
   );
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
 
   useEffect(() => {
     const testSupabase = async () => {
@@ -481,6 +486,14 @@ function App() {
       />
     );
   };
+
+  if (authLoading) {
+    return <LoadingIndicator />;
+  }
+
+  if (!user) {
+    return <LoginForm onSuccess={() => {}} />;
+  }
 
   if (loading) {
     return <LoadingIndicator />;
