@@ -92,7 +92,7 @@ export const serializeListsForSave = (listsToSave: TodoList[]): any[] => {
 export const getFilteredTodos = (
   lists: TodoList[],
   selectedListId: string,
-  showCompleted: boolean
+  showCompleted?: boolean
 ): Todo[] => {
   const homeList = lists.find(list => list.name.toLowerCase() === 'home');
   const completedList = lists.find(list => list.name.toLowerCase() === 'completed');
@@ -107,10 +107,14 @@ export const getFilteredTodos = (
       .filter((list) => list && list.todos)
       .flatMap((list) => list.todos.filter((todo) => !todo.completed));
   }
+  
+  const currentList = lists.find((list) => list && list.id === selectedListId);
+  if (!currentList) return [];
+
   return (
-    lists
-      .find((list) => list && list.id === selectedListId)
-      ?.todos?.filter((todo) => showCompleted || !todo.completed) ?? []
+    currentList.todos.filter((todo) => 
+      currentList.showCompleted ? true : !todo.completed
+    )
   );
 };
 
