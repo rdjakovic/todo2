@@ -14,7 +14,7 @@ interface AuthState {
   initialize: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   loading: true,
   error: null,
@@ -25,13 +25,22 @@ export const useAuthStore = create<AuthState>((set) => ({
   setError: (error) => set({ error }),
 
   initialize: async () => {
+    // Only initialize once
+    if (get().initialized) return;
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       set({ user, initialized: true, loading: false });
 
-      supabase.auth.onAuthStateChange((_event, session) => {
+      // Set up auth state change listener
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         set({ user: session?.user ?? null });
       });
+
+      // Clean up subscription on unmount
+      return () => {
+        subscription.unsubscribe();
+      };
     } catch (error) {
       set({ 
         error: error instanceof Error ? error.message : 'Failed to initialize auth',
