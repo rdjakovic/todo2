@@ -37,6 +37,7 @@ function App() {
     setSelectedListId,
     fetchLists,
     saveLists,
+    setLists,
     addTodo: addTodoToList,
     toggleTodo: toggleTodoInList,
     deleteTodo: deleteTodoFromList,
@@ -219,6 +220,7 @@ function App() {
     return (
       <TodoListView
         lists={lists}
+        setLists={setLists}
         selectedList={selectedListId}
         error={error}
         addTodo={addTodo}
