@@ -68,7 +68,7 @@ function App() {
 
   useEffect(() => {
     if (user && !dataInitialized) {
-      fetchLists();
+      fetchLists(user);
       setDataInitialized(true);
     }
   }, [user, dataInitialized, fetchLists]);

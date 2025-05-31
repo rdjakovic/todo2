@@ -3,6 +3,7 @@ import { TodoList, Todo } from '../types/todo';
 import { supabase } from '../lib/supabase';
 import { initialLists } from '../const/initialLists';
 import toast from 'react-hot-toast';
+import { User } from '@supabase/supabase-js';
 
 interface TodoState {
   lists: TodoList[];
@@ -13,7 +14,7 @@ interface TodoState {
   setSelectedListId: (id: number) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  fetchLists: () => Promise<void>;
+  fetchLists: (user: User) => Promise<void>;
   saveLists: (lists: TodoList[]) => Promise<void>;
   addTodo: (listId: number, todo: Omit<Todo, 'id'>) => Promise<void>;
   toggleTodo: (listId: number, todoId: number) => Promise<void>;
@@ -36,7 +37,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
 
-  fetchLists: async () => {
+  fetchLists: async (user) => {
     set({ loading: true });
     try {
       const { data, error } = await supabase
