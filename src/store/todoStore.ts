@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { TodoList, Todo } from '../types/todo';
 import { supabase } from '../lib/supabase';
+import { initialLists } from '../const/initialLists';
 import toast from 'react-hot-toast';
 
 interface TodoState {
@@ -45,6 +46,30 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
       if (error) throw error;
 
+      // If no lists exist, create initial lists
+      if (data.length === 0) {
+        const { error: insertError } = await supabase
+          .from('lists')
+          .insert(initialLists.map(list => ({
+            id: list.id,
+            name: list.name,
+            icon: list.icon,
+            is_completed_hidden: !list.showCompleted,
+            user_id: user.id
+          })));
+
+        if (insertError) throw insertError;
+
+        // Fetch the newly inserted lists
+        const { data: newData, error: refetchError } = await supabase
+          .from('lists')
+          .select('*')
+          .order('id');
+
+        if (refetchError) throw refetchError;
+        data = newData;
+      }
+
       const { data: todosData, error: todosError } = await supabase
         .from('todos')
         .select('*')
@@ -54,6 +79,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
       const lists = data.map(list => ({
         ...list,
+        showCompleted: !list.is_completed_hidden,
         todos: todosData
           .filter(todo => todo.list_id === list.id)
           .map(todo => ({
