@@ -1,10 +1,10 @@
 import { Todo, TodoList } from "../types/todo";
 
-export const getListById = (lists: TodoList[], id: string) => {
+export const getListById = (lists: TodoList[], id: number) => {
   return lists.find((list) => list.id === id);
 };
 
-export const getListNameById = (lists: TodoList[], id: string) => {
+export const getListNameById = (lists: TodoList[], id: number) => {
   return lists.find((list) => list.id === id)?.name;
 };
 
@@ -12,16 +12,12 @@ export const getListByName = (lists: TodoList[], name: string) => {
   return lists.find((list) => list.name === name);
 };
 
-export const getTodoById = (todos: Todo[], id: string) => {
+export const getListIdByName = (lists: TodoList[], name: string) => {
+  return lists.find((list) => list.name === name)?.id;
+};
+
+export const getTodoById = (todos: Todo[], id: number) => {
   return todos.find((todo) => todo.id === id);
-};
-
-export const getTodoListIndexByName = (lists: TodoList[], id: string) => {
-  return lists.findIndex((list) => list.id === id);
-};
-
-export const getTodoIndexById = (todos: Todo[], id: string) => {
-  return todos.findIndex((todo) => todo.id === id);
 };
 
 // Helper function for native date validation
@@ -91,11 +87,13 @@ export const serializeListsForSave = (listsToSave: TodoList[]): any[] => {
 // Filters todos based on the selected list and hideCompleted status
 export const getFilteredTodos = (
   lists: TodoList[],
-  selectedListId: string,
+  selectedListId: number,
   showCompleted?: boolean
 ): Todo[] => {
-  const homeList = lists.find(list => list.name.toLowerCase() === 'home');
-  const completedList = lists.find(list => list.name.toLowerCase() === 'completed');
+  const homeList = lists.find((list) => list.name.toLowerCase() === "home");
+  const completedList = lists.find(
+    (list) => list.name.toLowerCase() === "completed"
+  );
 
   if (selectedListId === completedList?.id) {
     return lists
@@ -107,23 +105,23 @@ export const getFilteredTodos = (
       .filter((list) => list && list.todos)
       .flatMap((list) => list.todos.filter((todo) => !todo.completed));
   }
-  
+
   const currentList = lists.find((list) => list && list.id === selectedListId);
   if (!currentList) return [];
 
-  return (
-    currentList.todos.filter((todo) => 
-      currentList.showCompleted ? true : !todo.completed
-    )
+  return currentList.todos.filter((todo) =>
+    currentList.showCompleted ? true : !todo.completed
   );
 };
 
 // Calculates the count of todos for each list
 export const calculateTodoCountByList = (
   lists: TodoList[]
-): Record<string, number> => {
-  const homeList = lists.find(list => list.name.toLowerCase() === 'home');
-  const completedList = lists.find(list => list.name.toLowerCase() === 'completed');
+): Record<number, number> => {
+  const homeList = lists.find((list) => list.name.toLowerCase() === "home");
+  const completedList = lists.find(
+    (list) => list.name.toLowerCase() === "completed"
+  );
 
   return lists
     .filter((list) => list && list.todos)
@@ -150,5 +148,5 @@ export const calculateTodoCountByList = (
       }
 
       return acc;
-    }, {} as Record<string, number>);
+    }, {} as Record<number, number>);
 };

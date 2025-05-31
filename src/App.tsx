@@ -1,5 +1,4 @@
 import { useState, useEffect, lazy, Suspense } from "react";
-import { confirm } from "@tauri-apps/plugin-dialog";
 import clsx from "clsx";
 import {
   DndContext,
@@ -10,6 +9,7 @@ import {
   useSensors,
   PointerSensor,
   closestCenter,
+  closestCorners,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { Sidebar } from "./components/Sidebar.tsx";
@@ -21,15 +21,14 @@ const EditTodoDialog = lazy(() => import("./components/EditTodoDialog"));
 import LoadingIndicator from "./components/LoadingIndicator";
 import SettingsView from "./components/SettingsView";
 import TodoListView from "./components/TodoListView";
-import { Todo } from "./types/todo";
+import { Todo, TodoList } from "./types/todo";
 import "./App.css";
 import { useTheme } from "./hooks/useTheme";
-import { initialLists } from "./const/initialLists";
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "react-hot-toast";
 
 function App() {
   const { user, loading: authLoading, initialize } = useAuthStore();
-  const { 
+  const {
     lists,
     selectedListId,
     loading,
@@ -41,7 +40,7 @@ function App() {
     addTodo: addTodoToList,
     toggleTodo: toggleTodoInList,
     deleteTodo: deleteTodoFromList,
-    editTodo: editTodoInList
+    editTodo: editTodoInList,
   } = useTodoStore();
 
   const { theme, toggleTheme } = useTheme();
@@ -58,7 +57,7 @@ function App() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 3,
       },
     })
   );
@@ -79,22 +78,47 @@ function App() {
     setHideCompleted(!currentList?.showCompleted || false);
   }, [selectedListId, lists]);
 
+  // Add this function to get filtered todos based on the showCompleted property
+  const getFilteredTodos = () => {
+    if (!selectedListId) return [];
+    const currentList = lists.find((list) => list.id === selectedListId);
+    if (!currentList) return [];
+
+    return currentList.showCompleted
+      ? currentList.todos
+      : currentList.todos.filter((todo) => !todo.completed);
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
+    console.log("Drag start - active.id:", event.active.id);
     const { active } = event;
     const draggedTodo = lists
       .flatMap((list) => list.todos)
       .find((todo) => todo.id === active.id);
     if (draggedTodo) {
+      console.log("Found dragged todo:", draggedTodo.title);
       setActiveDraggedTodo(draggedTodo);
+    } else {
+      console.log("No todo found for active.id:", active.id);
     }
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
+    console.log(
+      "handleDragEnd called - active.id:",
+      event.active.id,
+      "over.id:",
+      event.over?.id
+    );
     const { active, over } = event;
 
-    if (!over) return;
+    if (!over) {
+      console.log("No over target, ending drag");
+      setActiveDraggedTodo(null);
+      return;
+    }
 
-    const todoId = Number(active.id);
+    const todoId = active.id; // Keep as string/UUID
     let sourceTodo: Todo | undefined;
     let sourceListId: number | undefined;
 
@@ -106,9 +130,25 @@ function App() {
       }
     });
 
-    if (!sourceTodo || !sourceListId) return;
+    if (!sourceTodo || !sourceListId) {
+      console.log("No source todo or list found");
+      setActiveDraggedTodo(null);
+      return;
+    }
 
-    if (over.id !== sourceListId) {
+    console.log(
+      "Drag end - active.id:",
+      active.id,
+      "over.id:",
+      over.id,
+      "sourceListId:",
+      sourceListId
+    );
+
+    // Check if over.id is a list ID (dropping on a different list)
+    const targetList = lists.find((list) => list.id === over.id);
+    if (targetList && over.id !== sourceListId) {
+      console.log("Moving todo from list", sourceListId, "to list", over.id);
       const updatedLists = lists.map((list) => {
         if (list.id === sourceListId) {
           return {
@@ -119,26 +159,47 @@ function App() {
         if (list.id === over.id) {
           return {
             ...list,
-            todos: [...list.todos, { ...sourceTodo! }],
+            todos: [...list.todos, { ...sourceTodo!, listId: Number(over.id) }],
           };
         }
         return list;
       });
-      await saveLists(updatedLists);
-    }
-    else if (typeof over.id === "number" && active.id !== over.id) {
-      const list = lists.find((l) => l.id === sourceListId)!;
-      const oldIndex = list.todos.findIndex((t) => t.id === active.id);
-      const newIndex = list.todos.findIndex((t) => t.id === over.id);
 
-      const updatedLists = lists.map((l) => {
-        if (l.id === sourceListId) {
-          const reorderedTodos = arrayMove(l.todos, oldIndex, newIndex);
-          return { ...l, todos: reorderedTodos };
-        }
-        return l;
-      });
+      // Update local state immediately
+      setLists(updatedLists);
+      // Then save to database
       await saveLists(updatedLists);
+    } else {
+      // Check if over.id is a todo ID (reordering within the same list)
+      const targetTodo = lists
+        .flatMap((list) => list.todos)
+        .find((todo) => todo.id === over.id);
+      if (targetTodo && active.id !== over.id) {
+        console.log(
+          "Reordering within list - from todo",
+          active.id,
+          "to todo",
+          over.id
+        );
+        const list = lists.find((l) => l.id === sourceListId)!;
+        const oldIndex = list.todos.findIndex((t) => t.id === active.id);
+        const newIndex = list.todos.findIndex((t) => t.id === over.id);
+
+        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+          const updatedLists = lists.map((l) => {
+            if (l.id === sourceListId) {
+              const reorderedTodos = arrayMove(l.todos, oldIndex, newIndex);
+              return { ...l, todos: reorderedTodos };
+            }
+            return l;
+          });
+
+          // Update local state immediately
+          setLists(updatedLists);
+          // Then save to database
+          await saveLists(updatedLists);
+        }
+      }
     }
 
     setActiveDraggedTodo(null);
@@ -162,9 +223,9 @@ function App() {
 
   const addTodo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTodo.trim()) return;
+    if (!newTodo.trim() || !selectedListId) return;
 
-    const newTodoItem: Omit<Todo, 'id'> = {
+    const newTodoItem: Omit<Todo, "id"> = {
       title: newTodo,
       notes: "",
       completed: false,
@@ -172,6 +233,7 @@ function App() {
       priority: "medium",
       dueDate: undefined,
       dateOfCompletion: undefined,
+      listId: selectedListId,
     };
 
     await addTodoToList(selectedListId, newTodoItem);
@@ -195,6 +257,7 @@ function App() {
     newPriority?: "low" | "medium" | "high",
     newDueDate?: Date
   ) => {
+    if (!selectedListId) return;
     await editTodoInList(selectedListId, id, {
       title: newTitle,
       notes: newNotes,
@@ -206,15 +269,7 @@ function App() {
 
   const renderContent = () => {
     if (selectedListId === 1000) {
-      return (
-        <SettingsView
-          theme={theme}
-          toggleTheme={toggleTheme}
-          storagePath=""
-          setStoragePath={() => {}}
-          handleSetPath={() => {}}
-        />
-      );
+      return <SettingsView theme={theme} toggleTheme={toggleTheme} />;
     }
 
     return (
@@ -226,11 +281,27 @@ function App() {
         addTodo={addTodo}
         newTodo={newTodo}
         setNewTodo={setNewTodo}
-        filteredTodos={lists.find(l => l.id === selectedListId)?.todos || []}
-        toggleTodo={(id) => toggleTodoInList(selectedListId, id)}
-        deleteTodo={(id) => deleteTodoFromList(selectedListId, id)}
-        editTodo={(id, title, notes, priority, dueDate) => 
-          editTodoInList(selectedListId, id, { title, notes, priority, dueDate })}
+        filteredTodos={getFilteredTodos()}
+        toggleTodo={(id) =>
+          selectedListId
+            ? toggleTodoInList(selectedListId, id)
+            : Promise.resolve()
+        }
+        deleteTodo={(id) =>
+          selectedListId
+            ? deleteTodoFromList(selectedListId, id)
+            : Promise.resolve()
+        }
+        editTodo={(id, title, notes, priority, dueDate) =>
+          selectedListId
+            ? editTodoInList(selectedListId, id, {
+                title,
+                notes,
+                priority,
+                dueDate,
+              })
+            : Promise.resolve()
+        }
         handleOpenEditDialog={handleOpenEditDialog}
         saveLists={saveLists}
       />
@@ -252,7 +323,7 @@ function App() {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={closestCorners}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
@@ -264,7 +335,8 @@ function App() {
             selectedList={selectedListId}
             onSelectList={setSelectedListId}
             onCreateList={async (name) => {
-              const newList: Partial<TodoList> = {
+              const newList: TodoList = {
+                id: Math.floor(Math.random() * 1000000), // Generate a temporary ID
                 name,
                 icon: "home",
                 todos: [],
@@ -273,11 +345,11 @@ function App() {
               await saveLists([...lists, newList]);
             }}
             onDeleteList={async (id) => {
-              const updatedLists = lists.filter(l => l.id !== id);
+              const updatedLists = lists.filter((l) => l.id !== id);
               await saveLists(updatedLists);
             }}
             onEditList={async (id, newName) => {
-              const updatedLists = lists.map(l =>
+              const updatedLists = lists.map((l) =>
                 l.id === id ? { ...l, name: newName } : l
               );
               await saveLists(updatedLists);

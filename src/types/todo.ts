@@ -1,5 +1,5 @@
 export interface TodoList {
-  id: string;
+  id: number;
   name: string;
   icon: string;
   todos: Todo[];
@@ -15,5 +15,5 @@ export interface Todo {
   priority?: "low" | "medium" | "high";
   dueDate?: Date;
   dateOfCompletion?: Date;
-  listId: string;
+  listId: number;
 }

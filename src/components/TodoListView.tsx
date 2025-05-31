@@ -7,14 +7,14 @@ import { getListById } from "../utils/helper";
 import clsx from "clsx";
 
 interface TodoListViewProps {
-  selectedList: string;
+  selectedList: number | null;
   filteredTodos: Todo[];
   lists: TodoList[];
-  setLists: React.Dispatch<React.SetStateAction<TodoList[]>>;
-  toggleTodo: (id: string) => Promise<void>;
-  deleteTodo: (id: string) => Promise<void>;
+  setLists: (lists: TodoList[]) => void;
+  toggleTodo: (id: number) => Promise<void>;
+  deleteTodo: (id: number) => Promise<void>;
   editTodo: (
-    id: string,
+    id: number,
     newText: string,
     newNotes?: string,
     newPriority?: "low" | "medium" | "high",
@@ -43,18 +43,20 @@ const TodoListView: React.FC<TodoListViewProps> = ({
   error,
   saveLists,
 }) => {
-  const currentList = getListById(lists, selectedList);
+  const currentList = selectedList ? getListById(lists, selectedList) : null;
 
-  const handleToggleShowCompleted = () => {
+  const handleToggleShowCompleted = async () => {
     if (currentList) {
       const updatedLists = lists.map((list) =>
-        list.id === selectedList ? {
-          ...list,
-          showCompleted: !list.showCompleted
-        } : list
+        list.id === selectedList
+          ? {
+              ...list,
+              showCompleted: !list.showCompleted,
+            }
+          : list
       );
       setLists(updatedLists);
-      saveLists(updatedLists);
+      await saveLists(updatedLists);
     }
   };
 

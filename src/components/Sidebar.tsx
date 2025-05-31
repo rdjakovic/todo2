@@ -15,7 +15,7 @@ import { useAuthStore } from "../store/authStore";
 
 interface SidebarProps {
   lists: TodoList[];
-  selectedList: number;
+  selectedList: number | null;
   onSelectList: (listId: number) => void;
   onCreateList: (name: string) => Promise<void>;
   onDeleteList: (listId: number) => Promise<void>;
