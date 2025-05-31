@@ -40,7 +40,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   fetchLists: async (user) => {
     set({ loading: true });
     try {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('lists')
         .select('*')
         .order('id');
