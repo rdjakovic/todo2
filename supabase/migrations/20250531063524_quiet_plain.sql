@@ -6,7 +6,7 @@
       - `id` (uuid, primary key)
       - `name` (text)
       - `icon` (text)
-      - `is_completed_hidden` (boolean)
+      - `show_completed` (boolean)
       - `user_id` (uuid, foreign key to auth.users)
       - `created_at` (timestamp with timezone)
       - `updated_at` (timestamp with timezone)
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS lists (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
   icon text NOT NULL,
-  is_completed_hidden boolean DEFAULT false,
+  show_completed boolean DEFAULT false,
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
