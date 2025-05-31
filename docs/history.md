@@ -174,3 +174,45 @@ The application is now running successfully at http://localhost:1420/ with:
 ✅ No breaking changes to user experience
 ✅ Better code organization and maintainability
 The refactoring is complete and the application now follows modern React patterns with centralized state management using Zustand, eliminating the need for prop drilling and making the codebase much more maintainable and scalable.
+
+---
+
+Date: 2025-05-31
+Description: Fixed Supabase RLS (Row Level Security) policy violation error when editing and saving lists.
+
+**Problem:**
+Users encountered a "new row violates row-level security policy for table 'lists'" error when trying to edit and save lists. The error occurred because the `saveLists` function was not properly setting the `user_id` field required by Supabase's RLS policies.
+
+**Root Cause:**
+The `saveLists` function was attempting to get the user ID from existing lists in the store (`get().lists.find((l) => l.id === list.id)?.userId`), which had several issues:
+
+- For new lists, there was no existing list to get the userId from
+- The userId field might be undefined or not properly set
+- It was trying to get user info from local state instead of the authenticated user
+
+**Solution:**
+
+1. **Added auth store import** to todoStore.ts to access the current authenticated user
+2. **Fixed saveLists function** to get the current user ID from the auth store instead of local state:
+   ```typescript
+   const currentUser = useAuthStore.getState().user;
+   if (!currentUser) {
+     throw new Error("User not authenticated");
+   }
+   // Now properly sets user_id: currentUser.id
+   ```
+3. **Fixed createList function** to properly set the user ID for new lists using the authenticated user
+4. **Fixed fetchLists function** to properly map `user_id` from database to `userId` in the processed lists
+
+**Benefits:**
+
+- ✅ RLS Compliance: All list operations now properly include the authenticated user's ID
+- ✅ Consistent User Association: All lists are properly associated with the current authenticated user
+- ✅ Error Prevention: Added proper authentication checks to prevent operations when no user is authenticated
+- ✅ Resolved the 403 Forbidden error when editing lists
+
+**Files Modified:**
+
+- `src/store/todoStore.ts`: Updated saveLists, createList, and fetchLists functions to properly handle user authentication
+
+---

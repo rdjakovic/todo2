@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 import { initialLists } from "../const/initialLists";
 import toast from "react-hot-toast";
 import { User } from "@supabase/supabase-js";
+import { useAuthStore } from "./authStore";
 
 interface TodoState {
   lists: TodoList[];
@@ -149,6 +150,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         ...list,
         showCompleted: list.show_completed,
         id: list.id,
+        userId: list.user_id, // Map user_id from database to userId
         todos: todosData
           .filter((todo) => todo.list_id === list.id)
           .map((todo) => ({
@@ -195,13 +197,19 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
   saveLists: async (lists) => {
     try {
+      // Get current user from auth store
+      const currentUser = useAuthStore.getState().user;
+      if (!currentUser) {
+        throw new Error("User not authenticated");
+      }
+
       const { error: listsError } = await supabase.from("lists").upsert(
         lists.map(({ todos, showCompleted, ...list }) => ({
           id: list.id,
           name: list.name,
           icon: list.icon,
           show_completed: showCompleted,
-          user_id: get().lists.find((l) => l.id === list.id)?.userId,
+          user_id: currentUser.id,
         }))
       );
 
@@ -497,13 +505,19 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
   createList: async (name: string) => {
     const { lists, saveLists } = get();
+    // Get current user from auth store
+    const currentUser = useAuthStore.getState().user;
+    if (!currentUser) {
+      throw new Error("User not authenticated");
+    }
+
     const newList: TodoList = {
       id: crypto.randomUUID(),
       name,
       icon: "home",
       todos: [],
       showCompleted: true,
-      userId: "", // Will be set by the auth system
+      userId: currentUser.id,
     };
     await saveLists([...lists, newList]);
   },
