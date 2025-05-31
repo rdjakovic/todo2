@@ -29,6 +29,7 @@ import {
   getFilteredTodos,
   calculateTodoCountByList,
 } from "./utils/helper";
+import { testConnection } from './lib/supabase';
 
 function App() {
   const { theme, toggleTheme } = useTheme();
@@ -36,13 +37,6 @@ function App() {
   const [selectedListId, setSelectedListId] = useState<number>(
     initialLists[0].id
   );
-  // const filteredTodos = useMemo(() => {
-  //   const currentList = getListById(lists, selectedList);
-  //   if (!currentList) return [];
-  //   return getFilteredTodos(lists, selectedList, currentList.showCompleted);
-  // }, [lists, selectedList]);
-
-  // const todoCounts = useMemo(() => calculateTodoCountByList(lists), [lists]);
   const [newTodo, setNewTodo] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,8 +46,8 @@ function App() {
   const [storagePath, setStoragePath] = useState<string>("");
   const [hideCompleted, setHideCompleted] = useState(false);
   const [activeDraggedTodo, setActiveDraggedTodo] = useState<Todo | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // Added state
-  const [todoToEditDialog, setTodoToEditDialog] = useState<Todo | null>(null); // Added state
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [todoToEditDialog, setTodoToEditDialog] = useState<Todo | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -64,22 +58,19 @@ function App() {
   );
 
   useEffect(() => {
+    const testSupabase = async () => {
+      const isConnected = await testConnection();
+      if (!isConnected) {
+        setError('Failed to connect to Supabase');
+      }
+    };
+    testSupabase();
+  }, []);
+
+  useEffect(() => {
     const currentList = lists.find((list) => list.id === selectedListId);
     setHideCompleted(!currentList?.showCompleted || false);
   }, [selectedListId, lists]);
-
-  // const handleHideCompletedToggle = async () => {
-  //   const newHideCompleted = !hideCompleted;
-  //   setHideCompleted(newHideCompleted);
-
-  //   const updatedLists = lists.map((list) =>
-  //     list.id === selectedList
-  //       ? { ...list, isCompletedHidden: newHideCompleted }
-  //       : list
-  //   );
-  //   setLists(updatedLists);
-  //   await saveList(updatedLists);
-  // };
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -100,7 +91,6 @@ function App() {
     let sourceTodo: Todo | undefined;
     let sourceListId: number | undefined;
 
-    // Find the todo and its source list
     lists.forEach((list) => {
       const todo = list.todos.find((t) => t.id === todoId);
       if (todo) {
@@ -111,7 +101,6 @@ function App() {
 
     if (!sourceTodo || !sourceListId) return;
 
-    // If dropping on a different list
     if (over.id !== sourceListId) {
       const updatedLists = lists.map((list) => {
         if (list.id === sourceListId) {
@@ -131,7 +120,6 @@ function App() {
       setLists(updatedLists);
       await saveList(updatedLists);
     }
-    // If reordering within the same list
     else if (typeof over.id === "number" && active.id !== over.id) {
       const list = lists.find((l) => l.id === sourceListId)!;
       const oldIndex = list.todos.findIndex((t) => t.id === active.id);
@@ -155,28 +143,24 @@ function App() {
     const loadInitialData = async () => {
       try {
         if (isTauri()) {
-          // Tauri-specific code
           const savedPath = await import("@tauri-apps/api/core").then(
             ({ invoke }) => invoke<string>("load_storage_path")
           );
           setStoragePath(await savedPath);
           await loadLists();
         } else {
-          // Web-specific code (e.g., using localStorage)
           const savedLists = localStorage.getItem("lists");
           if (savedLists) {
             const parsedLists = processLoadedLists(JSON.parse(savedLists));
             setLists(parsedLists);
           } else {
-            // For initialLists, ensure dates are Date objects if they are strings
             const processedInitialLists = processLoadedLists(
               initialLists.map((list) => ({
                 ...list,
                 todos: list.todos.map((todo) => ({ ...todo })),
               }))
-            ); // Ensure deep copy for processing
+            );
             setLists(processedInitialLists);
-            // Save the processed initial lists, not the original initialLists which might have string dates
             localStorage.setItem(
               "lists",
               JSON.stringify(
@@ -219,7 +203,7 @@ function App() {
     };
 
     window.addEventListener("resize", handleResize);
-    handleResize(); // Call it initially
+    handleResize();
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -236,15 +220,14 @@ function App() {
       if (loadedAndProcessedLists && loadedAndProcessedLists.length > 0) {
         setLists(loadedAndProcessedLists);
       } else {
-        // For initialLists, ensure dates are Date objects if they are strings
         const processedInitialLists = processLoadedLists(
           initialLists.map((list) => ({
             ...list,
             todos: list.todos.map((todo) => ({ ...todo })),
           }))
-        ); // Ensure deep copy
+        );
         setLists(processedInitialLists);
-        await saveList(processedInitialLists); // Save the processed initial lists
+        await saveList(processedInitialLists);
       }
       setError(null);
     } catch (err) {
@@ -285,7 +268,7 @@ function App() {
       notes: "",
       completed: false,
       dateCreated: new Date(),
-      priority: "medium", // Added default
+      priority: "medium",
       dueDate: undefined,
       dateOfCompletion: undefined,
     };
@@ -314,9 +297,9 @@ function App() {
             ? {
                 ...todo,
                 completed: !todo.completed,
-                dateOfCompletion: !todo.completed // Set dateOfCompletion if todo is now completed
+                dateOfCompletion: !todo.completed
                   ? new Date()
-                  : undefined, // Clear if todo is now incomplete
+                  : undefined,
               }
             : todo
         ),
@@ -389,7 +372,6 @@ function App() {
   };
 
   const editList = async (id: number, newName: string) => {
-    // TODO : default lists to enum (home, completed)
     if (id === 1 || id === 2) {
       setError("Cannot edit default lists");
       return;
@@ -406,7 +388,7 @@ function App() {
     newTitle: string,
     newNotes?: string,
     newPriority?: "low" | "medium" | "high",
-    newDueDate?: Date // Changed from string to Date
+    newDueDate?: Date
   ) => {
     try {
       const updatedLists = lists.map((list) => ({
@@ -418,7 +400,7 @@ function App() {
                 title: newTitle,
                 notes: newNotes ?? todo.notes,
                 priority: newPriority ?? todo.priority,
-                dueDate: newDueDate !== undefined ? newDueDate : todo.dueDate, // Ensure newDueDate is used if provided
+                dueDate: newDueDate !== undefined ? newDueDate : todo.dueDate,
               }
             : todo
         ),
@@ -427,12 +409,10 @@ function App() {
       await saveList(updatedLists);
       setError(null);
     } catch (err) {
-      // Fixed: Added opening brace
       setError("Failed to edit todo");
     }
   };
 
-  // Dialog handlers
   const handleOpenEditDialog = (todo: Todo) => {
     setTodoToEditDialog(todo);
     setIsEditDialogOpen(true);
@@ -448,7 +428,7 @@ function App() {
     newTitle: string,
     newNotes?: string,
     newPriority?: "low" | "medium" | "high",
-    newDueDate?: Date // Changed from string to Date
+    newDueDate?: Date
   ) => {
     await editTodo(id, newTitle, newNotes, newPriority, newDueDate);
     handleCloseEditDialog();
@@ -472,7 +452,6 @@ function App() {
   };
 
   const renderContent = () => {
-    //TODO : handle settings differently - it's not a list
     if (selectedListId === 1000) {
       return (
         <SettingsView
@@ -559,8 +538,8 @@ function App() {
                     _notes,
                     _priority,
                     _dueDate
-                  ) => {}} // Matched signature
-                  onOpenEditDialog={() => {}} // No-op for dragged item
+                  ) => {}}
+                  onOpenEditDialog={() => {}}
                 />
               )}
             </div>
