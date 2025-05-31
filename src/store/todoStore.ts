@@ -40,10 +40,25 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   fetchLists: async (user) => {
     set({ loading: true });
     try {
-      const { data, error } = await supabase
-        .from('lists')
-        .select('*')
-        .order('id');
+      const { data: lists, error } = await supabase
+      .from('lists')
+      .select(`
+        id,
+        name,
+        icon,
+        show_completed,
+        todos (
+          id,
+          title,
+          notes,
+          completed,
+          priority,
+          due_date,
+          date_created,
+          date_of_completion
+        )
+      `)
+      .order('created_at', { ascending: true });
 
       if (error) throw error;
 
