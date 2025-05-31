@@ -52,6 +52,7 @@ function App() {
   const [activeDraggedTodo, setActiveDraggedTodo] = useState<Todo | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [todoToEditDialog, setTodoToEditDialog] = useState<Todo | null>(null);
+  const [dataInitialized, setDataInitialized] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -63,10 +64,14 @@ function App() {
 
   useEffect(() => {
     initialize();
-    if (user) {
+  }, [initialize]);
+
+  useEffect(() => {
+    if (user && !dataInitialized) {
       fetchLists();
+      setDataInitialized(true);
     }
-  }, [initialize, user]);
+  }, [user, dataInitialized, fetchLists]);
 
   useEffect(() => {
     const currentList = lists.find((list) => list.id === selectedListId);
