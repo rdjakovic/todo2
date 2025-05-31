@@ -5,11 +5,13 @@ import {
   Cog6ToothIcon,
   CheckIcon,
   Bars3Icon,
+  ArrowLeftOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import { TodoList } from "../types/todo";
-import { ListItem } from "./ListItem"; // Import the new component
+import { ListItem } from "./ListItem";
 import { getListNameById } from "../utils/helper";
+import { useAuthStore } from "../store/authStore";
 
 interface SidebarProps {
   lists: TodoList[];
@@ -40,6 +42,7 @@ export function Sidebar({
   width,
   onWidthChange,
 }: SidebarProps) {
+  const { signOut } = useAuthStore();
   const [isCreating, setIsCreating] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [editingListId, setEditingListId] = useState<number | null>(null);
@@ -68,13 +71,12 @@ export function Sidebar({
     (e: MouseEvent) => {
       if (isResizing) {
         const newWidth = e.clientX;
-        const currentWidth = width; // Use current width to determine direction
+        const currentWidth = width;
 
         if (newWidth >= 200 && newWidth <= 600) {
           const listItems = document.querySelectorAll(".list-item-container");
           let hasOverflow = false;
 
-          // Only check for overflow if we're shrinking the sidebar
           if (newWidth < currentWidth) {
             listItems.forEach((item) => {
               const containerWidth = newWidth - 32;
@@ -87,7 +89,7 @@ export function Sidebar({
             });
 
             if (hasOverflow) {
-              onToggle(); // Close sidebar
+              onToggle();
               setIsResizing(false);
               return;
             }
@@ -97,7 +99,7 @@ export function Sidebar({
         }
       }
     },
-    [isResizing, onWidthChange, onToggle, width] // Added width to dependencies
+    [isResizing, onWidthChange, onToggle, width]
   );
 
   useEffect(() => {
@@ -120,7 +122,7 @@ export function Sidebar({
   const handleEditList = (id: number) => {
     const listName = getListNameById(lists, id);
     if (listName === "home" || listName === "completed") {
-      return; // Don't allow editing default lists
+      return;
     }
     const list = lists.find((l) => l.id === id);
     if (list) {
@@ -139,7 +141,6 @@ export function Sidebar({
 
   return (
     <>
-      {/* Hamburger button */}
       <button
         onClick={onToggle}
         className={clsx(
@@ -151,7 +152,6 @@ export function Sidebar({
         <Bars3Icon className="w-6 h-6 text-gray-600 dark:text-gray-200" />
       </button>
 
-      {/* Overlay for mobile when sidebar is open */}
       {isOpen && windowWidth < 768 && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40"
@@ -159,7 +159,6 @@ export function Sidebar({
         />
       )}
 
-      {/* Sidebar */}
       <div
         role="navigation"
         className={clsx(
@@ -219,7 +218,6 @@ export function Sidebar({
             )
           )}
 
-          {/* Create new list button */}
           {isCreating ? (
             <div className="flex gap-2">
               <input
@@ -268,16 +266,23 @@ export function Sidebar({
           )}
         </div>
 
-        {/* Settings button */}
-        <button
-          onClick={onSelectSettings}
-          className="p-4 flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 border-t border-gray-200 dark:border-gray-700"
-        >
-          <Cog6ToothIcon className="w-5 h-5" />
-          <span>Settings</span>
-        </button>
+        <div className="border-t border-gray-200 dark:border-gray-700">
+          <button
+            onClick={onSelectSettings}
+            className="p-4 flex items-center gap-2 w-full hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100"
+          >
+            <Cog6ToothIcon className="w-5 h-5" />
+            <span>Settings</span>
+          </button>
+          <button
+            onClick={signOut}
+            className="p-4 flex items-center gap-2 w-full hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100 text-red-600 dark:text-red-400"
+          >
+            <ArrowLeftOnRectangleIcon className="w-5 h-5" />
+            <span>Sign Out</span>
+          </button>
+        </div>
 
-        {/* Resize handle */}
         {windowWidth >= 768 && (
           <div
             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-purple-500 transition-colors"
