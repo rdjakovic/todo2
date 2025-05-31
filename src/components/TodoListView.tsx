@@ -48,12 +48,11 @@ const TodoListView: React.FC<TodoListViewProps> = ({
   const handleToggleShowCompleted = () => {
     if (currentList) {
       const updatedLists = lists.map((list) =>
-        list.id === selectedList ? {
-          ...list,
-          showCompleted: !list.showCompleted,
-          show_completed: !list.showCompleted // Add this for database consistency
-        } : list
+        list.id === selectedList
+          ? { ...list, showCompleted: !list.showCompleted }
+          : list
       );
+      setLists(updatedLists);
       saveLists(updatedLists);
     }
   };
@@ -68,7 +67,7 @@ const TodoListView: React.FC<TodoListViewProps> = ({
 
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600 dark:text-gray-300 text-right">
-              {currentList?.showCompleted ? "Show Completed" : "Hide Completed"}
+              {currentList?.showCompleted ? "Hide Completed" : "Show Completed"}
             </span>
             <button
               onClick={handleToggleShowCompleted}
