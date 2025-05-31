@@ -92,7 +92,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
       if (todosError) throw todosError;
 
-      const lists = data.map(list => ({
+      const processedLists = data.map(list => ({
         ...list,
         showCompleted: list.show_completed,
         todos: todosData
@@ -108,17 +108,17 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       }));
 
       // Set the selectedListId to the Home list's UUID
-      const homeList = lists.find(list => list.name.toLowerCase() === 'home');
+      const homeList = processedLists.find(list => list.name.toLowerCase() === 'home');
       
       set({ 
-        lists, 
+        lists: processedLists, 
         selectedListId: homeList?.id || "", 
         loading: false, 
         error: null 
       });
       
       toast.success('Connection to database successful!');
-      localStorage.setItem('lists', JSON.stringify(lists));
+      localStorage.setItem('lists', JSON.stringify(processedLists));
     } catch (error) {
       console.error('Failed to fetch from Supabase:', error);
       const localData = localStorage.getItem('lists');
