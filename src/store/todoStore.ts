@@ -55,7 +55,8 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           priority,
           due_date,
           date_created,
-          date_of_completion
+          date_of_completion,
+          list_id
         )
       `)
       .order('created_at', { ascending: true });
@@ -87,7 +88,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
       const { data: todosData, error: todosError } = await supabase
         .from('todos')
-        .select('*')
+        .select('id, list_id, title, notes, completed, priority, due_date, date_created, date_of_completion')
         .order('date_created');
 
       if (todosError) throw todosError;
