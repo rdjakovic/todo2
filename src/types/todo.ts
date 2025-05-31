@@ -1,13 +1,13 @@
 export interface TodoList {
-  id: number;
+  id: string;
   name: string;
   icon: string;
   todos: Todo[];
-  showCompleted?: boolean;
+  showCompleted: boolean;
 }
 
 export interface Todo {
-  id: number;
+  id: string;
   title: string;
   notes?: string;
   completed: boolean;
@@ -15,4 +15,5 @@ export interface Todo {
   priority?: "low" | "medium" | "high";
   dueDate?: Date;
   dateOfCompletion?: Date;
+  listId: string;
 }

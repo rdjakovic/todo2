@@ -7,7 +7,7 @@ import { User } from '@supabase/supabase-js';
 
 interface TodoState {
   lists: TodoList[];
-  selectedListId: string;
+  selectedListId: string | null;
   loading: boolean;
   error: string | null;
   setLists: (lists: TodoList[]) => void;
@@ -28,7 +28,7 @@ interface TodoState {
 
 export const useTodoStore = create<TodoState>((set, get) => ({
   lists: [],
-  selectedListId: "",
+  selectedListId: null,
   loading: false,
   error: null,
 
@@ -43,21 +43,8 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       const { data: lists, error } = await supabase
       .from('lists')
       .select(`
-        id,
-        name,
-        icon,
-        show_completed,
-        todos (
-          id,
-          title,
-          notes,
-          completed,
-          priority,
-          due_date,
-          date_created,
-          date_of_completion,
-          list_id
-        )
+        *,
+        todos:todos(*)
       `)
       .order('created_at', { ascending: true });
 
@@ -96,12 +83,16 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       const processedLists = lists.map(list => ({
         ...list,
         showCompleted: list.show_completed,
+        id: list.id,
         todos: todosData
           .filter(todo => todo.list_id === list.id)
           .map(todo => ({
-            ...todo,
             id: todo.id,
             listId: todo.list_id,
+            title: todo.title,
+            notes: todo.notes,
+            completed: todo.completed,
+            priority: todo.priority,
             dateCreated: new Date(todo.date_created),
             dueDate: todo.due_date ? new Date(todo.due_date) : undefined,
             dateOfCompletion: todo.date_of_completion ? new Date(todo.date_of_completion) : undefined,
@@ -113,7 +104,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       
       set({ 
         lists: processedLists, 
-        selectedListId: homeList?.id || "", 
+        selectedListId: homeList?.id || null, 
         loading: false, 
         error: null 
       });
