@@ -1,19 +1,11 @@
 import React from "react";
 import { PlusIcon } from "@heroicons/react/24/outline";
+import { useTodoStore } from "../store/todoStore";
 
-interface TodoFormProps {
-  newTodo: string;
-  setNewTodo: (value: string) => void;
-  addTodo: (e: React.FormEvent) => Promise<void>;
-}
-
-const TodoForm: React.FC<TodoFormProps> = ({
-  newTodo,
-  setNewTodo,
-  addTodo,
-}) => {
+const TodoForm: React.FC = () => {
+  const { newTodo, setNewTodo, addTodoFromForm } = useTodoStore();
   return (
-    <form onSubmit={addTodo} className="mb-8">
+    <form onSubmit={addTodoFromForm} className="mb-8">
       <div className="flex flex-col gap-2 sm:flex-row">
         <input
           type="text"

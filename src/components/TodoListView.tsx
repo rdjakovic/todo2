@@ -1,57 +1,36 @@
 import React from "react";
 import { AnimatePresence } from "framer-motion";
-import { Todo, TodoList } from "../types/todo";
+
 import TodoForm from "./TodoForm";
 import TodoListItems from "./TodoListItems";
 import { getListById } from "../utils/helper";
 import clsx from "clsx";
+import { useTodoStore } from "../store/todoStore";
 
-interface TodoListViewProps {
-  selectedList: string;
-  filteredTodos: Todo[];
-  lists: TodoList[];
-  setLists: React.Dispatch<React.SetStateAction<TodoList[]>>;
-  toggleTodo: (id: string) => Promise<void>;
-  deleteTodo: (id: string) => Promise<void>;
-  editTodo: (
-    id: string,
-    newText: string,
-    newNotes?: string,
-    newPriority?: "low" | "medium" | "high",
-    newDueDate?: Date
-  ) => Promise<void>;
-  handleOpenEditDialog: (todo: Todo) => void;
-  addTodo: (e: React.FormEvent) => Promise<void>;
-  newTodo: string;
-  setNewTodo: (value: string) => void;
-  error: string | null;
-  saveLists: (lists: TodoList[]) => Promise<void>;
-}
-
-const TodoListView: React.FC<TodoListViewProps> = ({
-  selectedList,
-  filteredTodos,
-  lists,
-  setLists,
-  toggleTodo,
-  deleteTodo,
-  editTodo,
-  handleOpenEditDialog,
-  addTodo,
-  newTodo,
-  setNewTodo,
-  error,
-  saveLists,
-}) => {
-  const currentList = getListById(lists, selectedList);
+const TodoListView: React.FC = () => {
+  const {
+    lists,
+    selectedListId,
+    error,
+    toggleTodo,
+    deleteTodo,
+    editTodo,
+    saveLists,
+    setLists,
+    getFilteredTodos,
+    openEditDialog,
+  } = useTodoStore();
+  const currentList = getListById(lists, selectedListId);
 
   const handleToggleShowCompleted = () => {
     if (currentList) {
       const updatedLists = lists.map((list) =>
-        list.id === selectedList ? {
-          ...list,
-          showCompleted: !list.showCompleted
-        } : list
+        list.id === selectedListId
+          ? {
+              ...list,
+              showCompleted: !list.showCompleted,
+            }
+          : list
       );
       setLists(updatedLists);
       saveLists(updatedLists);
@@ -63,7 +42,7 @@ const TodoListView: React.FC<TodoListViewProps> = ({
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
-            {lists.find((list) => list.id === selectedList)?.name || "Todos"}
+            {lists.find((list) => list.id === selectedListId)?.name || "Todos"}
           </h1>
 
           <div className="flex items-center gap-2">
@@ -93,15 +72,22 @@ const TodoListView: React.FC<TodoListViewProps> = ({
           </div>
         )}
 
-        <TodoForm newTodo={newTodo} setNewTodo={setNewTodo} addTodo={addTodo} />
+        <TodoForm />
 
         <AnimatePresence mode="popLayout">
           <TodoListItems
-            filteredTodos={filteredTodos}
-            onToggle={toggleTodo}
-            onDelete={deleteTodo}
-            onEdit={editTodo}
-            onOpenEditDialog={handleOpenEditDialog}
+            filteredTodos={getFilteredTodos()}
+            onToggle={(id) => toggleTodo(selectedListId, id)}
+            onDelete={(id) => deleteTodo(selectedListId, id)}
+            onEdit={(id, title, notes, priority, dueDate) =>
+              editTodo(selectedListId, id, {
+                title,
+                notes,
+                priority,
+                dueDate,
+              })
+            }
+            onOpenEditDialog={openEditDialog}
           />
         </AnimatePresence>
       </div>

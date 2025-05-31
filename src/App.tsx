@@ -1,5 +1,4 @@
 import { useState, useEffect, lazy, Suspense } from "react";
-import { confirm } from "@tauri-apps/plugin-dialog";
 import clsx from "clsx";
 import {
   DndContext,
@@ -24,35 +23,30 @@ import TodoListView from "./components/TodoListView";
 import { Todo } from "./types/todo";
 import "./App.css";
 import { useTheme } from "./hooks/useTheme";
-import { initialLists } from "./const/initialLists";
-import { Toaster } from 'react-hot-toast';
+import { Toaster } from "react-hot-toast";
 
 function App() {
   const { user, loading: authLoading, initialize } = useAuthStore();
-  const { 
+  const {
     lists,
     selectedListId,
     loading,
-    error,
-    setSelectedListId,
+    isSidebarOpen,
+    sidebarWidth,
+    windowWidth,
+    activeDraggedTodo,
+    isEditDialogOpen,
+    todoToEditDialog,
     fetchLists,
     saveLists,
-    setLists,
-    addTodo: addTodoToList,
-    toggleTodo: toggleTodoInList,
-    deleteTodo: deleteTodoFromList,
-    editTodo: editTodoInList
+    editTodo: editTodoInList,
+    setIsSidebarOpen,
+    setWindowWidth,
+    setActiveDraggedTodo,
+    closeEditDialog,
   } = useTodoStore();
 
   const { theme, toggleTheme } = useTheme();
-  const [newTodo, setNewTodo] = useState("");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
-  const [sidebarWidth, setSidebarWidth] = useState(256);
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  const [hideCompleted, setHideCompleted] = useState(false);
-  const [activeDraggedTodo, setActiveDraggedTodo] = useState<Todo | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [todoToEditDialog, setTodoToEditDialog] = useState<Todo | null>(null);
   const [dataInitialized, setDataInitialized] = useState(false);
 
   const sensors = useSensors(
@@ -74,11 +68,6 @@ function App() {
     }
   }, [user, dataInitialized, fetchLists]);
 
-  useEffect(() => {
-    const currentList = lists.find((list) => list.id === selectedListId);
-    setHideCompleted(!currentList?.showCompleted || false);
-  }, [selectedListId, lists]);
-
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const draggedTodo = lists
@@ -94,9 +83,9 @@ function App() {
 
     if (!over) return;
 
-    const todoId = Number(active.id);
+    const todoId = active.id;
     let sourceTodo: Todo | undefined;
-    let sourceListId: number | undefined;
+    let sourceListId: string | undefined;
 
     lists.forEach((list) => {
       const todo = list.todos.find((t) => t.id === todoId);
@@ -125,8 +114,7 @@ function App() {
         return list;
       });
       await saveLists(updatedLists);
-    }
-    else if (typeof over.id === "number" && active.id !== over.id) {
+    } else if (active.id !== over.id) {
       const list = lists.find((l) => l.id === sourceListId)!;
       const oldIndex = list.todos.findIndex((t) => t.id === active.id);
       const newIndex = list.todos.findIndex((t) => t.id === over.id);
@@ -160,36 +148,8 @@ function App() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const addTodo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTodo.trim()) return;
-
-    const newTodoItem: Omit<Todo, 'id'> = {
-      title: newTodo,
-      notes: "",
-      completed: false,
-      dateCreated: new Date(),
-      priority: "medium",
-      dueDate: undefined,
-      dateOfCompletion: undefined,
-    };
-
-    await addTodoToList(selectedListId, newTodoItem);
-    setNewTodo("");
-  };
-
-  const handleOpenEditDialog = (todo: Todo) => {
-    setTodoToEditDialog(todo);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleCloseEditDialog = () => {
-    setTodoToEditDialog(null);
-    setIsEditDialogOpen(false);
-  };
-
   const handleSaveEditDialog = async (
-    id: number,
+    id: string,
     newTitle: string,
     newNotes?: string,
     newPriority?: "low" | "medium" | "high",
@@ -201,40 +161,15 @@ function App() {
       priority: newPriority,
       dueDate: newDueDate,
     });
-    handleCloseEditDialog();
+    closeEditDialog();
   };
 
   const renderContent = () => {
-    if (selectedListId === 1000) {
-      return (
-        <SettingsView
-          theme={theme}
-          toggleTheme={toggleTheme}
-          storagePath=""
-          setStoragePath={() => {}}
-          handleSetPath={() => {}}
-        />
-      );
+    if (selectedListId === "settings") {
+      return <SettingsView theme={theme} toggleTheme={toggleTheme} />;
     }
 
-    return (
-      <TodoListView
-        lists={lists}
-        setLists={setLists}
-        selectedList={selectedListId}
-        error={error}
-        addTodo={addTodo}
-        newTodo={newTodo}
-        setNewTodo={setNewTodo}
-        filteredTodos={lists.find(l => l.id === selectedListId)?.todos || []}
-        toggleTodo={(id) => toggleTodoInList(selectedListId, id)}
-        deleteTodo={(id) => deleteTodoFromList(selectedListId, id)}
-        editTodo={(id, title, notes, priority, dueDate) => 
-          editTodoInList(selectedListId, id, { title, notes, priority, dueDate })}
-        handleOpenEditDialog={handleOpenEditDialog}
-        saveLists={saveLists}
-      />
-    );
+    return <TodoListView />;
   };
 
   if (authLoading) {
@@ -259,36 +194,7 @@ function App() {
       <div className={clsx("app", theme)}>
         <Toaster position="top-right" />
         <div className="flex min-h-screen bg-gradient-to-br from-purple-50 dark:from-gray-900 to-blue-50 dark:to-gray-800">
-          <Sidebar
-            lists={lists}
-            selectedList={selectedListId}
-            onSelectList={setSelectedListId}
-            onCreateList={async (name) => {
-              const newList: Partial<TodoList> = {
-                name,
-                icon: "home",
-                todos: [],
-                showCompleted: true,
-              };
-              await saveLists([...lists, newList]);
-            }}
-            onDeleteList={async (id) => {
-              const updatedLists = lists.filter(l => l.id !== id);
-              await saveLists(updatedLists);
-            }}
-            onEditList={async (id, newName) => {
-              const updatedLists = lists.map(l =>
-                l.id === id ? { ...l, name: newName } : l
-              );
-              await saveLists(updatedLists);
-            }}
-            onSelectSettings={() => setSelectedListId(1000)}
-            todoCountByList={{}}
-            isOpen={isSidebarOpen}
-            onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-            width={sidebarWidth}
-            onWidthChange={setSidebarWidth}
-          />
+          <Sidebar />
 
           <main
             className="flex-1 transition-all duration-300"
@@ -330,7 +236,7 @@ function App() {
             isOpen={isEditDialogOpen}
             todoToEdit={todoToEditDialog}
             onSave={handleSaveEditDialog}
-            onCancel={handleCloseEditDialog}
+            onCancel={closeEditDialog}
           />
         </Suspense>
       </div>

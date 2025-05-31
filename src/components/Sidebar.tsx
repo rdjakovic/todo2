@@ -8,56 +8,36 @@ import {
   ArrowLeftOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import clsx from "clsx";
-import { TodoList } from "../types/todo";
 import { ListItem } from "./ListItem";
 import { getListNameById } from "../utils/helper";
 import { useAuthStore } from "../store/authStore";
+import { useTodoStore } from "../store/todoStore";
 
-interface SidebarProps {
-  lists: TodoList[];
-  selectedList: string;
-  onSelectList: (listId: string) => void;
-  onCreateList: (name: string) => Promise<void>;
-  onDeleteList: (listId: string) => Promise<void>;
-  onEditList: (id: string, name: string) => Promise<void>;
-  onSelectSettings: () => void;
-  todoCountByList: Record<string, number>;
-  isOpen: boolean;
-  onToggle: () => void;
-  width: number;
-  onWidthChange: (width: number) => void;
-}
-
-export function Sidebar({
-  lists,
-  selectedList,
-  onSelectList,
-  onCreateList,
-  onDeleteList,
-  onEditList,
-  onSelectSettings,
-  todoCountByList,
-  isOpen,
-  onToggle,
-  width,
-  onWidthChange,
-}: SidebarProps) {
+export function Sidebar() {
   const { signOut } = useAuthStore();
+  const {
+    lists,
+    selectedListId: selectedList,
+    isSidebarOpen: isOpen,
+    sidebarWidth: width,
+    windowWidth,
+    setSelectedListId: onSelectList,
+    setSidebarWidth: onWidthChange,
+    toggleSidebar: onToggle,
+    createList: onCreateList,
+    deleteList: onDeleteList,
+    editList: onEditList,
+    getTodoCountByList,
+  } = useTodoStore();
+  
+  const todoCountByList = getTodoCountByList();
+  const onSelectSettings = () => onSelectList("settings");
+  
   const [isCreating, setIsCreating] = useState(false);
   const [newListName, setNewListName] = useState("");
   const [editingListId, setEditingListId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [isResizing, setIsResizing] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(window.innerWidth);
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   const startResizing = useCallback(() => {
     setIsResizing(true);

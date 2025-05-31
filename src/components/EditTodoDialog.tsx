@@ -6,12 +6,12 @@ interface EditTodoDialogProps {
   isOpen: boolean;
   todoToEdit: Todo | null;
   onSave: (
-    id: number,
+    id: string,
     newTitle: string,
     newNotes?: string,
     newPriority?: "low" | "medium" | "high",
     newDueDate?: Date | undefined // Changed to Date
-  ) => void;
+  ) => Promise<void>;
   onCancel: () => void;
 }
 

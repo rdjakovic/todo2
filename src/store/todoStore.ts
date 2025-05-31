@@ -10,10 +10,36 @@ interface TodoState {
   selectedListId: string;
   loading: boolean;
   error: string | null;
+
+  // Form state
+  newTodo: string;
+
+  // Edit dialog state
+  isEditDialogOpen: boolean;
+  todoToEditDialog: Todo | null;
+
+  // UI state
+  isSidebarOpen: boolean;
+  sidebarWidth: number;
+  windowWidth: number;
+
+  // Drag and drop state
+  activeDraggedTodo: Todo | null;
+
+  // Actions
   setLists: (lists: TodoList[]) => void;
   setSelectedListId: (id: string) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setNewTodo: (newTodo: string) => void;
+  setIsEditDialogOpen: (isOpen: boolean) => void;
+  setTodoToEditDialog: (todo: Todo | null) => void;
+  setIsSidebarOpen: (isOpen: boolean) => void;
+  setSidebarWidth: (width: number) => void;
+  setWindowWidth: (width: number) => void;
+  setActiveDraggedTodo: (todo: Todo | null) => void;
+
+  // Todo operations
   fetchLists: (user: User) => Promise<void>;
   saveLists: (lists: TodoList[]) => Promise<void>;
   addTodo: (listId: string, todo: Omit<Todo, "id">) => Promise<void>;
@@ -24,6 +50,18 @@ interface TodoState {
     todoId: string,
     updates: Partial<Todo>
   ) => Promise<void>;
+
+  // Helper functions
+  getCurrentList: () => TodoList | undefined;
+  getFilteredTodos: () => Todo[];
+  getTodoCountByList: () => Record<string, number>;
+  openEditDialog: (todo: Todo) => void;
+  closeEditDialog: () => void;
+  addTodoFromForm: (e: React.FormEvent) => Promise<void>;
+  createList: (name: string) => Promise<void>;
+  deleteList: (id: string) => Promise<void>;
+  editList: (id: string, name: string) => Promise<void>;
+  toggleSidebar: () => void;
 }
 
 export const useTodoStore = create<TodoState>((set, get) => ({
@@ -32,10 +70,33 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   loading: false,
   error: null,
 
+  // Form state
+  newTodo: "",
+
+  // Edit dialog state
+  isEditDialogOpen: false,
+  todoToEditDialog: null,
+
+  // UI state
+  isSidebarOpen:
+    typeof window !== "undefined" ? window.innerWidth >= 768 : true,
+  sidebarWidth: 256,
+  windowWidth: typeof window !== "undefined" ? window.innerWidth : 1024,
+
+  // Drag and drop state
+  activeDraggedTodo: null,
+
   setLists: (lists) => set({ lists }),
   setSelectedListId: (id) => set({ selectedListId: id }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
+  setNewTodo: (newTodo) => set({ newTodo }),
+  setIsEditDialogOpen: (isOpen) => set({ isEditDialogOpen: isOpen }),
+  setTodoToEditDialog: (todo) => set({ todoToEditDialog: todo }),
+  setIsSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
+  setSidebarWidth: (width) => set({ sidebarWidth: width }),
+  setWindowWidth: (width) => set({ windowWidth: width }),
+  setActiveDraggedTodo: (todo) => set({ activeDraggedTodo: todo }),
 
   fetchLists: async (user) => {
     set({ loading: true });
@@ -372,5 +433,95 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       localStorage.setItem("lists", JSON.stringify(updatedLists));
       toast.error("Failed to save to database, saved locally");
     }
+  },
+
+  // Helper functions
+  getCurrentList: () => {
+    const { lists, selectedListId } = get();
+    return lists.find((list) => list.id === selectedListId);
+  },
+
+  getFilteredTodos: () => {
+    const { lists, selectedListId } = get();
+    const currentList = lists.find((list) => list.id === selectedListId);
+    if (!currentList) return [];
+
+    return currentList.showCompleted
+      ? currentList.todos
+      : currentList.todos.filter((todo) => !todo.completed);
+  },
+
+  getTodoCountByList: () => {
+    const { lists } = get();
+    const counts: Record<string, number> = {};
+    lists.forEach((list) => {
+      counts[list.id] = list.todos.filter((todo) => !todo.completed).length;
+    });
+    return counts;
+  },
+
+  openEditDialog: (todo: Todo) => {
+    set({
+      todoToEditDialog: todo,
+      isEditDialogOpen: true,
+    });
+  },
+
+  closeEditDialog: () => {
+    set({
+      todoToEditDialog: null,
+      isEditDialogOpen: false,
+    });
+  },
+
+  addTodoFromForm: async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { newTodo, selectedListId, addTodo } = get();
+
+    if (!newTodo.trim()) return;
+
+    const newTodoItem: Omit<Todo, "id"> = {
+      title: newTodo,
+      notes: "",
+      completed: false,
+      dateCreated: new Date(),
+      priority: "medium",
+      dueDate: undefined,
+      dateOfCompletion: undefined,
+      listId: selectedListId,
+    };
+
+    await addTodo(selectedListId, newTodoItem);
+    set({ newTodo: "" });
+  },
+
+  createList: async (name: string) => {
+    const { lists, saveLists } = get();
+    const newList: TodoList = {
+      id: crypto.randomUUID(),
+      name,
+      icon: "home",
+      todos: [],
+      showCompleted: true,
+      userId: "", // Will be set by the auth system
+    };
+    await saveLists([...lists, newList]);
+  },
+
+  deleteList: async (id: string) => {
+    const { lists, saveLists } = get();
+    const updatedLists = lists.filter((l) => l.id !== id);
+    await saveLists(updatedLists);
+  },
+
+  editList: async (id: string, name: string) => {
+    const { lists, saveLists } = get();
+    const updatedLists = lists.map((l) => (l.id === id ? { ...l, name } : l));
+    await saveLists(updatedLists);
+  },
+
+  toggleSidebar: () => {
+    const { isSidebarOpen, setIsSidebarOpen } = get();
+    setIsSidebarOpen(!isSidebarOpen);
   },
 }));
