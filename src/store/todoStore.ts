@@ -130,8 +130,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         .from('lists')
         .upsert(
           lists.map(({ todos, showCompleted, ...list }) => ({
-            ...list,
-            show_completed: showCompleted
+            id: list.id,
+            name: list.name,
+            icon: list.icon,
+            show_completed: showCompleted,
+            user_id: list.user_id
           }))
         );
 

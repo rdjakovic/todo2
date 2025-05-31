@@ -50,7 +50,7 @@ const TodoListView: React.FC<TodoListViewProps> = ({
           ? { ...list, showCompleted: !list.showCompleted }
           : list
       );
-      setLists(updatedLists);
+      saveLists(updatedLists);
     }
   };
 
