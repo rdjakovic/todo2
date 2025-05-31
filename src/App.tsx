@@ -232,6 +232,7 @@ function App() {
         editTodo={(id, title, notes, priority, dueDate) => 
           editTodoInList(selectedListId, id, { title, notes, priority, dueDate })}
         handleOpenEditDialog={handleOpenEditDialog}
+        saveLists={saveLists}
       />
     );
   };

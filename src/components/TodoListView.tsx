@@ -25,6 +25,7 @@ interface TodoListViewProps {
   newTodo: string;
   setNewTodo: (value: string) => void;
   error: string | null;
+  saveLists: (lists: TodoList[]) => Promise<void>;
 }
 
 const TodoListView: React.FC<TodoListViewProps> = ({
@@ -40,6 +41,7 @@ const TodoListView: React.FC<TodoListViewProps> = ({
   newTodo,
   setNewTodo,
   error,
+  saveLists,
 }) => {
   const currentList = getListById(lists, selectedList);
 
@@ -81,10 +83,6 @@ const TodoListView: React.FC<TodoListViewProps> = ({
               />
             </button>
           </div>
-
-          {/* <button onClick={handleToggleShowCompleted}>
-            {currentList?.showCompleted ? "Hide Completed" : "Show Completed"}
-          </button> */}
         </div>
 
         {error && (
