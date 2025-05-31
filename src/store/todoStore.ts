@@ -129,15 +129,22 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       const { error: listsError } = await supabase
         .from('lists')
         .upsert(
-          lists.map(({ todos, ...list }) => list)
+          lists.map(({ todos, showCompleted, ...list }) => ({
+            ...list,
+            show_completed: showCompleted
+          }))
         );
 
       if (listsError) throw listsError;
 
       const todos = lists.flatMap(list =>
         list.todos.map(todo => ({
-          ...todo,
+          id: todo.id,
           list_id: list.id,
+          title: todo.title,
+          notes: todo.notes,
+          completed: todo.completed,
+          priority: todo.priority,
           date_created: todo.dateCreated.toISOString(),
           due_date: todo.dueDate?.toISOString(),
           date_of_completion: todo.dateOfCompletion?.toISOString(),
@@ -172,8 +179,12 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       const { error } = await supabase
         .from('todos')
         .insert([{
-          ...newTodo,
+          id: newTodo.id,
           list_id: newTodo.listId,
+          title: newTodo.title,
+          notes: newTodo.notes,
+          completed: newTodo.completed,
+          priority: newTodo.priority,
           date_created: newTodo.dateCreated.toISOString(),
           due_date: newTodo.dueDate?.toISOString(),
           date_of_completion: newTodo.dateOfCompletion?.toISOString(),
@@ -305,12 +316,26 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     };
 
     try {
+      const payload: any = {
+        title: updates.title,
+        notes: updates.notes,
+        completed: updates.completed,
+        priority: updates.priority,
+      };
+
+      if (updates.dueDate !== undefined) {
+        payload.due_date = updates.dueDate?.toISOString();
+      }
+      if (updates.dateOfCompletion !== undefined) {
+        payload.date_of_completion = updates.dateOfCompletion?.toISOString();
+      }
+      if (updates.dateCreated !== undefined) {
+        payload.date_created = updates.dateCreated.toISOString();
+      }
+
       const { error } = await supabase
         .from('todos')
-        .update({
-          ...updates,
-          due_date: updates.dueDate?.toISOString(),
-        })
+        .update(payload)
         .eq('id', todoId);
 
       if (error) throw error;
