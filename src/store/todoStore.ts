@@ -63,7 +63,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       if (error) throw error;
 
       // If no lists exist, create initial lists
-      if (data.length === 0) {
+      if (lists.length === 0) {
         const { error: insertError } = await supabase
           .from('lists')
           .insert(initialLists.map(list => ({
@@ -82,7 +82,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           .order('id');
 
         if (refetchError) throw refetchError;
-        data = newData;
+        lists = newData;
       }
 
       const { data: todosData, error: todosError } = await supabase
@@ -92,7 +92,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
       if (todosError) throw todosError;
 
-      const processedLists = data.map(list => ({
+      const processedLists = lists.map(list => ({
         ...list,
         showCompleted: list.show_completed,
         todos: todosData
