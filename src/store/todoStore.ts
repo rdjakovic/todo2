@@ -48,19 +48,20 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       const { data: todosData, error: todosError } = await supabase
         .from('todos')
         .select('*')
-        .order('dateCreated');
+        .order('date_created');
 
       if (todosError) throw todosError;
 
       const lists = data.map(list => ({
         ...list,
         todos: todosData
-          .filter(todo => todo.listId === list.id)
+          .filter(todo => todo.list_id === list.id)
           .map(todo => ({
             ...todo,
-            dateCreated: new Date(todo.dateCreated),
-            dueDate: todo.dueDate ? new Date(todo.dueDate) : undefined,
-            dateOfCompletion: todo.dateOfCompletion ? new Date(todo.dateOfCompletion) : undefined,
+            listId: todo.list_id,
+            dateCreated: new Date(todo.date_created),
+            dueDate: todo.due_date ? new Date(todo.due_date) : undefined,
+            dateOfCompletion: todo.date_of_completion ? new Date(todo.date_of_completion) : undefined,
           })),
       }));
 
@@ -73,7 +74,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       if (localData) {
         const lists = JSON.parse(localData);
         set({ lists, loading: false, error: null });
-        toast.warning('Cannot connect to database. Using local data!');
+        toast('Cannot connect to database. Using local data!');
       } else {
         set({ error: 'Failed to load data', loading: false });
       }
@@ -93,10 +94,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       const todos = lists.flatMap(list =>
         list.todos.map(todo => ({
           ...todo,
-          listId: list.id,
-          dateCreated: todo.dateCreated.toISOString(),
-          dueDate: todo.dueDate?.toISOString(),
-          dateOfCompletion: todo.dateOfCompletion?.toISOString(),
+          list_id: list.id,
+          date_created: todo.dateCreated.toISOString(),
+          due_date: todo.dueDate?.toISOString(),
+          date_of_completion: todo.dateOfCompletion?.toISOString(),
         }))
       );
 
@@ -129,9 +130,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         .from('todos')
         .insert([{
           ...newTodo,
-          dateCreated: newTodo.dateCreated.toISOString(),
-          dueDate: newTodo.dueDate?.toISOString(),
-          dateOfCompletion: newTodo.dateOfCompletion?.toISOString(),
+          list_id: newTodo.listId,
+          date_created: newTodo.dateCreated.toISOString(),
+          due_date: newTodo.dueDate?.toISOString(),
+          date_of_completion: newTodo.dateOfCompletion?.toISOString(),
         }]);
 
       if (error) throw error;
@@ -174,7 +176,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         .from('todos')
         .update({
           completed: updatedTodo.completed,
-          dateOfCompletion: updatedTodo.dateOfCompletion?.toISOString(),
+          date_of_completion: updatedTodo.dateOfCompletion?.toISOString(),
         })
         .eq('id', todoId);
 
@@ -264,7 +266,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         .from('todos')
         .update({
           ...updates,
-          dueDate: updates.dueDate?.toISOString(),
+          due_date: updates.dueDate?.toISOString(),
         })
         .eq('id', todoId);
 
