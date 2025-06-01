@@ -176,7 +176,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       const { data: todosData, error: todosError } = await supabase
         .from("todos")
         .select(
-          "id, list_id, title, notes, completed, priority, due_date, date_created, date_of_completion"
+          "id, list_id, title, notes, completed, priority, date_created, due_date, date_of_completion"
         )
         .order("date_created");
 
@@ -228,7 +228,6 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           date_created: todo.dateCreated.toISOString(),
           due_date: todo.dueDate?.toISOString(),
           date_of_completion: todo.dateOfCompletion?.toISOString(),
-          user_id: currentUser.id,
         }))
       );
 
@@ -338,12 +337,6 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       listId,
     };
     try {
-      // Get current user from auth store
-      const currentUser = useAuthStore.getState().user;
-      if (!currentUser) {
-        throw new Error("User not authenticated");
-      }
-
       const { error } = await supabase.from("todos").insert([
         {
           id: newTodo.id,
@@ -355,7 +348,6 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           date_created: newTodo.dateCreated.toISOString(),
           due_date: newTodo.dueDate?.toISOString(),
           date_of_completion: newTodo.dateOfCompletion?.toISOString(),
-          user_id: currentUser.id,
         },
       ]);
 
