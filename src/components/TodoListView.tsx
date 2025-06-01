@@ -50,7 +50,12 @@ const TodoListView: React.FC = () => {
             </span>
             <button
               onClick={handleToggleShowCompleted}
-              className="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className={clsx(
+                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500",
+                currentList?.showCompleted 
+                  ? "bg-green-500 dark:bg-green-600" 
+                  : "bg-gray-200 dark:bg-gray-700"
+              )}
               role="switch"
               aria-checked={currentList?.showCompleted}
               aria-label="Toggle completed todos visibility"

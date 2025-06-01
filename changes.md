@@ -33,3 +33,10 @@
   2. Simplified the logic by directly applying arrayMove to the entire todos array
   3. Eliminated the complex mapping operation that was causing reordering to fail
   4. Updated state management to ensure UI reflects the new order immediately
+
+2025-06-01 19:15:00
+- Enhanced toggle button for completed todos:
+  1. Added green background color (bg-green-500) when showing all todos
+  2. Added dark mode support with dark:bg-green-600 
+  3. Used clsx to conditionally apply classes based on toggle state
+  4. Maintained existing functionality while improving visual feedback
