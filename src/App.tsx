@@ -102,31 +102,17 @@ function App() {
 
     // Handle reordering within the same list
     if (active.id !== over.id) {
-      // Get all todos from the same list
-      const currentListTodos = todos.filter((t) => t.listId === sourceTodo.listId);
-      
-      // Find indices for the dragged item and the drop target
-      const oldIndex = currentListTodos.findIndex((t) => t.id === active.id);
-      const newIndex = currentListTodos.findIndex((t) => t.id === over.id);
+      // Find the global indices of the dragged item and drop target in the entire todos array
+      const oldIndexGlobal = todos.findIndex((t) => t.id === active.id);
+      const newIndexGlobal = todos.findIndex((t) => t.id === over.id);
 
-      if (oldIndex !== -1 && newIndex !== -1) {
-        // Reorder the list todos
-        const reorderedListTodos = arrayMove(currentListTodos, oldIndex, newIndex);
+      if (oldIndexGlobal !== -1 && newIndexGlobal !== -1) {
+        // Directly reorder the entire todos array using the global indices
+        const reorderedTodos = arrayMove(todos, oldIndexGlobal, newIndexGlobal);
         
-        // Create a new todos array with the reordered items
-        const updatedTodos = todos.map((todo) => {
-          if (todo.listId === sourceTodo.listId) {
-            // Find the corresponding todo in the reordered list
-            const reorderedTodo = reorderedListTodos.find((t) => t.id === todo.id);
-            return reorderedTodo || todo;
-          }
-          return todo;
-        });
-        
-        // Save to backend and update state
-        await saveTodos(updatedTodos);
-        // After saving to backend, update local state directly
-        setTodos(updatedTodos);
+        // Save the reordered todos to backend and update state
+        await saveTodos(reorderedTodos);
+        setTodos(reorderedTodos);
       }
     }
   };

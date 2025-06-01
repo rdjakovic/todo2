@@ -26,3 +26,10 @@
   2. Added improved comments to explain the reordering logic
   3. Ensured state is updated immediately after drag and drop operations
   4. Made sure local state is updated consistently after all save operations
+
+2025-06-01 18:30:00
+- Fixed todo reordering within the same list by completely rewriting the reordering logic:
+  1. Changed the approach to use global indices in the todos array instead of filtering by list first
+  2. Simplified the logic by directly applying arrayMove to the entire todos array
+  3. Eliminated the complex mapping operation that was causing reordering to fail
+  4. Updated state management to ensure UI reflects the new order immediately
