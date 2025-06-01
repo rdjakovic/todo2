@@ -17,8 +17,8 @@ interface TodoItemProps {
     newNotes?: string,
     newPriority?: "low" | "medium" | "high",
     newDueDate?: Date
-  ) => Promise<void>; // Match App.tsx's editTodo signature
-  onOpenEditDialog: (todo: Todo) => void; // New prop to open the dialog
+  ) => Promise<void>;
+  onOpenEditDialog: (todo: Todo) => void; 
   isDragging?: boolean;
 }
 
@@ -30,7 +30,7 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
       todo,
       onToggle,
       onDelete,
-      // onEdit is not directly called here anymore but passed up
+      onEdit,
       onOpenEditDialog,
       isDragging,
     },
@@ -80,9 +80,10 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
       >
         <div
           className={clsx(
-            "py-2 px-3 rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-3 cursor-move",
+            "py-2 px-3 rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-3",
             todo.completed && "bg-gray-50 dark:bg-gray-900",
-            (isDragging || isSortableDragging) && "opacity-50"
+            (isDragging || isSortableDragging) && "opacity-50",
+            "cursor-move"
           )}
         >
           <button
@@ -146,7 +147,6 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
               <TrashIcon className="w-4 h-4" />
             </button>
           </div>
-          {/* Removed the erroneous closing parenthesis and brace */}
         </div>
       </MotionDiv>
     );
