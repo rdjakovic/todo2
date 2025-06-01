@@ -56,6 +56,7 @@ interface TodoState {
     todoId: string,
     updates: Partial<Todo>
   ) => Promise<void>;
+  reset: () => void;
 
   // Helper functions
   getCurrentList: () => TodoList | undefined;
@@ -106,6 +107,23 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   setWindowWidth: (width) => set({ windowWidth: width }),
   setActiveDraggedTodo: (todo) => set({ activeDraggedTodo: todo }),
 
+  // New reset function to clear state and localStorage
+  reset: () => {
+    localStorage.removeItem("todo-lists");
+    localStorage.removeItem("todos");
+    set({
+      lists: [],
+      todos: [],
+      selectedListId: "home",
+      loading: false,
+      error: null,
+      newTodo: "",
+      isEditDialogOpen: false,
+      todoToEditDialog: null,
+      activeDraggedTodo: null
+    });
+  },
+
   fetchLists: async (user) => {
     set({ loading: true });
     try {
@@ -113,6 +131,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       let { data: lists, error } = await supabase
         .from("lists")
         .select("*")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: true });
 
       if (error) throw error;
@@ -134,6 +153,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         const { data: newData, error: refetchError } = await supabase
           .from("lists")
           .select("*")
+          .eq("user_id", user.id)
           .order("id");
 
         if (refetchError) throw refetchError;
@@ -209,6 +229,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       }
     }
   },
+
   saveTodos: async (todos) => {
     try {
       // Get current user from auth store
@@ -570,6 +591,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     };
     await saveLists([...lists, newList]);
   },
+
   deleteList: async (id: string) => {
     const { lists, todos, saveLists, saveTodos } = get();
 

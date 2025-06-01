@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
+import { useTodoStore } from './todoStore';
 
 interface AuthState {
   user: User | null;
@@ -54,6 +55,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       await supabase.auth.signOut();
       set({ user: null });
+      // Reset todo store state and clear localStorage
+      useTodoStore.getState().reset();
     } catch (error) {
       set({ error: error instanceof Error ? error.message : 'Failed to sign out' });
     }
