@@ -4,6 +4,10 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { Todo } from "../types/todo";
 
 // Lazy load TodoItem
@@ -29,10 +33,6 @@ const TodoListItems = forwardRef<HTMLDivElement, TodoListItemsProps>(
       return (
         <motion.div
           ref={ref}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
           className="text-center text-gray-500 dark:text-gray-400 py-8"
         >
           No todos yet. Add one above!
@@ -43,12 +43,13 @@ const TodoListItems = forwardRef<HTMLDivElement, TodoListItemsProps>(
     return (
       <motion.div
         ref={ref}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.15 }}
         layout
       >
+        <SortableContext
+          items={filteredTodos.map((t) => t.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-2">
         <SortableContext
           items={filteredTodos.map((t) => t.id)}
           strategy={verticalListSortingStrategy}

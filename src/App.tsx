@@ -79,29 +79,27 @@ function App() {
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-
     if (!over) return;
-
     const todoId = active.id;
     const sourceTodo = todos.find((t) => t.id === todoId);
-
     if (!sourceTodo) return;
 
-    if (over.id !== sourceTodo.listId) {
-      // Moving todo to a different list
+    // Check if dropping on a list in sidebar
+    const targetList = lists.find((list) => list.id === over.id);
+    if (targetList) {
+      // Update todo with new list ID
       const updatedTodos = todos.map((todo) =>
-        todo.id === todoId ? { ...todo, listId: over.id as string } : todo
+        todo.id === todoId ? { ...todo, listId: targetList.id } : todo
       );
       await saveTodos(updatedTodos);
-    } else if (active.id !== over.id) {
-      // Reordering todos within the same list
+      return;
+    }
+
+    // Handle reordering within the same list
+    if (active.id !== over.id) {
       const listTodos = todos.filter((t) => t.listId === sourceTodo.listId);
       const oldIndex = listTodos.findIndex((t) => t.id === active.id);
       let newIndex = listTodos.findIndex((t) => t.id === over.id);
-      if (newIndex === -1) {
-        // Dropped on container – place at the end
-        newIndex = listTodos.length - 1;
-      }
 
       if (oldIndex !== -1 && newIndex !== -1) {
         const reorderedListTodos = arrayMove(listTodos, oldIndex, newIndex);
@@ -117,7 +115,6 @@ function App() {
         await saveTodos(updatedTodos);
       }
     }
-
     setActiveDraggedTodo(null);
   };
 

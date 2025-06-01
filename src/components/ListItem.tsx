@@ -10,6 +10,8 @@ import {
 import { useDroppable } from "@dnd-kit/core";
 import clsx from "clsx";
 import { TodoList } from "../types/todo";
+import { useDroppable } from "@dnd-kit/core";
+import clsx from "clsx";
 
 // Helper function moved here
 const getIconForList = (icon: string) => {
@@ -53,11 +55,18 @@ export function ListItem({
     data: list,
   });
 
+  const { setNodeRef, isOver } = useDroppable({
+    id: list.id,
+    data: list,
+  });
+
   return (
     <div
       ref={setNodeRef}
+      ref={setNodeRef}
       className={clsx(
-        "list-item-container relative group",
+        "list-item-container relative group transition-colors duration-200",
+        isOver && "bg-purple-50 dark:bg-purple-900/50 rounded-lg"
         isOver && "bg-purple-50 dark:bg-purple-900/50 rounded-lg"
       )}
     >
