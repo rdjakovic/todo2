@@ -40,3 +40,10 @@
   2. Added dark mode support with dark:bg-green-600 
   3. Used clsx to conditionally apply classes based on toggle state
   4. Maintained existing functionality while improving visual feedback
+
+2025-06-01 20:00:00
+- Fixed sidebar lists disappearing when toggling show/hide completed in the active list:
+  1. Fixed the saveLists function in todoStore.ts to properly preserve all existing lists
+  2. Added proper state merging to only update the changed lists while maintaining others
+  3. Improved error handling to ensure lists state is properly maintained even if the API call fails
+  4. Ensured the UI stays consistent by merging partial updates with existing data

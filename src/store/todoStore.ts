@@ -45,7 +45,7 @@ interface TodoState {
   // Todo operations
   fetchLists: (user: User) => Promise<void>;
   fetchTodos: (user: User) => Promise<void>;
-  saveLists: (lists: TodoList[]) => Promise<void>;
+  saveLists: (listsToSave: TodoList[]) => Promise<void>;
   saveTodos: (todos: Todo[]) => Promise<void>;
   loadFromLocalStorage: () => Promise<void>;
   addTodo: (listId: string, todo: Omit<Todo, "id">) => Promise<void>;
@@ -191,7 +191,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     }
   },
 
-  fetchTodos: async () => {
+  fetchTodos: async (user) => {
     try {
       const { data: todosData, error: todosError } = await supabase
         .from("todos")
@@ -306,7 +306,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     }
   },
 
-  saveLists: async (lists) => {
+  saveLists: async (listsToSave) => {
     try {
       // Get current user from auth store
       const currentUser = useAuthStore.getState().user;
@@ -314,8 +314,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         throw new Error("User not authenticated");
       }
 
+      // Get the current full list of lists
+      const allCurrentLists = get().lists;
+
       const { error: listsError } = await supabase.from("lists").upsert(
-        lists.map(({ showCompleted, ...list }) => ({
+        listsToSave.map(({ showCompleted, ...list }) => ({
           id: list.id,
           name: list.name,
           icon: list.icon,
@@ -327,25 +330,46 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
       if (listsError) throw listsError;
 
+      // Update the current lists with the changes from listsToSave
+      const updatedLists = allCurrentLists.map((list) => {
+        // Find if this list was updated
+        const updatedList = listsToSave.find((l) => l.id === list.id);
+        // If it was updated, return the updated version, otherwise keep the original
+        return updatedList || list;
+      });
+
       // Only update localStorage if we're saving all lists
-      if (lists.length === get().lists.length) {
-        localStorage.setItem("todo-lists", JSON.stringify(lists));
+      if (listsToSave.length === allCurrentLists.length) {
+        localStorage.setItem("todo-lists", JSON.stringify(listsToSave));
       } else {
         // Update just the changed lists in localStorage
         const currentLists = JSON.parse(
           localStorage.getItem("todo-lists") || "[]"
         );
-        const updatedLists = currentLists.map((list: TodoList) => {
-          const updatedList = lists.find((l) => l.id === list.id);
+        const updatedLocalLists = currentLists.map((list: TodoList) => {
+          const updatedList = listsToSave.find((l) => l.id === list.id);
           return updatedList || list;
         });
-        localStorage.setItem("todo-lists", JSON.stringify(updatedLists));
+        localStorage.setItem("todo-lists", JSON.stringify(updatedLocalLists));
       }
-      set({ error: null, lists });
+      
+      // Update state with the merged lists that include both updated and non-updated lists
+      set({ error: null, lists: updatedLists });
     } catch (error) {
       console.error("Failed to save lists to Supabase:", error);
-      localStorage.setItem("todo-lists", JSON.stringify(lists));
-      set({ lists, error: "Failed to save lists to database, saved locally" });
+      
+      // Even in case of error, we need to update the state correctly
+      const allCurrentLists = get().lists;
+      const updatedLists = allCurrentLists.map((list) => {
+        const updatedList = listsToSave.find((l) => l.id === list.id);
+        return updatedList || list;
+      });
+      
+      localStorage.setItem("todo-lists", JSON.stringify(updatedLists));
+      set({ 
+        lists: updatedLists, 
+        error: "Failed to save lists to database, saved locally" 
+      });
       toast.error("Failed to save lists to database, saved locally");
     }
   },
