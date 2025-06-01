@@ -209,9 +209,14 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       }
     }
   },
-
   saveTodos: async (todos) => {
     try {
+      // Get current user from auth store
+      const currentUser = useAuthStore.getState().user;
+      if (!currentUser) {
+        throw new Error("User not authenticated");
+      }
+
       const { error: todosError } = await supabase.from("todos").upsert(
         todos.map((todo) => ({
           id: todo.id,
@@ -223,6 +228,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           date_created: todo.dateCreated.toISOString(),
           due_date: todo.dueDate?.toISOString(),
           date_of_completion: todo.dateOfCompletion?.toISOString(),
+          user_id: currentUser.id,
         }))
       );
 
@@ -317,8 +323,13 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       id: crypto.randomUUID(),
       listId,
     };
-
     try {
+      // Get current user from auth store
+      const currentUser = useAuthStore.getState().user;
+      if (!currentUser) {
+        throw new Error("User not authenticated");
+      }
+
       const { error } = await supabase.from("todos").insert([
         {
           id: newTodo.id,
@@ -330,6 +341,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           date_created: newTodo.dateCreated.toISOString(),
           due_date: newTodo.dueDate?.toISOString(),
           date_of_completion: newTodo.dateOfCompletion?.toISOString(),
+          user_id: currentUser.id,
         },
       ]);
 
@@ -552,14 +564,46 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     };
     await saveLists([...lists, newList]);
   },
-
   deleteList: async (id: string) => {
     const { lists, todos, saveLists, saveTodos } = get();
-    const updatedLists = lists.filter((l) => l.id !== id);
-    const updatedTodos = todos.filter((t) => t.listId !== id);
 
-    await saveLists(updatedLists);
-    await saveTodos(updatedTodos);
+    try {
+      // First delete the todos belonging to this list from Supabase
+      const { error: todosDeleteError } = await supabase
+        .from("todos")
+        .delete()
+        .eq("list_id", id);
+
+      if (todosDeleteError) throw todosDeleteError;
+
+      // Then delete the list itself from Supabase
+      const { error: listDeleteError } = await supabase
+        .from("lists")
+        .delete()
+        .eq("id", id);
+
+      if (listDeleteError) throw listDeleteError;
+
+      // Update local state after successful database operations
+      const updatedLists = lists.filter((l) => l.id !== id);
+      const updatedTodos = todos.filter((t) => t.listId !== id);
+
+      set({ lists: updatedLists, todos: updatedTodos, error: null });
+
+      // Keep these as fallback for offline support
+      localStorage.setItem("todo-lists", JSON.stringify(updatedLists));
+      localStorage.setItem("todos", JSON.stringify(updatedTodos));
+    } catch (error) {
+      console.error("Failed to delete from Supabase:", error);
+      // Fallback to local-only deletion
+      const updatedLists = lists.filter((l) => l.id !== id);
+      const updatedTodos = todos.filter((t) => t.listId !== id);
+
+      await saveLists(updatedLists);
+      await saveTodos(updatedTodos);
+
+      toast.error("Failed to delete from database, updated locally");
+    }
   },
 
   editList: async (id: string, name: string) => {

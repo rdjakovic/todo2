@@ -97,7 +97,11 @@ function App() {
       // Reordering todos within the same list
       const listTodos = todos.filter((t) => t.listId === sourceTodo.listId);
       const oldIndex = listTodos.findIndex((t) => t.id === active.id);
-      const newIndex = listTodos.findIndex((t) => t.id === over.id);
+      let newIndex = listTodos.findIndex((t) => t.id === over.id);
+      if (newIndex === -1) {
+        // Dropped on container – place at the end
+        newIndex = listTodos.length - 1;
+      }
 
       if (oldIndex !== -1 && newIndex !== -1) {
         const reorderedListTodos = arrayMove(listTodos, oldIndex, newIndex);
