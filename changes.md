@@ -19,3 +19,10 @@
   3. Modified saveTodos in todoStore.ts to update local state in addition to saving to backend
   4. Cleaned up duplicate imports in TodoListItems.tsx
   5. Fixed type errors in ListItem.tsx for onEdit and onDelete function parameters
+
+2025-06-01 17:45:00
+- Fixed todo reordering within the same list:
+  1. Improved the handleDragEnd function in App.tsx with clearer variable names
+  2. Added improved comments to explain the reordering logic
+  3. Ensured state is updated immediately after drag and drop operations
+  4. Made sure local state is updated consistently after all save operations
