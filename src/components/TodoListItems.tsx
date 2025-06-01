@@ -50,11 +50,6 @@ const TodoListItems = forwardRef<HTMLDivElement, TodoListItemsProps>(
           strategy={verticalListSortingStrategy}
         >
           <div className="space-y-2">
-        <SortableContext
-          items={filteredTodos.map((t) => t.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="space-y-2">
             <Suspense fallback={<div>Loading todos...</div>}>
               {filteredTodos.map((todo) => (
                 <TodoItem
