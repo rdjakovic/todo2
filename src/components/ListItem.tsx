@@ -35,8 +35,8 @@ interface ListItemProps {
   list: TodoList;
   onSelect: () => void;
   selected: boolean;
-  onEdit: (id: number) => void;
-  onDelete: (id: number) => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
   todoCount: number;
 }
 
@@ -101,6 +101,3 @@ export const ListItem = ({
     </div>
   );
 };
-
-// Add default export if needed, or keep named export
-// export default ListItem; // Uncomment if default export is preferred

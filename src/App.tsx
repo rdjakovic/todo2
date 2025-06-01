@@ -40,6 +40,7 @@ function App() {
     todoToEditDialog,
     fetchLists,
     saveTodos,
+    setTodos,
     editTodo: editTodoInList,
     setIsSidebarOpen,
     setWindowWidth,
@@ -94,7 +95,8 @@ function App() {
         todo.id === todoId ? { ...todo, listId: targetList.id } : todo
       );
       await saveTodos(updatedTodos);
-      // Removed the problematic line: set({ todos: updatedTodos });
+      // After saving to backend, update local state directly
+      setTodos(updatedTodos);
       return;
     }
 
@@ -116,6 +118,8 @@ function App() {
           return todo;
         });
         await saveTodos(updatedTodos);
+        // After saving to backend, update local state directly
+        setTodos(updatedTodos);
       }
     }
   };

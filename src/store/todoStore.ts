@@ -255,11 +255,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       if (todosError) throw todosError;
 
       localStorage.setItem("todos", JSON.stringify(todos));
-      set({ error: null });
+      set({ error: null, todos }); // Update local state directly
     } catch (error) {
       console.error("Failed to save todos to Supabase:", error);
       localStorage.setItem("todos", JSON.stringify(todos));
-      set({ error: "Failed to save todos to database, saved locally" });
+      set({ error: "Failed to save todos to database, saved locally", todos }); // Update local state directly
       toast.error("Failed to save todos to database, saved locally");
     }
   },
@@ -341,7 +341,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         });
         localStorage.setItem("todo-lists", JSON.stringify(updatedLists));
       }
-      set({ error: null });
+      set({ error: null, lists });
     } catch (error) {
       console.error("Failed to save lists to Supabase:", error);
       localStorage.setItem("todo-lists", JSON.stringify(lists));
