@@ -53,16 +53,11 @@ export function ListItem({
     data: list,
   });
 
-  const { setNodeRef, isOver } = useDroppable({
-    id: list.id,
-    data: list,
-  });
-
   return (
     <div
       ref={setNodeRef}
       className={clsx(
-        "list-item-container relative group transition-colors duration-200",
+        "list-item-container relative group",
         isOver && "bg-purple-50 dark:bg-purple-900/50 rounded-lg"
       )}
     >
