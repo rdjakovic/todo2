@@ -79,7 +79,9 @@ function App() {
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveDraggedTodo(null);
     if (!over) return;
+
     const todoId = active.id;
     const sourceTodo = todos.find((t) => t.id === todoId);
     if (!sourceTodo) return;
@@ -92,6 +94,7 @@ function App() {
         todo.id === todoId ? { ...todo, listId: targetList.id } : todo
       );
       await saveTodos(updatedTodos);
+      set({ todos: updatedTodos });
       return;
     }
 
@@ -115,7 +118,6 @@ function App() {
         await saveTodos(updatedTodos);
       }
     }
-    setActiveDraggedTodo(null);
   };
 
   useEffect(() => {

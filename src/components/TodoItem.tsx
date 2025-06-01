@@ -82,8 +82,8 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
           className={clsx(
             "py-2 px-3 rounded-lg bg-white dark:bg-gray-800 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-3",
             todo.completed && "bg-gray-50 dark:bg-gray-900",
-            (isDragging || isSortableDragging) && "opacity-50",
-            "cursor-move"
+            (isDragging || isSortableDragging) && "opacity-50 cursor-grabbing",
+            !isDragging && !isSortableDragging && "cursor-grab"
           )}
         >
           <button
