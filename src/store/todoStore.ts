@@ -49,7 +49,7 @@ interface TodoState {
   saveTodos: (todos: Todo[]) => Promise<void>;
   loadFromLocalStorage: () => Promise<void>;
   addTodo: (listId: string, todo: Omit<Todo, "id">) => Promise<void>;
-  toggleTodo: (listId: string, todoId: string) => Promise<void>;
+  toggleTodo: (todoId: string) => Promise<void>;
   deleteTodo: (listId: string, todoId: string) => Promise<void>;
   editTodo: (
     listId: string,
@@ -361,7 +361,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     }
   },
 
-  toggleTodo: async (listId, todoId) => {
+  toggleTodo: async (todoId) => {
     const { todos } = get();
     const todo = todos.find((t) => t.id === todoId);
 
