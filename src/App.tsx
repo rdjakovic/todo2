@@ -94,7 +94,7 @@ function App() {
         todo.id === todoId ? { ...todo, listId: targetList.id } : todo
       );
       await saveTodos(updatedTodos);
-      set({ todos: updatedTodos });
+      // Removed the problematic line: set({ todos: updatedTodos });
       return;
     }
 
