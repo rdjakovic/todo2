@@ -216,3 +216,94 @@ The `saveLists` function was attempting to get the user ID from existing lists i
 - `src/store/todoStore.ts`: Updated saveLists, createList, and fetchLists functions to properly handle user authentication
 
 ---
+
+Date: 2025-01-03
+Description: Refactored todo application to separate list metadata from todos themselves, implementing a normalized data architecture.
+
+**Problem:**
+The application was using a denormalized data structure where each `TodoList` contained a `todos: Todo[]` array. This approach had several issues:
+
+- Performance problems with large datasets
+- Data duplication and inefficient memory usage
+- Difficult maintenance and scalability concerns
+- Complex state management when updating todos across lists
+
+**Solution:**
+Implemented a complete refactoring to separate lists and todos into independent collections with a normalized data architecture.
+
+**Key Changes:**
+
+1. **Modified Types (src/types/todo.ts)**
+
+   - ✅ Removed `todos: Todo[]` field from `TodoList` interface
+   - ✅ Maintained `Todo` interface with `listId` for relationship preservation
+
+2. **Updated TodoStore State Structure (src/store/todoStore.ts)**
+
+   - ✅ Added `todos: Todo[]` as separate state property
+   - ✅ Added `setTodos` action for managing todos array
+   - ✅ Added new functions: `fetchTodos`, `saveTodos`, `loadFromLocalStorage`
+
+3. **Refactored Core Store Functions**
+
+   - ✅ `fetchLists`: Now fetches only list metadata, calls `fetchTodos` separately
+   - ✅ `fetchTodos`: New function to fetch todos separately from Supabase
+   - ✅ `saveLists`: Now saves only list metadata (no todos)
+   - ✅ `saveTodos`: New function to save todos separately to Supabase
+   - ✅ `loadFromLocalStorage`: New function with migration support for old format
+
+4. **Updated localStorage Handling**
+
+   - ✅ Two separate keys: `"todo-lists"` for list metadata and `"todos"` for todo items
+   - ✅ Migration logic: Automatically detects and converts old format to new format
+   - ✅ Dual storage strategy: Maintains both Supabase and localStorage for fallback
+
+5. **Updated All CRUD Operations**
+
+   - ✅ `addTodo`: Works with separate `todos` array instead of `list.todos`
+   - ✅ `toggleTodo`: Updated to find todos in the separate array
+   - ✅ `deleteTodo`: Updated to filter from the separate todos array
+   - ✅ `editTodo`: Updated to update todos in the separate array
+   - ✅ `deleteList`: Now also deletes associated todos when a list is deleted
+
+6. **Updated Helper Functions**
+
+   - ✅ `getFilteredTodos`: Now filters todos by `listId` from the separate array
+   - ✅ `getTodoCountByList`: Now counts todos from separate array grouped by `listId`
+
+7. **Updated App.tsx**
+
+   - ✅ Drag and Drop: Updated to work with the separate todos array
+   - ✅ Import changes: Added `todos` and `saveTodos` from the store
+   - ✅ Logic updates: All drag and drop operations now work with separate data structure
+
+8. **Migration Strategy**
+   - ✅ Backward compatibility: Detects old format data and automatically migrates
+   - ✅ Seamless transition: Users with existing data have their data converted automatically
+   - ✅ No data loss: Migration preserves all existing todos and lists
+
+**Benefits Achieved:**
+
+- 🚀 **Performance**: Normalized data structure reduces memory usage and improves rendering performance
+- 🔧 **Maintainability**: Cleaner separation of concerns makes the code easier to maintain
+- 📈 **Scalability**: Better handling of large datasets with separate collections
+- 🔄 **Migration**: Seamless upgrade path for existing users
+- 💾 **Storage**: More efficient localStorage usage with separate keys
+- 🛡️ **Data Integrity**: Better relationship management between lists and todos
+
+**Files Modified:**
+
+- `src/types/todo.ts`: Removed todos array from TodoList interface
+- `src/store/todoStore.ts`: Complete refactoring with separate collections and new functions
+- `src/App.tsx`: Updated drag and drop logic to work with separate data structure
+
+**Technical Implementation:**
+
+- Maintained `listId` field in todos for relationship preservation
+- Implemented automatic data migration from old to new format
+- Added comprehensive error handling and fallback mechanisms
+- Preserved all existing functionality while improving underlying architecture
+
+The refactoring is complete and the application now uses a normalized data architecture with separate collections for lists and todos, significantly improving performance and maintainability while preserving all existing functionality.
+
+---

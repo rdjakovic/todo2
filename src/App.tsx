@@ -29,6 +29,7 @@ function App() {
   const { user, loading: authLoading, initialize } = useAuthStore();
   const {
     lists,
+    todos,
     selectedListId,
     loading,
     isSidebarOpen,
@@ -38,7 +39,7 @@ function App() {
     isEditDialogOpen,
     todoToEditDialog,
     fetchLists,
-    saveLists,
+    saveTodos,
     editTodo: editTodoInList,
     setIsSidebarOpen,
     setWindowWidth,
@@ -70,9 +71,7 @@ function App() {
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    const draggedTodo = lists
-      .flatMap((list) => list.todos)
-      .find((todo) => todo.id === active.id);
+    const draggedTodo = todos.find((todo) => todo.id === active.id);
     if (draggedTodo) {
       setActiveDraggedTodo(draggedTodo);
     }
@@ -84,49 +83,35 @@ function App() {
     if (!over) return;
 
     const todoId = active.id;
-    let sourceTodo: Todo | undefined;
-    let sourceListId: string | undefined;
+    const sourceTodo = todos.find((t) => t.id === todoId);
 
-    lists.forEach((list) => {
-      const todo = list.todos.find((t) => t.id === todoId);
-      if (todo) {
-        sourceTodo = todo;
-        sourceListId = list.id;
-      }
-    });
+    if (!sourceTodo) return;
 
-    if (!sourceTodo || !sourceListId) return;
-
-    if (over.id !== sourceListId) {
-      const updatedLists = lists.map((list) => {
-        if (list.id === sourceListId) {
-          return {
-            ...list,
-            todos: list.todos.filter((t) => t.id !== todoId),
-          };
-        }
-        if (list.id === over.id) {
-          return {
-            ...list,
-            todos: [...list.todos, { ...sourceTodo! }],
-          };
-        }
-        return list;
-      });
-      await saveLists(updatedLists);
+    if (over.id !== sourceTodo.listId) {
+      // Moving todo to a different list
+      const updatedTodos = todos.map((todo) =>
+        todo.id === todoId ? { ...todo, listId: over.id as string } : todo
+      );
+      await saveTodos(updatedTodos);
     } else if (active.id !== over.id) {
-      const list = lists.find((l) => l.id === sourceListId)!;
-      const oldIndex = list.todos.findIndex((t) => t.id === active.id);
-      const newIndex = list.todos.findIndex((t) => t.id === over.id);
+      // Reordering todos within the same list
+      const listTodos = todos.filter((t) => t.listId === sourceTodo.listId);
+      const oldIndex = listTodos.findIndex((t) => t.id === active.id);
+      const newIndex = listTodos.findIndex((t) => t.id === over.id);
 
-      const updatedLists = lists.map((l) => {
-        if (l.id === sourceListId) {
-          const reorderedTodos = arrayMove(l.todos, oldIndex, newIndex);
-          return { ...l, todos: reorderedTodos };
-        }
-        return l;
-      });
-      await saveLists(updatedLists);
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const reorderedListTodos = arrayMove(listTodos, oldIndex, newIndex);
+        const updatedTodos = todos.map((todo) => {
+          if (todo.listId === sourceTodo.listId) {
+            const reorderedTodo = reorderedListTodos.find(
+              (t) => t.id === todo.id
+            );
+            return reorderedTodo || todo;
+          }
+          return todo;
+        });
+        await saveTodos(updatedTodos);
+      }
     }
 
     setActiveDraggedTodo(null);

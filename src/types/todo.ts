@@ -2,7 +2,6 @@ export interface TodoList {
   id: string;
   name: string;
   icon: string;
-  todos: Todo[];
   showCompleted: boolean;
   userId: string;
 }
