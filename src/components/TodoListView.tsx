@@ -76,7 +76,7 @@ const TodoListView: React.FC = () => {
         <AnimatePresence mode="popLayout">
           <TodoListItems
             filteredTodos={getFilteredTodos()}
-            onToggle={(id) => toggleTodo(selectedListId, id)}
+            onToggle={toggleTodo}
             onDelete={(id) => deleteTodo(selectedListId, id)}
             onEdit={(id, title, notes, priority, dueDate) =>
               editTodo(selectedListId, id, {
