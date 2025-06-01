@@ -1,6 +1,5 @@
 import React from "react";
 import clsx from "clsx";
-import { isTauri } from "../utils/environment"; // Assuming isTauri is moved or accessible
 
 interface SettingsViewProps {
   theme: string;

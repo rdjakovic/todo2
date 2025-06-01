@@ -37,10 +37,7 @@ const TodoListItems = forwardRef<HTMLDivElement, TodoListItemsProps>(
     }
 
     return (
-      <motion.div
-        ref={ref}
-        layout
-      >
+      <motion.div ref={ref} layout>
         <SortableContext
           items={filteredTodos.map((t) => t.id)}
           strategy={verticalListSortingStrategy}

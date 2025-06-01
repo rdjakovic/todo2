@@ -120,7 +120,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       newTodo: "",
       isEditDialogOpen: false,
       todoToEditDialog: null,
-      activeDraggedTodo: null
+      activeDraggedTodo: null,
     });
   },
 
@@ -191,7 +191,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     }
   },
 
-  fetchTodos: async (user) => {
+  fetchTodos: async () => {
     try {
       const { data: todosData, error: todosError } = await supabase
         .from("todos")
@@ -314,9 +314,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         throw new Error("User not authenticated");
       }
 
-      const { error: listsError } = await supabase
-        .from("lists")
-        .upsert(
+      const { error: listsError } = await supabase.from("lists").upsert(
         lists.map(({ showCompleted, ...list }) => ({
           id: list.id,
           name: list.name,
@@ -334,9 +332,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         localStorage.setItem("todo-lists", JSON.stringify(lists));
       } else {
         // Update just the changed lists in localStorage
-        const currentLists = JSON.parse(localStorage.getItem("todo-lists") || "[]");
+        const currentLists = JSON.parse(
+          localStorage.getItem("todo-lists") || "[]"
+        );
         const updatedLists = currentLists.map((list: TodoList) => {
-          const updatedList = lists.find(l => l.id === list.id);
+          const updatedList = lists.find((l) => l.id === list.id);
           return updatedList || list;
         });
         localStorage.setItem("todo-lists", JSON.stringify(updatedLists));

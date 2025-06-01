@@ -18,24 +18,14 @@ interface TodoItemProps {
     newPriority?: "low" | "medium" | "high",
     newDueDate?: Date
   ) => Promise<void>;
-  onOpenEditDialog: (todo: Todo) => void; 
+  onOpenEditDialog: (todo: Todo) => void;
   isDragging?: boolean;
 }
 
 const MotionDiv = motion.div;
 
 const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
-  (
-    {
-      todo,
-      onToggle,
-      onDelete,
-      onEdit,
-      onOpenEditDialog,
-      isDragging,
-    },
-    ref
-  ) => {
+  ({ todo, onToggle, onDelete, onEdit, onOpenEditDialog, isDragging }, ref) => {
     const {
       attributes,
       listeners,
