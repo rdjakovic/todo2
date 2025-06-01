@@ -294,20 +294,34 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         throw new Error("User not authenticated");
       }
 
-      const { error: listsError } = await supabase.from("lists").upsert(
+      const { error: listsError } = await supabase
+        .from("lists")
+        .upsert(
         lists.map(({ showCompleted, ...list }) => ({
           id: list.id,
           name: list.name,
           icon: list.icon,
           show_completed: showCompleted,
           user_id: currentUser.id,
-        }))
+        })),
+        { onConflict: "id" }
       );
 
       if (listsError) throw listsError;
 
-      localStorage.setItem("todo-lists", JSON.stringify(lists));
-      set({ lists, error: null });
+      // Only update localStorage if we're saving all lists
+      if (lists.length === get().lists.length) {
+        localStorage.setItem("todo-lists", JSON.stringify(lists));
+      } else {
+        // Update just the changed lists in localStorage
+        const currentLists = JSON.parse(localStorage.getItem("todo-lists") || "[]");
+        const updatedLists = currentLists.map((list: TodoList) => {
+          const updatedList = lists.find(l => l.id === list.id);
+          return updatedList || list;
+        });
+        localStorage.setItem("todo-lists", JSON.stringify(updatedLists));
+      }
+      set({ error: null });
     } catch (error) {
       console.error("Failed to save lists to Supabase:", error);
       localStorage.setItem("todo-lists", JSON.stringify(lists));

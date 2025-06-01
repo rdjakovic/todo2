@@ -24,16 +24,15 @@ const TodoListView: React.FC = () => {
 
   const handleToggleShowCompleted = () => {
     if (currentList) {
-      const updatedLists = lists.map((list) =>
-        list.id === selectedListId
-          ? {
-              ...list,
-              showCompleted: !list.showCompleted,
-            }
-          : list
+      const updatedList = {
+        ...currentList,
+        showCompleted: !currentList.showCompleted,
+      };
+      const newLists = lists.map((list) =>
+        list.id === selectedListId ? updatedList : list
       );
-      setLists(updatedLists);
-      saveLists(updatedLists);
+      setLists(newLists);
+      saveLists([updatedList]); // Only save the changed list
     }
   };
 
