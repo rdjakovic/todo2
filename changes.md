@@ -113,3 +113,12 @@
 - Progress percentage is calculated as (completed tasks / total tasks) * 100
 - High Priority count only includes incomplete high-priority tasks for actionable insights
 - Updated `src/components/TodoListView.tsx` with statistics calculation and display logic
+
+## 2025-01-27 19:45:00 - Updated Statistics Section for Light Theme
+- Improved the statistics section styling for better visibility in light theme
+- Changed background from dark gray to light gray (`bg-gray-100`) in light mode while keeping dark theme unchanged
+- Updated text colors: main text is now dark gray (`text-gray-800`) in light mode, white in dark mode
+- Updated label text colors: medium gray (`text-gray-600`) in light mode, light gray in dark mode
+- Added subtle border (`border-gray-200`) in light mode for better definition
+- Dark theme retains the original dark styling for consistency
+- Updated `src/components/TodoListView.tsx` with improved color scheme for light/dark theme compatibility

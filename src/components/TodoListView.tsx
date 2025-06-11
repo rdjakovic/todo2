@@ -166,13 +166,13 @@ const TodoListView: React.FC = () => {
           {/* Statistics section - only show for "All" list */}
           {isAllList && (
             <div className="mb-6 sm:mb-8">
-              <div className="bg-gray-800 dark:bg-gray-900 rounded-xl p-6 text-white">
+              <div className="bg-gray-100 dark:bg-gray-900 rounded-xl p-6 text-gray-800 dark:text-white border border-gray-200 dark:border-gray-700">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
                   <div className="text-center">
                     <div className="text-2xl sm:text-3xl font-bold mb-1">
                       {statistics.totalTasks}
                     </div>
-                    <div className="text-sm text-gray-300">
+                    <div className="text-sm text-gray-600 dark:text-gray-300">
                       Total Tasks
                     </div>
                   </div>
@@ -181,7 +181,7 @@ const TodoListView: React.FC = () => {
                     <div className="text-2xl sm:text-3xl font-bold mb-1">
                       {statistics.completedTasks}
                     </div>
-                    <div className="text-sm text-gray-300">
+                    <div className="text-sm text-gray-600 dark:text-gray-300">
                       Completed
                     </div>
                   </div>
@@ -190,7 +190,7 @@ const TodoListView: React.FC = () => {
                     <div className="text-2xl sm:text-3xl font-bold mb-1">
                       {statistics.highPriorityTasks}
                     </div>
-                    <div className="text-sm text-gray-300">
+                    <div className="text-sm text-gray-600 dark:text-gray-300">
                       High Priority
                     </div>
                   </div>
@@ -199,7 +199,7 @@ const TodoListView: React.FC = () => {
                     <div className="text-2xl sm:text-3xl font-bold mb-1">
                       {statistics.progress}%
                     </div>
-                    <div className="text-sm text-gray-300">
+                    <div className="text-sm text-gray-600 dark:text-gray-300">
                       Progress
                     </div>
                   </div>
