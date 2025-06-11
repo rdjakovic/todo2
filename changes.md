@@ -21,3 +21,11 @@
 - The new dialog provides icon selection similar to the edit list dialog, maintaining UI consistency
 - Removed inline input fields and related state management from Sidebar component
 - Users can now create lists with custom names and icons through a dedicated dialog interface
+
+## 2025-01-27 17:00:00 - Fixed New List State Update Issue
+- Fixed issue where newly created lists didn't appear in the sidebar after closing the dialog
+- Modified `createList` function in `src/store/todoStore.ts` to properly handle state updates
+- Changed from using `saveLists` to direct database insertion followed by immediate state update
+- Added proper error handling and success/error toast notifications for list creation
+- Ensured localStorage is updated correctly after successful list creation
+- New lists now appear immediately in the sidebar without requiring a page refresh

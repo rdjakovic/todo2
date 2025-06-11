@@ -668,7 +668,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   },
 
   createList: async (name: string, icon: string = "home") => {
-    const { lists, saveLists } = get();
+    const { lists } = get();
     // Get current user from auth store
     const currentUser = useAuthStore.getState().user;
     if (!currentUser) {
@@ -682,7 +682,43 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       showCompleted: true,
       userId: currentUser.id,
     };
-    await saveLists([...lists, newList]);
+    
+    try {
+      // Save to Supabase first
+      const { error } = await supabase.from("lists").insert([
+        {
+          id: newList.id,
+          name: newList.name,
+          icon: newList.icon,
+          show_completed: newList.showCompleted,
+          user_id: currentUser.id,
+        },
+      ]);
+
+      if (error) throw error;
+
+      // Update local state after successful database operation
+      const updatedLists = [...lists, newList];
+      set({ lists: updatedLists, error: null });
+
+      // Update localStorage (exclude "All" list)
+      const dbLists = updatedLists.filter(list => list.name !== "All");
+      localStorage.setItem("todo-lists", JSON.stringify(dbLists));
+      
+      toast.success("List created successfully!");
+    } catch (error) {
+      console.error("Failed to create list in Supabase:", error);
+      
+      // Fallback to local-only creation
+      const updatedLists = [...lists, newList];
+      set({ lists: updatedLists, error: "Failed to save to database, saved locally" });
+      
+      // Update localStorage (exclude "All" list)
+      const dbLists = updatedLists.filter(list => list.name !== "All");
+      localStorage.setItem("todo-lists", JSON.stringify(dbLists));
+      
+      toast.error("Failed to save to database, saved locally");
+    }
   },
 
   deleteList: async (id: string) => {
