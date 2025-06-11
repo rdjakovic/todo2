@@ -89,10 +89,31 @@ function App() {
     // Check if dropping on a list in sidebar
     const targetList = lists.find((list) => list.id === over.id);
     if (targetList) {
-      // Update todo with new list ID
-      const updatedTodos = todos.map((todo) =>
-        todo.id === todoId ? { ...todo, listId: targetList.id } : todo
-      );
+      // Special handling for "Completed" list
+      const isTargetCompleted = targetList.name.toLowerCase() === "completed";
+      const isSourceCompleted = sourceTodo.completed;
+      
+      // Update todo with new list ID and completion status
+      const updatedTodos = todos.map((todo) => {
+        if (todo.id === todoId) {
+          const updatedTodo = { ...todo, listId: targetList.id };
+          
+          // If dropping on "Completed" list, mark as completed
+          if (isTargetCompleted && !isSourceCompleted) {
+            updatedTodo.completed = true;
+            updatedTodo.dateOfCompletion = new Date();
+          }
+          // If dragging from "Completed" list to another list, mark as not completed
+          else if (!isTargetCompleted && isSourceCompleted) {
+            updatedTodo.completed = false;
+            updatedTodo.dateOfCompletion = undefined;
+          }
+          
+          return updatedTodo;
+        }
+        return todo;
+      });
+      
       await saveTodos(updatedTodos);
       // After saving to backend, update local state directly
       setTodos(updatedTodos);
