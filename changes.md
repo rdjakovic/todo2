@@ -65,3 +65,11 @@
 - Added click event handling to prevent interference with drag and drop functionality
 - Updated `src/components/TodoItem.tsx` with useState hook and chevron icons from Heroicons
 - Improves interface cleanliness while maintaining access to detailed todo information
+
+## 2025-01-27 18:15:00 - Moved Notes Toggle to Title Line
+- Moved the notes toggle button to the same line as the todo title to preserve vertical space
+- Changed toggle text from "Show notes"/"Hide notes" to shorter "Notes"/"Hide" for better space utilization
+- Restructured the layout to use flexbox with justify-between for proper spacing
+- Added flex-shrink-0 to the toggle button to prevent it from shrinking
+- Simplified the notes display logic by removing the extra container div
+- Updated `src/components/TodoItem.tsx` for more compact and space-efficient design

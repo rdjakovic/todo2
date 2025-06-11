@@ -134,32 +134,31 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
                     "line-through text-gray-500 dark:text-gray-400"
                 )}
               >
-                {todo.title}
+                <span className="flex items-center justify-between gap-2">
+                  <span>{todo.title}</span>
+                  {todo.notes && todo.notes.trim() && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowNotes(!showNotes);
+                      }}
+                      className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors flex-shrink-0"
+                    >
+                      {showNotes ? (
+                        <ChevronUpIcon className="w-3 h-3" />
+                      ) : (
+                        <ChevronDownIcon className="w-3 h-3" />
+                      )}
+                      {showNotes ? "Hide" : "Notes"}
+                    </button>
+                  )}
+                </span>
               </p>
               
               {/* Notes section */}
-              {todo.notes && todo.notes.trim() && (
-                <div className="mt-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowNotes(!showNotes);
-                    }}
-                    className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                  >
-                    {showNotes ? (
-                      <ChevronUpIcon className="w-3 h-3" />
-                    ) : (
-                      <ChevronDownIcon className="w-3 h-3" />
-                    )}
-                    {showNotes ? "Hide notes" : "Show notes"}
-                  </button>
-                  
-                  {showNotes && (
-                    <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
-                      {todo.notes}
-                    </div>
-                  )}
+              {todo.notes && todo.notes.trim() && showNotes && (
+                <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                  {todo.notes}
                 </div>
               )}
               
