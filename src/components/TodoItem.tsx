@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
-import { CheckIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { CheckIcon, PencilIcon, TrashIcon, ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 import { isValidNativeDate, formatNativeDate } from "../utils/helper";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import clsx from "clsx";
-import { forwardRef } from "react";
+import { forwardRef, useState } from "react";
 import { Todo } from "../types/todo";
 
 interface TodoItemProps {
@@ -61,6 +61,8 @@ const getPriorityBadgeColors = (priority?: "low" | "medium" | "high") => {
 };
 const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
   ({ todo, onToggle, onDelete, onEdit, onOpenEditDialog, isDragging }, ref) => {
+    const [showNotes, setShowNotes] = useState(false);
+    
     const {
       attributes,
       listeners,
@@ -134,6 +136,33 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
               >
                 {todo.title}
               </p>
+              
+              {/* Notes section */}
+              {todo.notes && todo.notes.trim() && (
+                <div className="mt-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowNotes(!showNotes);
+                    }}
+                    className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                  >
+                    {showNotes ? (
+                      <ChevronUpIcon className="w-3 h-3" />
+                    ) : (
+                      <ChevronDownIcon className="w-3 h-3" />
+                    )}
+                    {showNotes ? "Hide notes" : "Show notes"}
+                  </button>
+                  
+                  {showNotes && (
+                    <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                      {todo.notes}
+                    </div>
+                  )}
+                </div>
+              )}
+              
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-1">
                 <div className="flex items-center gap-2">
                 <p className="text-xs sm:text-xs text-gray-500 dark:text-gray-400 mt-1 sm:mt-0">

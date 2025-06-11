@@ -56,3 +56,12 @@
 - Items without priority still use gray background when completed
 - Updated `getPriorityColors` helper function in `src/components/TodoItem.tsx`
 - Allows users to still identify task priorities even after completion
+
+## 2025-01-27 18:00:00 - Added Notes Toggle Feature to Todo Items
+- Added toggle functionality to show/hide notes text on todo items when they contain notes
+- Added "Show notes" / "Hide notes" button with chevron icons for clear visual indication
+- Notes are displayed in a subtle gray background container when expanded
+- Toggle button only appears when todo item has notes content
+- Added click event handling to prevent interference with drag and drop functionality
+- Updated `src/components/TodoItem.tsx` with useState hook and chevron icons from Heroicons
+- Improves interface cleanliness while maintaining access to detailed todo information
