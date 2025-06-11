@@ -6,6 +6,13 @@ import toast from "react-hot-toast";
 import { User } from "@supabase/supabase-js";
 import { useAuthStore } from "./authStore";
 
+export type SortOption = 
+  | "dateCreated" 
+  | "priority" 
+  | "dateCompleted" 
+  | "completedFirst" 
+  | "completedLast";
+
 interface TodoState {
   lists: TodoList[];
   todos: Todo[];
@@ -28,6 +35,9 @@ interface TodoState {
   // Drag and drop state
   activeDraggedTodo: Todo | null;
 
+  // Sorting settings
+  sortBy: SortOption;
+
   // Actions
   setLists: (lists: TodoList[]) => void;
   setTodos: (todos: Todo[]) => void;
@@ -41,6 +51,7 @@ interface TodoState {
   setSidebarWidth: (width: number) => void;
   setWindowWidth: (width: number) => void;
   setActiveDraggedTodo: (todo: Todo | null) => void;
+  setSortBy: (sortBy: SortOption) => void;
 
   // Todo operations
   fetchLists: (user: User) => Promise<void>;
@@ -71,6 +82,64 @@ interface TodoState {
   toggleSidebar: () => void;
 }
 
+// Helper function to sort todos based on sort option
+const sortTodos = (todos: Todo[], sortBy: SortOption): Todo[] => {
+  const sortedTodos = [...todos];
+  
+  switch (sortBy) {
+    case "dateCreated":
+      return sortedTodos.sort((a, b) => 
+        new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()
+      );
+    
+    case "priority":
+      const priorityOrder = { high: 3, medium: 2, low: 1 };
+      return sortedTodos.sort((a, b) => {
+        const aPriority = priorityOrder[a.priority || "low"];
+        const bPriority = priorityOrder[b.priority || "low"];
+        if (aPriority !== bPriority) {
+          return bPriority - aPriority; // High priority first
+        }
+        // If same priority, sort by date created (newest first)
+        return new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime();
+      });
+    
+    case "dateCompleted":
+      return sortedTodos.sort((a, b) => {
+        // Completed items first, sorted by completion date (newest first)
+        if (a.completed && b.completed) {
+          if (a.dateOfCompletion && b.dateOfCompletion) {
+            return new Date(b.dateOfCompletion).getTime() - new Date(a.dateOfCompletion).getTime();
+          }
+          return 0;
+        }
+        if (a.completed && !b.completed) return -1;
+        if (!a.completed && b.completed) return 1;
+        // If both incomplete, sort by date created
+        return new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime();
+      });
+    
+    case "completedFirst":
+      return sortedTodos.sort((a, b) => {
+        if (a.completed && !b.completed) return -1;
+        if (!a.completed && b.completed) return 1;
+        // If same completion status, sort by date created
+        return new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime();
+      });
+    
+    case "completedLast":
+      return sortedTodos.sort((a, b) => {
+        if (a.completed && !b.completed) return 1;
+        if (!a.completed && b.completed) return -1;
+        // If same completion status, sort by date created
+        return new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime();
+      });
+    
+    default:
+      return sortedTodos;
+  }
+};
+
 export const useTodoStore = create<TodoState>((set, get) => ({
   lists: [],
   todos: [],
@@ -94,6 +163,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   // Drag and drop state
   activeDraggedTodo: null,
 
+  // Sorting settings - load from localStorage or default to dateCreated
+  sortBy: (typeof window !== "undefined" ? 
+    (localStorage.getItem("todo-sort-by") as SortOption) || "dateCreated" : 
+    "dateCreated"),
+
   setLists: (lists) => set({ lists }),
   setTodos: (todos) => set({ todos }),
   setSelectedListId: (id) => set({ selectedListId: id }),
@@ -106,11 +180,18 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   setSidebarWidth: (width) => set({ sidebarWidth: width }),
   setWindowWidth: (width) => set({ windowWidth: width }),
   setActiveDraggedTodo: (todo) => set({ activeDraggedTodo: todo }),
+  setSortBy: (sortBy) => {
+    set({ sortBy });
+    if (typeof window !== "undefined") {
+      localStorage.setItem("todo-sort-by", sortBy);
+    }
+  },
 
   // New reset function to clear state and localStorage
   reset: () => {
     localStorage.removeItem("todo-lists");
     localStorage.removeItem("todos");
+    localStorage.removeItem("todo-sort-by");
     set({
       lists: [],
       todos: [],
@@ -121,6 +202,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       isEditDialogOpen: false,
       todoToEditDialog: null,
       activeDraggedTodo: null,
+      sortBy: "dateCreated",
     });
   },
 
@@ -576,27 +658,30 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   },
 
   getFilteredTodos: () => {
-    const { todos, lists, selectedListId } = get();
+    const { todos, lists, selectedListId, sortBy } = get();
     const currentList = lists.find((list) => list.id === selectedListId);
     if (!currentList) return [];
 
     // Special handling for "All" list - show all todos from all lists
     if (currentList.name.toLowerCase() === "all") {
-      return currentList.showCompleted
+      const filteredTodos = currentList.showCompleted
         ? todos
         : todos.filter((todo) => !todo.completed);
+      return sortTodos(filteredTodos, sortBy);
     }
 
     // Special handling for "Completed" list - show all completed todos from all lists
     if (currentList.name.toLowerCase() === "completed") {
-      return todos.filter((todo) => todo.completed);
+      const completedTodos = todos.filter((todo) => todo.completed);
+      return sortTodos(completedTodos, sortBy);
     }
 
     // For other lists, filter by listId and showCompleted setting
     const listTodos = todos.filter((todo) => todo.listId === selectedListId);
-    return currentList.showCompleted
+    const filteredTodos = currentList.showCompleted
       ? listTodos
       : listTodos.filter((todo) => !todo.completed);
+    return sortTodos(filteredTodos, sortBy);
   },
 
   getTodoCountByList: () => {

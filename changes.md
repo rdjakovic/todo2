@@ -143,3 +143,21 @@
 - Improved readability with font weight adjustments and color contrast
 - Statistics section now has a modern, professional appearance that matches the app's design language
 - Updated `src/components/TodoListView.tsx` with comprehensive color theming for both light and dark modes
+
+## 2025-01-27 20:30:00 - Added Comprehensive Sorting System
+- Added new "Sorting Items" section to Settings page with 5 different sorting options
+- Implemented sorting functionality throughout the application with the following options:
+  - **Date Created**: Sort by creation date (newest first) - default option
+  - **Priority**: Sort by priority level (high to low), with same priority sorted by creation date
+  - **Date Completed**: Show completed items first, sorted by completion date (newest first)
+  - **Completed First**: Show completed items at the top, then incomplete items
+  - **Completed Last**: Show incomplete items first, then completed items at the bottom
+- Added `SortOption` type and `sortBy` state to the todo store with localStorage persistence
+- Created `sortTodos` helper function that handles all sorting logic efficiently
+- Updated `getFilteredTodos` function to apply sorting to all filtered todo lists
+- Sorting preferences are automatically saved to localStorage and persist across sessions
+- Sorting works consistently across all list types (All, Completed, and custom lists)
+- Added comprehensive radio button interface in Settings with clear descriptions for each option
+- Updated `src/store/todoStore.ts` with sorting state management and helper functions
+- Updated `src/components/SettingsView.tsx` with new sorting settings section
+- Enhanced user experience with immediate sorting updates when preferences change

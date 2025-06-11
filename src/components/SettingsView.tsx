@@ -1,12 +1,43 @@
 import React from "react";
 import clsx from "clsx";
+import { useTodoStore, SortOption } from "../store/todoStore";
 
 interface SettingsViewProps {
   theme: string;
   toggleTheme: () => void;
 }
 
+const sortOptions: { value: SortOption; label: string; description: string }[] = [
+  {
+    value: "dateCreated",
+    label: "Date Created",
+    description: "Sort by creation date (newest first)"
+  },
+  {
+    value: "priority",
+    label: "Priority",
+    description: "Sort by priority level (high to low)"
+  },
+  {
+    value: "dateCompleted",
+    label: "Date Completed",
+    description: "Show completed items first, sorted by completion date"
+  },
+  {
+    value: "completedFirst",
+    label: "Completed First",
+    description: "Show completed items at the top"
+  },
+  {
+    value: "completedLast",
+    label: "Completed Last",
+    description: "Show completed items at the bottom"
+  }
+];
+
 const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme }) => {
+  const { sortBy, setSortBy } = useTodoStore();
+
   return (
     <div className="flex-1 p-8">
       <div className="max-w-2xl mx-auto">
@@ -15,6 +46,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme }) => {
         </h1>
 
         <div className="space-y-6">
+          {/* Theme Settings */}
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
@@ -40,6 +72,44 @@ const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme }) => {
                   )}
                 />
               </button>
+            </div>
+          </div>
+
+          {/* Sorting Settings */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+            <div className="mb-4">
+              <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                Sorting Items
+              </h2>
+              <p className="text-gray-500 dark:text-gray-400">
+                Choose how to sort your todo items
+              </p>
+            </div>
+            
+            <div className="space-y-3">
+              {sortOptions.map((option) => (
+                <label
+                  key={option.value}
+                  className="flex items-start gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                >
+                  <input
+                    type="radio"
+                    name="sortBy"
+                    value={option.value}
+                    checked={sortBy === option.value}
+                    onChange={(e) => setSortBy(e.target.value as SortOption)}
+                    className="mt-1 w-4 h-4 text-purple-600 border-gray-300 dark:border-gray-600 focus:ring-purple-500 dark:focus:ring-purple-400 dark:bg-gray-700"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900 dark:text-white">
+                      {option.label}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {option.description}
+                    </div>
+                  </div>
+                </label>
+              ))}
             </div>
           </div>
         </div>
