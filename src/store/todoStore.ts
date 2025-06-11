@@ -348,8 +348,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       // Get the current full list of lists
       const allCurrentLists = get().lists;
 
+      // Filter out the "All" list as it's a client-side only virtual list
+      const dbListsToSave = listsToSave.filter(list => list.name !== "All");
+
       const { error: listsError } = await supabase.from("lists").upsert(
-        listsToSave.map(({ showCompleted, ...list }) => ({
+        dbListsToSave.map(({ showCompleted, ...list }) => ({
           id: list.id,
           name: list.name,
           icon: list.icon,
@@ -369,9 +372,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         return updatedList || list;
       });
 
-      // Only update localStorage if we're saving all lists
-      if (listsToSave.length === allCurrentLists.length) {
-        localStorage.setItem("todo-lists", JSON.stringify(listsToSave));
+      // Only update localStorage if we're saving all lists (excluding "All" list)
+      const dbLists = updatedLists.filter(list => list.name !== "All");
+      if (dbListsToSave.length === dbLists.length) {
+        localStorage.setItem("todo-lists", JSON.stringify(dbLists));
       } else {
         // Update just the changed lists in localStorage
         const currentLists = JSON.parse(
@@ -396,7 +400,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         return updatedList || list;
       });
       
-      localStorage.setItem("todo-lists", JSON.stringify(updatedLists));
+      // Only save database lists to localStorage (exclude "All" list)
+      const dbLists = updatedLists.filter(list => list.name !== "All");
+      localStorage.setItem("todo-lists", JSON.stringify(dbLists));
       set({ 
         lists: updatedLists, 
         error: "Failed to save lists to database, saved locally" 
