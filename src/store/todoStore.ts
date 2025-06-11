@@ -167,13 +167,29 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         userId: list.user_id,
       }));
 
+      // Sort lists: Home first, Completed second, others by creation date
+      const sortedLists = processedLists?.sort((a, b) => {
+        // Home list always comes first
+        if (a.name.toLowerCase() === "home") return -1;
+        if (b.name.toLowerCase() === "home") return 1;
+        
+        // Completed list always comes second
+        if (a.name.toLowerCase() === "completed") return -1;
+        if (b.name.toLowerCase() === "completed") return 1;
+        
+        // For other lists, sort by creation date (created_at field)
+        const aDate = new Date(a.created_at || 0);
+        const bDate = new Date(b.created_at || 0);
+        return aDate.getTime() - bDate.getTime();
+      });
+
       // Set the selectedListId to the Home list's UUID
-      const homeList = processedLists?.find(
+      const homeList = sortedLists?.find(
         (list) => list.name.toLowerCase() === "home"
       );
 
       set({
-        lists: processedLists,
+        lists: sortedLists || [],
         selectedListId: homeList?.id || "home",
         loading: false,
         error: null,
@@ -183,7 +199,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       await get().fetchTodos(user);
 
       toast.success("Connection to database successful!");
-      localStorage.setItem("todo-lists", JSON.stringify(processedLists));
+      localStorage.setItem("todo-lists", JSON.stringify(sortedLists));
     } catch (error) {
       console.error("Failed to fetch from Supabase:", error);
       // Try to load from localStorage with migration support
