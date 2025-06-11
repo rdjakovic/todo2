@@ -106,7 +106,7 @@ const ListEditDialog = ({ isOpen, list, onSave, onCancel }: ListEditDialogProps)
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out">
-      <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-xl w-full max-w-sm sm:max-w-md transform transition-all duration-300 ease-in-out scale-100 max-h-[90vh] min-h-[50vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-xl w-full max-w-sm sm:max-w-md transform transition-all duration-300 ease-in-out scale-100 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-100">
             Edit List
@@ -143,7 +143,7 @@ const ListEditDialog = ({ isOpen, list, onSave, onCancel }: ListEditDialogProps)
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Choose Icon
           </label>
-          <div className="grid grid-cols-6 sm:grid-cols-7 gap-1.5 max-h-50 overflow-y-auto justify-items-center">
+          <div className="grid grid-cols-6 sm:grid-cols-8 gap-1.5 justify-items-center">
             {availableIcons.map(({ name, icon: IconComponent }) => (
               <button
                 key={name}

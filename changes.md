@@ -122,3 +122,12 @@
 - Added subtle border (`border-gray-200`) in light mode for better definition
 - Dark theme retains the original dark styling for consistency
 - Updated `src/components/TodoListView.tsx` with improved color scheme for light/dark theme compatibility
+
+## 2025-01-27 20:00:00 - Optimized List Dialogs for Desktop Screens
+- Removed excessive empty space in Edit List and Create List dialogs on non-mobile screens
+- Removed `min-h-[50vh]` constraint that was forcing unnecessary height on desktop
+- Increased icon grid from 7 to 8 columns on larger screens for better space utilization
+- Removed `max-h-50 overflow-y-auto` from icon grid since all icons now fit without scrolling
+- Mobile layout remains unchanged to preserve optimal mobile experience
+- Updated both `src/components/ListEditDialog.tsx` and `src/components/CreateListDialog.tsx`
+- Dialogs now have more compact, appropriate sizing for desktop while maintaining mobile responsiveness
