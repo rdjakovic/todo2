@@ -73,3 +73,10 @@
 - Added flex-shrink-0 to the toggle button to prevent it from shrinking
 - Simplified the notes display logic by removing the extra container div
 - Updated `src/components/TodoItem.tsx` for more compact and space-efficient design
+
+## 2025-01-27 18:30:00 - Positioned Notes Toggle Next to Title
+- Moved the notes toggle button to be immediately to the right of the todo title with small spacing
+- Changed from flexbox justify-between layout to inline layout with `ml-2` spacing
+- Toggle button now appears directly after the title text rather than at the end of the line
+- Uses `inline-flex` for the button to maintain proper alignment with the text
+- Updated `src/components/TodoItem.tsx` for more natural reading flow and better space utilization

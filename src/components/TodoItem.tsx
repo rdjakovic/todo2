@@ -134,15 +134,15 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
                     "line-through text-gray-500 dark:text-gray-400"
                 )}
               >
-                <span className="flex items-center justify-between gap-2">
-                  <span>{todo.title}</span>
+                <span className="inline">
+                  {todo.title}
                   {todo.notes && todo.notes.trim() && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowNotes(!showNotes);
                       }}
-                      className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors flex-shrink-0"
+                      className="ml-2 inline-flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
                     >
                       {showNotes ? (
                         <ChevronUpIcon className="w-3 h-3" />
