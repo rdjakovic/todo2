@@ -18,3 +18,8 @@
   - Added max-height and overflow handling for small screens
 - Added custom Tailwind breakpoints including 'xs' for 375px (iPhone SE size)
 - Improved overall mobile user experience with better touch interactions
+
+## 2025-01-31 11:15:00 - Reduced icon grid height in Edit List dialog
+- Changed max-height of icon grid from 48 (192px) to 32 (128px) to prevent vertical scrollbar
+- This ensures the dialog fits better within viewport constraints while maintaining usability
+- Icon grid remains scrollable but with a more compact height
