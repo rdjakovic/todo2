@@ -151,7 +151,7 @@ const CreateListDialog = ({ isOpen, onSave, onCancel }: CreateListDialogProps) =
                 )}
                 title={name}
               >
-                <IconComponent className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                <IconComponent className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               </button>
             ))}
           </div>

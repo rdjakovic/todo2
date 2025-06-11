@@ -29,3 +29,10 @@
 - Added proper error handling and success/error toast notifications for list creation
 - Ensured localStorage is updated correctly after successful list creation
 - New lists now appear immediately in the sidebar without requiring a page refresh
+- New lists now appear immediately in the sidebar without requiring a page refresh
+
+## 2025-01-27 17:15:00 - Increased Icon Size in List Dialogs
+- Made icons in the "Choose Icon" section slightly larger in both Edit List and Create List dialogs
+- Changed icon size from `w-4 h-4` to `w-5 h-5` for better visibility and easier selection
+- Updated both `src/components/ListEditDialog.tsx` and `src/components/CreateListDialog.tsx`
+- Improves user experience when selecting icons for lists
