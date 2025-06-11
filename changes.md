@@ -103,3 +103,13 @@
 - TodoForm is now only visible on regular user-created lists where adding todos makes logical sense
 - Updated conditional rendering in `src/components/TodoListView.tsx` using existing `isAllList` and `isCompletedList` flags
 - Improves user experience by preventing confusion about where new todos should be added
+
+## 2025-01-27 19:30:00 - Added Statistics Section to All List View
+- Added a comprehensive statistics dashboard that only appears when viewing the "All" list
+- Statistics include: Total Tasks, Completed Tasks, High Priority Tasks (incomplete), and Progress percentage
+- Features a dark gray/black background with white text for visual prominence, similar to the provided design
+- Uses a responsive grid layout (2 columns on mobile, 4 columns on larger screens)
+- Statistics automatically update as todos are added, completed, or modified
+- Progress percentage is calculated as (completed tasks / total tasks) * 100
+- High Priority count only includes incomplete high-priority tasks for actionable insights
+- Updated `src/components/TodoListView.tsx` with statistics calculation and display logic

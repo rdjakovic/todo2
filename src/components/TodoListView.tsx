@@ -14,6 +14,7 @@ import { useState } from "react";
 const TodoListView: React.FC = () => {
   const {
     lists,
+    todos,
     selectedListId,
     error,
     toggleTodo,
@@ -38,6 +39,22 @@ const TodoListView: React.FC = () => {
   const isCompletedList = currentList?.name.toLowerCase() === "completed";
   const isAllList = currentList?.name.toLowerCase() === "all";
 
+  // Calculate statistics for "All" list
+  const getStatistics = () => {
+    const totalTasks = todos.length;
+    const completedTasks = todos.filter(todo => todo.completed).length;
+    const highPriorityTasks = todos.filter(todo => todo.priority === "high" && !todo.completed).length;
+    const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    
+    return {
+      totalTasks,
+      completedTasks,
+      highPriorityTasks,
+      progress
+    };
+  };
+
+  const statistics = getStatistics();
   const handleToggleShowCompleted = () => {
     // Prevent toggling for "Completed" list
     if (isCompletedList) {
@@ -146,6 +163,50 @@ const TodoListView: React.FC = () => {
               </button>
             </div>
           </div>
+          {/* Statistics section - only show for "All" list */}
+          {isAllList && (
+            <div className="mb-6 sm:mb-8">
+              <div className="bg-gray-800 dark:bg-gray-900 rounded-xl p-6 text-white">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+                  <div className="text-center">
+                    <div className="text-2xl sm:text-3xl font-bold mb-1">
+                      {statistics.totalTasks}
+                    </div>
+                    <div className="text-sm text-gray-300">
+                      Total Tasks
+                    </div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="text-2xl sm:text-3xl font-bold mb-1">
+                      {statistics.completedTasks}
+                    </div>
+                    <div className="text-sm text-gray-300">
+                      Completed
+                    </div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="text-2xl sm:text-3xl font-bold mb-1">
+                      {statistics.highPriorityTasks}
+                    </div>
+                    <div className="text-sm text-gray-300">
+                      High Priority
+                    </div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <div className="text-2xl sm:text-3xl font-bold mb-1">
+                      {statistics.progress}%
+                    </div>
+                    <div className="text-sm text-gray-300">
+                      Progress
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 p-4 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg text-red-600 dark:text-red-200">
