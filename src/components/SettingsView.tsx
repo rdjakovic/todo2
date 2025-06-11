@@ -103,7 +103,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme }) => {
                     value={option.value}
                     checked={sortBy === option.value}
                     onChange={(e) => setSortBy(e.target.value as SortOption)}
-                    className="mt-1 w-4 h-4 text-red-600 border-gray-300 dark:border-gray-600 focus:ring-red-500 dark:focus:ring-red-400 bg-red-600 dark:bg-red-600"
+                    className="mt-1 w-4 h-4 text-red-600 border-gray-300 dark:border-gray-600 focus:ring-red-500 dark:focus:ring-gray-400 bg-red-600 dark:bg-red-600"
                   />
                   <div className="flex-1">
                     <div className="font-medium text-gray-900 dark:text-white">
