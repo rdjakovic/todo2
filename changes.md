@@ -34,3 +34,9 @@
 - Reduced spacing between sections (mb-6 to mb-4) for more compact vertical layout
 - Added `flex items-center justify-center` to icon buttons for perfect centering
 - These changes ensure the dialog fits on mobile screens without scrollbars while maintaining usability
+
+## 2025-01-31 12:00:00 - Increased Edit List dialog height by 20%
+- Added `min-h-[50vh]` to the dialog container to increase the minimum height by approximately 20%
+- Increased icon grid max-height from `max-h-24` (96px) to `max-h-32` (128px) to better utilize the additional space
+- This provides more breathing room for the dialog content while maintaining the responsive design
+- The dialog now has a more comfortable layout with better proportions
