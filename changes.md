@@ -80,3 +80,11 @@
 - Toggle button now appears directly after the title text rather than at the end of the line
 - Uses `inline-flex` for the button to maintain proper alignment with the text
 - Updated `src/components/TodoItem.tsx` for more natural reading flow and better space utilization
+
+## 2025-01-27 18:45:00 - Improved Medium Priority Colors for Dark Mode
+- Updated medium priority colors to be more vibrant and visible in dark mode
+- Changed background from `dark:bg-yellow-950/30` to `dark:bg-yellow-900/30` for better visibility
+- Updated border from `dark:border-yellow-900/50` to `dark:border-yellow-800/50` for more contrast
+- Improved completed medium priority items with lighter backgrounds and borders
+- Enhanced priority badge colors: background from `dark:bg-yellow-900/50` to `dark:bg-yellow-800/50` and text from `dark:text-yellow-300` to `dark:text-yellow-400`
+- Updated `src/components/TodoItem.tsx` for better color contrast and readability in dark mode
