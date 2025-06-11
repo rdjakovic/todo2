@@ -87,7 +87,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
   // UI state
   isSidebarOpen:
-    typeof window !== "undefined" ? window.innerWidth >= 768 : true,
+    typeof window !== "undefined" ? window.innerWidth >= 1024 : true,
   sidebarWidth: 256,
   windowWidth: typeof window !== "undefined" ? window.innerWidth : 1024,
 

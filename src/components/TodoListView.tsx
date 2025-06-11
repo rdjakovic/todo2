@@ -64,10 +64,10 @@ const TodoListView: React.FC = () => {
   return (
     <>
       <div className="flex-1 p-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
+        <div className="max-w-4xl mx-auto px-2 sm:px-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4">
             <div className="flex items-center gap-3">
-              <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 dark:text-white">
                 {currentList?.name || "Todos"}
               </h1>
               {canEditOrDelete && (
@@ -90,8 +90,8 @@ const TodoListView: React.FC = () => {
               )}
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600 dark:text-gray-300 text-right">
+            <div className="flex items-center gap-2 justify-between sm:justify-end">
+              <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                 {currentList?.showCompleted ? "Showing All" : "Hiding Completed"}
               </span>
               <button

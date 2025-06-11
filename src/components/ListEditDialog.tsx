@@ -106,9 +106,9 @@ const ListEditDialog = ({ isOpen, list, onSave, onCancel }: ListEditDialogProps)
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md transform transition-all duration-300 ease-in-out scale-100">
+      <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-xl w-full max-w-sm sm:max-w-md transform transition-all duration-300 ease-in-out scale-100 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-100">
             Edit List
           </h2>
           <button
@@ -133,7 +133,7 @@ const ListEditDialog = ({ isOpen, list, onSave, onCancel }: ListEditDialogProps)
             value={editName}
             onChange={(e) => setEditName(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
+            className="w-full px-3 py-3 sm:py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-base sm:text-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
             placeholder="Enter list name"
             autoFocus
           />
@@ -143,37 +143,37 @@ const ListEditDialog = ({ isOpen, list, onSave, onCancel }: ListEditDialogProps)
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Choose Icon
           </label>
-          <div className="grid grid-cols-6 gap-2 max-h-48 overflow-y-auto">
+          <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 max-h-48 overflow-y-auto">
             {availableIcons.map(({ name, icon: IconComponent }) => (
               <button
                 key={name}
                 onClick={() => setSelectedIcon(name)}
                 className={clsx(
-                  'p-2 rounded-lg border-2 transition-colors',
+                  'p-3 sm:p-2 rounded-lg border-2 transition-colors',
                   selectedIcon === name
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/50'
                     : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                 )}
                 title={name}
               >
-                <IconComponent className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                <IconComponent className="w-6 h-6 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-300" />
               </button>
             ))}
           </div>
         </div>
 
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-col sm:flex-row justify-end gap-3">
           <button
             onClick={onCancel}
             type="button"
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-offset-gray-800"
+            className="px-4 py-3 sm:py-2 text-base sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-offset-gray-800 order-2 sm:order-1"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             type="button"
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800"
+            className="px-4 py-3 sm:py-2 text-base sm:text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center justify-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800 order-1 sm:order-2"
           >
             <CheckIcon className="w-4 h-4" />
             Save

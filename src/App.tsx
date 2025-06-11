@@ -184,9 +184,9 @@ function App() {
             className="flex-1 transition-all duration-300"
             style={{
               marginLeft:
-                windowWidth >= 768 && isSidebarOpen ? `${sidebarWidth}px` : "0",
+                windowWidth >= 1024 && isSidebarOpen ? `${sidebarWidth}px` : "0",
               paddingTop:
-                (!isSidebarOpen && windowWidth >= 768) || windowWidth < 768
+                (!isSidebarOpen && windowWidth >= 1024) || windowWidth < 1024
                   ? "4rem"
                   : "1rem",
             }}

@@ -100,14 +100,14 @@ export function Sidebar() {
         onClick={onToggle}
         className={clsx(
           "fixed top-4 left-4 p-2 rounded-lg bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 z-50",
-          isOpen && windowWidth >= 768 ? "hidden" : "block"
+          isOpen && windowWidth >= 1024 ? "hidden" : "block"
         )}
         title="Toggle sidebar"
       >
         <Bars3Icon className="w-6 h-6 text-gray-600 dark:text-gray-200" />
       </button>
 
-      {isOpen && windowWidth < 768 && (
+      {isOpen && windowWidth < 1024 && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40"
           onClick={onToggle}
@@ -118,8 +118,8 @@ export function Sidebar() {
         role="navigation"
         className={clsx(
           "h-screen border-r border-gray-200 dark:border-gray-700 flex flex-col z-50 transition-transform duration-300 bg-white dark:bg-gray-800",
-          windowWidth >= 768
-            ? "md:fixed inset-y-0 left-0"
+          windowWidth >= 1024
+            ? "lg:fixed inset-y-0 left-0"
             : "fixed inset-y-0 left-0",
           !isOpen && "-translate-x-full"
         )}
@@ -201,7 +201,7 @@ export function Sidebar() {
           </button>
         </div>
 
-        {windowWidth >= 768 && (
+        {windowWidth >= 1024 && (
           <div
             className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-purple-500 transition-colors"
             onMouseDown={startResizing}
