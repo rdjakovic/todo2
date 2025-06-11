@@ -9,7 +9,6 @@ import {
 } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import { ListItem } from "./ListItem";
-import { getListNameById } from "../utils/helper";
 import { useAuthStore } from "../store/authStore";
 import { useTodoStore } from "../store/todoStore";
 
@@ -25,8 +24,6 @@ export function Sidebar() {
     setSidebarWidth: onWidthChange,
     toggleSidebar: onToggle,
     createList: onCreateList,
-    deleteList: onDeleteList,
-    editList: onEditList,
     getTodoCountByList,
   } = useTodoStore();
   
@@ -35,8 +32,6 @@ export function Sidebar() {
   
   const [isCreating, setIsCreating] = useState(false);
   const [newListName, setNewListName] = useState("");
-  const [editingListId, setEditingListId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState("");
   const [isResizing, setIsResizing] = useState(false);
 
   const startResizing = useCallback(() => {
@@ -99,26 +94,6 @@ export function Sidebar() {
     }
   };
 
-  const handleEditList = (id: string) => {
-    const listName = getListNameById(lists, id);
-    if (listName === "home" || listName === "completed") {
-      return;
-    }
-    const list = lists.find((l) => l.id === id);
-    if (list) {
-      setEditingListId(id);
-      setEditingName(list.name);
-    }
-  };
-
-  const handleSaveEdit = async () => {
-    if (editingListId && editingName.trim()) {
-      await onEditList(editingListId, editingName.trim());
-      setEditingListId(null);
-      setEditingName("");
-    }
-  };
-
   return (
     <>
       <button
@@ -151,52 +126,15 @@ export function Sidebar() {
         style={{ width: width + "px" }}
       >
         <div className="p-4 flex-1 space-y-2 overflow-y-auto">
-          {lists.map((list) =>
-            editingListId === list.id ? (
-              <div key={list.id} className="flex-1 flex gap-2">
-                <input
-                  type="text"
-                  value={editingName}
-                  onChange={(e) => setEditingName(e.target.value)}
-                  className="flex-1 w-0 min-w-0 px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"
-                  placeholder="Enter list name"
-                  title="Edit list name"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleSaveEdit();
-                    } else if (e.key === "Escape") {
-                      setEditingListId(null);
-                    }
-                  }}
-                />
-                <button
-                  onClick={handleSaveEdit}
-                  className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900 rounded-lg"
-                  title="Save"
-                >
-                  <CheckIcon className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setEditingListId(null)}
-                  className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                  title="Cancel"
-                >
-                  <XMarkIcon className="w-5 h-5" />
-                </button>
-              </div>
-            ) : (
-              <ListItem
-                key={list.id}
-                list={list}
-                onSelect={() => onSelectList(list.id)}
-                selected={selectedList === list.id}
-                onEdit={() => handleEditList(list.id)}
-                onDelete={() => onDeleteList(list.id)}
-                todoCount={todoCountByList[list.id] || 0}
-              />
-            )
-          )}
+          {lists.map((list) => (
+            <ListItem
+              key={list.id}
+              list={list}
+              onSelect={() => onSelectList(list.id)}
+              selected={selectedList === list.id}
+              todoCount={todoCountByList[list.id] || 0}
+            />
+          ))}
 
           {isCreating ? (
             <div className="flex gap-2">

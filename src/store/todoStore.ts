@@ -67,7 +67,7 @@ interface TodoState {
   addTodoFromForm: (e: React.FormEvent) => Promise<void>;
   createList: (name: string) => Promise<void>;
   deleteList: (id: string) => Promise<void>;
-  editList: (id: string, name: string) => Promise<void>;
+  editList: (id: string, name: string, icon?: string) => Promise<void>;
   toggleSidebar: () => void;
 }
 
@@ -659,8 +659,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   },
 
   editList: async (id: string, name: string) => {
+  editList: async (id: string, name: string, icon?: string) => {
     const { lists, saveLists } = get();
-    const updatedLists = lists.map((l) => (l.id === id ? { ...l, name } : l));
+    const updatedLists = lists.map((l) => 
+      l.id === id ? { ...l, name, ...(icon && { icon }) } : l
+    );
     await saveLists(updatedLists);
   },
 

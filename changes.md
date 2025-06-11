@@ -47,3 +47,14 @@
   2. Added proper state merging to only update the changed lists while maintaining others
   3. Improved error handling to ensure lists state is properly maintained even if the API call fails
   4. Ensured the UI stays consistent by merging partial updates with existing data
+
+2025-01-03 21:30:00
+- Moved list edit and delete functionality from Sidebar to TodoListView with enhanced dialogs:
+  1. Created ListEditDialog component with icon selection from 25+ heroicons
+  2. Created DeleteListDialog component with confirmation warning
+  3. Removed edit/delete buttons from ListItem and Sidebar components
+  4. Added edit/delete buttons next to list name in TodoListView header
+  5. Updated editList function to support icon changes
+  6. Enhanced getIconForList function to support all new icon options
+  7. Restricted edit/delete actions to custom lists only (not Home/Completed)
+  8. Added proper keyboard navigation and accessibility features to dialogs
