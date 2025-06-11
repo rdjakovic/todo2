@@ -23,3 +23,14 @@
 - Changed max-height of icon grid from 48 (192px) to 32 (128px) to prevent vertical scrollbar
 - This ensures the dialog fits better within viewport constraints while maintaining usability
 - Icon grid remains scrollable but with a more compact height
+
+## 2025-01-31 11:30:00 - Fixed Edit List dialog responsive layout and mobile optimization
+- Centered icons in the grid using `justify-items-center` for proper alignment
+- Reduced icon grid height from 32 (128px) to 24 (96px) to prevent mobile scrollbars
+- Made icon grid more compact with 6-7 columns instead of 5-6 for better space utilization
+- Reduced icon button padding and icon sizes for more compact layout
+- Standardized input field height by removing mobile-specific padding variations
+- Reduced button padding and removed mobile-specific text size variations
+- Reduced spacing between sections (mb-6 to mb-4) for more compact vertical layout
+- Added `flex items-center justify-center` to icon buttons for perfect centering
+- These changes ensure the dialog fits on mobile screens without scrollbars while maintaining usability
