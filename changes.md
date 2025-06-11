@@ -46,3 +46,13 @@
 - Completed todos maintain a gray background regardless of priority
 - Updated `src/components/TodoItem.tsx` with helper functions for priority colors and badges
 - Improves visual organization and quick identification of task priorities
+
+## 2025-01-27 17:45:00 - Updated Completed Items Priority Colors
+- Modified completed todo items to maintain their priority-based color coding
+- Completed items now show a more subtle version of their priority colors (50% opacity for backgrounds, 30% for borders)
+- High priority completed items: subtle red tint
+- Medium priority completed items: subtle yellow tint  
+- Low priority completed items: subtle blue tint
+- Items without priority still use gray background when completed
+- Updated `getPriorityColors` helper function in `src/components/TodoItem.tsx`
+- Allows users to still identify task priorities even after completion
