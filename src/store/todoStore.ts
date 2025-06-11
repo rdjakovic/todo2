@@ -658,8 +658,6 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     }
   },
 
-  editList: async (id: string, name: string) => {
-  }
   editList: async (id: string, name: string, icon?: string) => {
     const { lists, saveLists } = get();
     const updatedLists = lists.map((l) => 
