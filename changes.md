@@ -170,3 +170,13 @@
 - Added proper validation to ensure due date is a valid Date object before formatting
 - Updated `src/components/TodoItem.tsx` with due date badge styling and display logic
 - Improves visibility of upcoming deadlines and task scheduling information
+
+## 2025-01-27 21:00:00 - Added Due Date Sorting Option
+- Added "Due Date" sorting option to the Settings > Sorting Items section
+- New sorting option sorts todos by due date with earliest due dates appearing first
+- Items with due dates are prioritized over items without due dates
+- Items without due dates are sorted by creation date (newest first) as fallback
+- Added `dueDate` to the `SortOption` type in `src/store/todoStore.ts`
+- Updated sorting logic in `sortTodos` helper function to handle due date sorting
+- Updated `src/components/SettingsView.tsx` with new sorting option and description
+- Enhances task management by allowing users to organize todos by upcoming deadlines

@@ -11,7 +11,8 @@ export type SortOption =
   | "priority" 
   | "dateCompleted" 
   | "completedFirst" 
-  | "completedLast";
+  | "completedLast"
+  | "dueDate";
 
 interface TodoState {
   lists: TodoList[];
@@ -132,6 +133,18 @@ const sortTodos = (todos: Todo[], sortBy: SortOption): Todo[] => {
         if (a.completed && !b.completed) return 1;
         if (!a.completed && b.completed) return -1;
         // If same completion status, sort by date created
+        return new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime();
+      });
+    
+    case "dueDate":
+      return sortedTodos.sort((a, b) => {
+        // Items with due dates come first, sorted by due date (earliest first)
+        if (a.dueDate && b.dueDate) {
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        }
+        if (a.dueDate && !b.dueDate) return -1;
+        if (!a.dueDate && b.dueDate) return 1;
+        // If both have no due date, sort by date created
         return new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime();
       });
     

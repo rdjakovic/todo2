@@ -32,6 +32,11 @@ const sortOptions: { value: SortOption; label: string; description: string }[] =
     value: "completedLast",
     label: "Completed Last",
     description: "Show completed items at the bottom"
+  },
+  {
+    value: "dueDate",
+    label: "Due Date",
+    description: "Sort by due date (earliest first), then by creation date"
   }
 ];
 
