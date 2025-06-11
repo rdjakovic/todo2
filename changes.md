@@ -96,3 +96,10 @@
 - This creates a cleaner, more minimal interface while maintaining priority visibility
 - Updated `getPriorityColors` helper function in `src/components/TodoItem.tsx` to return consistent colors
 - Completed and non-completed items maintain their distinct styling through opacity and strikethrough effects
+
+## 2025-01-27 19:15:00 - Removed TodoForm from Special Lists
+- Hidden the TodoForm component on "All" and "Completed" lists since these are virtual/aggregate lists
+- Users can no longer attempt to add todos directly to these special lists
+- TodoForm is now only visible on regular user-created lists where adding todos makes logical sense
+- Updated conditional rendering in `src/components/TodoListView.tsx` using existing `isAllList` and `isCompletedList` flags
+- Improves user experience by preventing confusion about where new todos should be added

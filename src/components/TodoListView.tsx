@@ -153,7 +153,8 @@ const TodoListView: React.FC = () => {
             </div>
           )}
 
-          <TodoForm />
+          {/* Only show TodoForm for regular lists, not for "All" or "Completed" */}
+          {!isAllList && !isCompletedList && <TodoForm />}
 
           <AnimatePresence mode="popLayout">
             <TodoListItems
