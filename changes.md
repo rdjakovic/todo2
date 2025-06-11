@@ -6,3 +6,10 @@
 - Added filtering logic to prevent the "All" list from being sent to the database while maintaining it in the local state
 - Updated localStorage saving logic to consistently exclude the "All" list from database operations
 - This resolves the "invalid input syntax for type uuid" error when saving lists to Supabase
+
+## 2025-01-27 16:00:00 - Fixed All List Toggle Functionality
+- Modified `handleToggleShowCompleted` function in `src/components/TodoListView.tsx` to handle the "All" list differently
+- The "All" list is a virtual client-side list that should not be saved to the database
+- Added special handling for the "All" list to only update local state without attempting to save to Supabase
+- This prevents database errors when toggling show/hide completed for the "All" list while maintaining the filtering functionality
+- Regular lists continue to save their toggle state to the database as expected

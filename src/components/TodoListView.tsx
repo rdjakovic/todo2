@@ -36,6 +36,7 @@ const TodoListView: React.FC = () => {
     currentList.name !== "Completed";
   
   const isCompletedList = currentList?.name.toLowerCase() === "completed";
+  const isAllList = currentList?.name.toLowerCase() === "all";
 
   const handleToggleShowCompleted = () => {
     // Prevent toggling for "Completed" list
@@ -44,6 +45,20 @@ const TodoListView: React.FC = () => {
     }
     
     if (currentList) {
+      // For "All" list, only update local state without saving to database
+      if (isAllList) {
+        const updatedList = {
+          ...currentList,
+          showCompleted: !currentList.showCompleted,
+        };
+        const newLists = lists.map((list) =>
+          list.id === selectedListId ? updatedList : list
+        );
+        setLists(newLists);
+        return;
+      }
+      
+      // For regular lists, update state and save to database
       const updatedList = {
         ...currentList,
         showCompleted: !currentList.showCompleted,
