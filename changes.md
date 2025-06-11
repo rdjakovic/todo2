@@ -88,3 +88,11 @@
 - Improved completed medium priority items with lighter backgrounds and borders
 - Enhanced priority badge colors: background from `dark:bg-yellow-900/50` to `dark:bg-yellow-800/50` and text from `dark:text-yellow-300` to `dark:text-yellow-400`
 - Updated `src/components/TodoItem.tsx` for better color contrast and readability in dark mode
+
+## 2025-01-27 19:00:00 - Removed Priority Background Colors from Todo Items
+- Simplified todo item design by removing priority-based background colors
+- Todo items now have consistent white/gray backgrounds regardless of priority level
+- Priority information is now conveyed exclusively through colored badges next to the creation date
+- This creates a cleaner, more minimal interface while maintaining priority visibility
+- Updated `getPriorityColors` helper function in `src/components/TodoItem.tsx` to return consistent colors
+- Completed and non-completed items maintain their distinct styling through opacity and strikethrough effects

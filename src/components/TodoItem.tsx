@@ -26,24 +26,10 @@ const MotionDiv = motion.div;
 
 // Helper function to get priority colors
 const getPriorityColors = (priority?: "low" | "medium" | "high", completed?: boolean) => {
-  switch (priority) {
-    case "high":
-      return completed 
-        ? "bg-red-50/50 dark:bg-red-950/20 border-red-100/50 dark:border-red-900/30"
-        : "bg-red-50 dark:bg-red-950/30 border-red-100 dark:border-red-900/50";
-    case "medium":
-      return completed
-        ? "bg-yellow-50/50 dark:bg-yellow-900/20 border-yellow-100/50 dark:border-yellow-800/30"
-        : "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-100 dark:border-yellow-800/50";
-    case "low":
-      return completed
-        ? "bg-blue-50/50 dark:bg-blue-950/20 border-blue-100/50 dark:border-blue-900/30"
-        : "bg-blue-50 dark:bg-blue-950/30 border-blue-100 dark:border-blue-900/50";
-    default:
-      return completed
-        ? "bg-gray-50 dark:bg-gray-900 border-gray-100 dark:border-gray-700"
-        : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700";
-  }
+  // Return consistent background and border colors regardless of priority
+  return completed
+    ? "bg-gray-50 dark:bg-gray-900 border-gray-100 dark:border-gray-700"
+    : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700";
 };
 
 // Helper function to get priority badge colors
