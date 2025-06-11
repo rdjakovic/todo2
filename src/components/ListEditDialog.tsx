@@ -143,7 +143,7 @@ const ListEditDialog = ({ isOpen, list, onSave, onCancel }: ListEditDialogProps)
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Choose Icon
           </label>
-          <div className="grid grid-cols-6 sm:grid-cols-7 gap-1.5 max-h-32 overflow-y-auto justify-items-center">
+          <div className="grid grid-cols-6 sm:grid-cols-7 gap-1.5 max-h-40 overflow-y-auto justify-items-center">
             {availableIcons.map(({ name, icon: IconComponent }) => (
               <button
                 key={name}
