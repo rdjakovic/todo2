@@ -36,3 +36,13 @@
 - Changed icon size from `w-4 h-4` to `w-5 h-5` for better visibility and easier selection
 - Updated both `src/components/ListEditDialog.tsx` and `src/components/CreateListDialog.tsx`
 - Improves user experience when selecting icons for lists
+
+## 2025-01-27 17:30:00 - Added Priority Colors to Todo Items
+- Added color-coded backgrounds to todo items based on their priority levels
+- High priority todos now have a red tint background (`bg-red-50` light, `bg-red-950/30` dark)
+- Medium priority todos have a yellow tint background (`bg-yellow-50` light, `bg-yellow-950/30` dark)
+- Low priority todos have a blue tint background (`bg-blue-50` light, `bg-blue-950/30` dark)
+- Added priority badges next to the creation date showing the priority level with matching colors
+- Completed todos maintain a gray background regardless of priority
+- Updated `src/components/TodoItem.tsx` with helper functions for priority colors and badges
+- Improves visual organization and quick identification of task priorities
