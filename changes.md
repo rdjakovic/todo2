@@ -19,3 +19,10 @@
 - Disabled the show/hide completed toggle for the "Completed" list since it should always show all completed tasks
 - Added visual feedback (disabled state, opacity, cursor) for the toggle button when on "Completed" list
 - Updated the toggle label text to indicate "All Completed Tasks" when viewing the "Completed" list
+
+## 2025-01-01 12:00:00 - Enhanced Completed List Drag and Drop Behavior
+- Implemented special drag and drop behavior for the "Completed" list
+- When dragging a todo from any list TO the "Completed" list: automatically marks the todo as completed and sets dateOfCompletion
+- When dragging a todo FROM the "Completed" list TO another list: automatically marks the todo as not completed and clears dateOfCompletion
+- This provides intuitive behavior where the "Completed" list acts as a completion state manager during drag operations
+- Enhanced user experience by making the completion status automatically sync with the list placement
