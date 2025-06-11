@@ -34,8 +34,15 @@ const TodoListView: React.FC = () => {
   const canEditOrDelete = currentList && 
     currentList.name !== "Home" && 
     currentList.name !== "Completed";
+  
+  const isCompletedList = currentList?.name.toLowerCase() === "completed";
 
   const handleToggleShowCompleted = () => {
+    // Prevent toggling for "Completed" list
+    if (isCompletedList) {
+      return;
+    }
+    
     if (currentList) {
       const updatedList = {
         ...currentList,
@@ -92,24 +99,33 @@ const TodoListView: React.FC = () => {
 
             <div className="flex items-center gap-2 justify-between sm:justify-end">
               <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-                {currentList?.showCompleted ? "Showing All" : "Hiding Completed"}
+                {isCompletedList 
+                  ? "All Completed Tasks" 
+                  : currentList?.showCompleted 
+                    ? "Showing All" 
+                    : "Hiding Completed"
+                }
               </span>
               <button
                 onClick={handleToggleShowCompleted}
+                disabled={isCompletedList}
                 className={clsx(
-                  "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500",
-                  currentList?.showCompleted 
+                  "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none",
+                  !isCompletedList && "focus:ring-2 focus:ring-purple-500",
+                  isCompletedList 
+                    ? "bg-gray-300 dark:bg-gray-600 cursor-not-allowed opacity-50"
+                    : currentList?.showCompleted 
                     ? "bg-green-500 dark:bg-green-600" 
                     : "bg-gray-200 dark:bg-gray-700"
                 )}
                 role="switch"
-                aria-checked={currentList?.showCompleted}
-                aria-label="Toggle completed todos visibility"
+                aria-checked={isCompletedList ? true : currentList?.showCompleted}
+                aria-label={isCompletedList ? "Completed list always shows all completed todos" : "Toggle completed todos visibility"}
               >
                 <span
                   className={clsx(
                     "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-                    currentList?.showCompleted ? "translate-x-6" : "translate-x-1"
+                    (isCompletedList || currentList?.showCompleted) ? "translate-x-6" : "translate-x-1"
                   )}
                 />
               </button>

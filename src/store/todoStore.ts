@@ -559,6 +559,12 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     const currentList = lists.find((list) => list.id === selectedListId);
     if (!currentList) return [];
 
+    // Special handling for "Completed" list - show all completed todos from all lists
+    if (currentList.name.toLowerCase() === "completed") {
+      return todos.filter((todo) => todo.completed);
+    }
+
+    // For other lists, filter by listId and showCompleted setting
     const listTodos = todos.filter((todo) => todo.listId === selectedListId);
     return currentList.showCompleted
       ? listTodos
@@ -566,16 +572,27 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   },
 
   getTodoCountByList: () => {
-    const { todos } = get();
+    const { todos, lists } = get();
     const counts: Record<string, number> = {};
+    
+    // Initialize counts for all lists
+    lists.forEach((list) => {
+      counts[list.id] = 0;
+    });
+    
     todos.forEach((todo) => {
-      if (!counts[todo.listId]) {
-        counts[todo.listId] = 0;
-      }
-      if (!todo.completed) {
+      // For regular lists, count incomplete todos
+      if (!todo.completed && counts.hasOwnProperty(todo.listId)) {
         counts[todo.listId]++;
       }
     });
+    
+    // Special handling for "Completed" list - count all completed todos
+    const completedList = lists.find((list) => list.name.toLowerCase() === "completed");
+    if (completedList) {
+      counts[completedList.id] = todos.filter((todo) => todo.completed).length;
+    }
+    
     return counts;
   },
 
