@@ -65,7 +65,7 @@ interface TodoState {
   openEditDialog: (todo: Todo) => void;
   closeEditDialog: () => void;
   addTodoFromForm: (e: React.FormEvent) => Promise<void>;
-  createList: (name: string) => Promise<void>;
+  createList: (name: string, icon?: string) => Promise<void>;
   deleteList: (id: string) => Promise<void>;
   editList: (id: string, name: string, icon?: string) => Promise<void>;
   toggleSidebar: () => void;
@@ -667,7 +667,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     set({ newTodo: "" });
   },
 
-  createList: async (name: string) => {
+  createList: async (name: string, icon: string = "home") => {
     const { lists, saveLists } = get();
     // Get current user from auth store
     const currentUser = useAuthStore.getState().user;
@@ -678,7 +678,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     const newList: TodoList = {
       id: crypto.randomUUID(),
       name,
-      icon: "home",
+      icon,
       showCompleted: true,
       userId: currentUser.id,
     };

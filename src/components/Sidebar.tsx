@@ -1,14 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   PlusIcon,
-  XMarkIcon,
   Cog6ToothIcon,
-  CheckIcon,
   Bars3Icon,
   ArrowLeftOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import { ListItem } from "./ListItem";
+import CreateListDialog from "./CreateListDialog";
 import { useAuthStore } from "../store/authStore";
 import { useTodoStore } from "../store/todoStore";
 
@@ -30,8 +29,7 @@ export function Sidebar() {
   const todoCountByList = getTodoCountByList();
   const onSelectSettings = () => onSelectList("settings");
   
-  const [isCreating, setIsCreating] = useState(false);
-  const [newListName, setNewListName] = useState("");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
 
   const startResizing = useCallback(() => {
@@ -86,12 +84,9 @@ export function Sidebar() {
     };
   }, [resize, stopResizing]);
 
-  const handleCreateList = () => {
-    if (newListName.trim()) {
-      onCreateList(newListName);
-      setNewListName("");
-      setIsCreating(false);
-    }
+  const handleCreateList = async (name: string, icon: string) => {
+    await onCreateList(name, icon);
+    setIsCreateDialogOpen(false);
   };
 
   return (
@@ -136,52 +131,13 @@ export function Sidebar() {
             />
           ))}
 
-          {isCreating ? (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newListName}
-                onChange={(e) => setNewListName(e.target.value)}
-                className="flex-1 px-3 py-2 border dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"
-                placeholder="Enter list name"
-                title="New list name"
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleCreateList();
-                  } else if (e.key === "Escape") {
-                    setIsCreating(false);
-                    setNewListName("");
-                  }
-                }}
-              />
-              <button
-                onClick={handleCreateList}
-                className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900 rounded-lg"
-                title="Save"
-              >
-                <CheckIcon className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => {
-                  setIsCreating(false);
-                  setNewListName("");
-                }}
-                className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                title="Cancel"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setIsCreating(true)}
-              className="flex items-center gap-2 px-3 py-2 w-full rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100"
-            >
-              <PlusIcon className="w-5 h-5" />
-              <span>Create new list</span>
-            </button>
-          )}
+          <button
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="flex items-center gap-2 px-3 py-2 w-full rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100"
+          >
+            <PlusIcon className="w-5 h-5" />
+            <span>Create new list</span>
+          </button>
         </div>
 
         <div className="border-t border-gray-200 dark:border-gray-700">
@@ -208,6 +164,12 @@ export function Sidebar() {
           />
         )}
       </div>
+
+      <CreateListDialog
+        isOpen={isCreateDialogOpen}
+        onSave={handleCreateList}
+        onCancel={() => setIsCreateDialogOpen(false)}
+      />
     </>
   );
 }
