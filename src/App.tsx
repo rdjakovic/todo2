@@ -89,6 +89,17 @@ function App() {
     // Check if dropping on a list in sidebar
     const targetList = lists.find((list) => list.id === over.id);
     if (targetList) {
+      // Prevent dropping onto "All" list
+      if (targetList.name.toLowerCase() === "all") {
+        return;
+      }
+      
+      // Check if dragging from "All" list - only allow dropping to "Completed" list
+      const sourceList = lists.find((list) => list.id === selectedListId);
+      if (sourceList?.name.toLowerCase() === "all" && targetList.name.toLowerCase() !== "completed") {
+        return;
+      }
+      
       // Special handling for "Completed" list
       const isTargetCompleted = targetList.name.toLowerCase() === "completed";
       const isSourceCompleted = sourceTodo.completed;

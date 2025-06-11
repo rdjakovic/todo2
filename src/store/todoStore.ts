@@ -74,7 +74,7 @@ interface TodoState {
 export const useTodoStore = create<TodoState>((set, get) => ({
   lists: [],
   todos: [],
-  selectedListId: "home",
+  selectedListId: "all",
   loading: false,
   error: null,
 
@@ -114,7 +114,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     set({
       lists: [],
       todos: [],
-      selectedListId: "home",
+      selectedListId: "all",
       loading: false,
       error: null,
       newTodo: "",
@@ -138,8 +138,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
       // If no lists exist, create initial lists
       if (lists?.length === 0) {
+        const listsToInsert = initialLists.filter(list => list.name !== "All");
         const { error: insertError } = await supabase.from("lists").insert(
-          initialLists.map((list) => ({
+          listsToInsert.map((list) => ({
             name: list.name,
             icon: list.icon,
             show_completed: list.showCompleted,
@@ -167,11 +168,23 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         userId: list.user_id,
       }));
 
+      // Create the "All" list as a client-side only list
+      const allList: TodoList = {
+        id: "all",
+        name: "All",
+        icon: "home",
+        showCompleted: true,
+        userId: user.id,
+      };
+
+      // Prepend the "All" list to the processed lists
+      const allLists = [allList, ...(processedLists || [])];
+
       // Sort lists: Home first, Completed second, others by creation date
-      const sortedLists = processedLists?.sort((a, b) => {
-        // Home list always comes first
-        if (a.name.toLowerCase() === "home") return -1;
-        if (b.name.toLowerCase() === "home") return 1;
+      const sortedLists = allLists.sort((a, b) => {
+        // All list always comes first
+        if (a.name.toLowerCase() === "all") return -1;
+        if (b.name.toLowerCase() === "all") return 1;
         
         // Completed list always comes second
         if (a.name.toLowerCase() === "completed") return -1;
@@ -183,14 +196,14 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         return aDate.getTime() - bDate.getTime();
       });
 
-      // Set the selectedListId to the Home list's UUID
-      const homeList = sortedLists?.find(
-        (list) => list.name.toLowerCase() === "home"
+      // Set the selectedListId to the All list's ID
+      const allListFound = sortedLists.find(
+        (list) => list.name.toLowerCase() === "all"
       );
 
       set({
-        lists: sortedLists || [],
-        selectedListId: homeList?.id || "home",
+        lists: sortedLists,
+        selectedListId: allListFound?.id || "all",
         loading: false,
         error: null,
       });
@@ -199,7 +212,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       await get().fetchTodos(user);
 
       toast.success("Connection to database successful!");
-      localStorage.setItem("todo-lists", JSON.stringify(sortedLists));
+      // Only save the database lists to localStorage (exclude "All" list)
+      const dbLists = sortedLists.filter(list => list.name !== "All");
+      localStorage.setItem("todo-lists", JSON.stringify(dbLists));
     } catch (error) {
       console.error("Failed to fetch from Supabase:", error);
       // Try to load from localStorage with migration support
@@ -559,6 +574,13 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     const currentList = lists.find((list) => list.id === selectedListId);
     if (!currentList) return [];
 
+    // Special handling for "All" list - show all todos from all lists
+    if (currentList.name.toLowerCase() === "all") {
+      return currentList.showCompleted
+        ? todos
+        : todos.filter((todo) => !todo.completed);
+    }
+
     // Special handling for "Completed" list - show all completed todos from all lists
     if (currentList.name.toLowerCase() === "completed") {
       return todos.filter((todo) => todo.completed);
@@ -586,6 +608,12 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         counts[todo.listId]++;
       }
     });
+    
+    // Special handling for "All" list - count all incomplete todos
+    const allList = lists.find((list) => list.name.toLowerCase() === "all");
+    if (allList) {
+      counts[allList.id] = todos.filter((todo) => !todo.completed).length;
+    }
     
     // Special handling for "Completed" list - count all completed todos
     const completedList = lists.find((list) => list.name.toLowerCase() === "completed");
@@ -652,6 +680,12 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   deleteList: async (id: string) => {
     const { lists, todos, saveLists, saveTodos } = get();
 
+    // Prevent deletion of "All" list
+    const listToDelete = lists.find(l => l.id === id);
+    if (listToDelete?.name.toLowerCase() === "all") {
+      toast.error("Cannot delete the All list");
+      return;
+    }
     try {
       // First delete the todos belonging to this list from Supabase
       const { error: todosDeleteError } = await supabase
@@ -676,7 +710,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       set({ lists: updatedLists, todos: updatedTodos, error: null });
 
       // Keep these as fallback for offline support
-      localStorage.setItem("todo-lists", JSON.stringify(updatedLists));
+      // Only save the database lists to localStorage (exclude "All" list)
+      const dbLists = updatedLists.filter(list => list.name !== "All");
+      localStorage.setItem("todo-lists", JSON.stringify(dbLists));
       localStorage.setItem("todos", JSON.stringify(updatedTodos));
     } catch (error) {
       console.error("Failed to delete from Supabase:", error);
@@ -693,6 +729,14 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
   editList: async (id: string, name: string, icon?: string) => {
     const { lists, saveLists } = get();
+    
+    // Prevent editing of "All" list
+    const listToEdit = lists.find(l => l.id === id);
+    if (listToEdit?.name.toLowerCase() === "all") {
+      toast.error("Cannot edit the All list");
+      return;
+    }
+    
     const updatedLists = lists.map((l) => 
       l.id === id ? { ...l, name, ...(icon && { icon }) } : l
     );

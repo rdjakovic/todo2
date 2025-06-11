@@ -32,7 +32,7 @@ const TodoListView: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const canEditOrDelete = currentList && 
-    currentList.name !== "Home" && 
+    currentList.name !== "All" && 
     currentList.name !== "Completed";
   
   const isCompletedList = currentList?.name.toLowerCase() === "completed";

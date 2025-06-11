@@ -26,3 +26,17 @@
 - When dragging a todo FROM the "Completed" list TO another list: automatically marks the todo as not completed and clears dateOfCompletion
 - This provides intuitive behavior where the "Completed" list acts as a completion state manager during drag operations
 - Enhanced user experience by making the completion status automatically sync with the list placement
+
+## 2025-01-01 12:30:00 - Renamed "Home" to "All" and Implemented Special Behavior
+- Renamed the "Home" list to "All" throughout the application
+- Updated the "All" list to be a client-side only placeholder that shows all todos from all lists
+- Modified fetchLists to exclude the "All" list from database operations while creating it locally
+- Updated getFilteredTodos to show all todos when "All" list is selected (respecting showCompleted setting)
+- Updated getTodoCountByList to count all incomplete todos for the "All" list
+- Implemented drag and drop restrictions:
+  - Prevented dropping any todo onto the "All" list
+  - When dragging from "All" list, only allow dropping to "Completed" list
+- Added protection against editing or deleting the "All" list
+- Updated localStorage handling to exclude the "All" list from persistence
+- Updated tests to reflect the "All" list naming
+- The "All" list now serves as a unified view of all todos across all lists while maintaining proper data separation
