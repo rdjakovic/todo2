@@ -11,10 +11,10 @@ const TodoItem = lazy(() => import("./TodoItem"));
 
 interface TodoListItemsProps {
   filteredTodos: Todo[];
-  onToggle: (id: number) => Promise<void>;
-  onDelete: (id: number) => Promise<void>;
+  onToggle: (id: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
   onEdit: (
-    id: number,
+    id: string,
     newText: string,
     newNotes?: string,
     newPriority?: "low" | "medium" | "high",
@@ -28,11 +28,7 @@ const TodoListItems = forwardRef<HTMLDivElement, TodoListItemsProps>(
     if (filteredTodos.length === 0) {
       return (
         <motion.div
-          ref={ref} // Added ref
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          ref={ref}
           className="text-center text-gray-500 dark:text-gray-400 py-8"
         >
           No todos yet. Add one above!
@@ -41,14 +37,7 @@ const TodoListItems = forwardRef<HTMLDivElement, TodoListItemsProps>(
     }
 
     return (
-      <motion.div
-        ref={ref} // Added ref
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.15 }}
-        layout
-      >
+      <motion.div ref={ref} layout>
         <SortableContext
           items={filteredTodos.map((t) => t.id)}
           strategy={verticalListSortingStrategy}

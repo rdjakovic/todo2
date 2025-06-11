@@ -2,12 +2,12 @@ export interface TodoList {
   id: string;
   name: string;
   icon: string;
-  todos: Todo[];
-  isCompletedHidden?: boolean;
+  showCompleted: boolean;
+  userId: string;
 }
 
 export interface Todo {
-  id: number;
+  id: string;
   title: string;
   notes?: string;
   completed: boolean;
@@ -15,4 +15,5 @@ export interface Todo {
   priority?: "low" | "medium" | "high";
   dueDate?: Date;
   dateOfCompletion?: Date;
+  listId: string;
 }

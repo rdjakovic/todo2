@@ -1,32 +1,28 @@
 import { TodoList } from "../types/todo";
 
-export const initialLists: TodoList[] = [
+export const initialLists: Partial<TodoList>[] = [
   {
-    id: "home",
-    name: "Home",
+    id: "all",
+    name: "All",
     icon: "home",
-    todos: [],
-    isCompletedHidden: false,
+    showCompleted: true,
   },
   {
     id: "completed",
     name: "Completed",
     icon: "check",
-    todos: [],
-    isCompletedHidden: false,
+    showCompleted: true,
   },
   {
     id: "personal",
     name: "Personal",
     icon: "user",
-    todos: [],
-    isCompletedHidden: false,
+    showCompleted: true,
   },
   {
     id: "work",
     name: "Work",
     icon: "briefcase",
-    todos: [],
-    isCompletedHidden: false,
+    showCompleted: true,
   },
 ];

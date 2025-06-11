@@ -1,4 +1,16 @@
-import { Todo, TodoList } from "../types/todo"; // Added Todo import
+import { TodoList } from "../types/todo";
+
+export const getListById = (lists: TodoList[], id: string) => {
+  return lists.find((list) => list.id === id);
+};
+
+export const getListNameById = (lists: TodoList[], id: string) => {
+  return lists.find((list) => list.id === id)?.name;
+};
+
+export const getListByName = (lists: TodoList[], name: string) => {
+  return lists.find((list) => list.name === name);
+};
 
 // Helper function for native date validation
 export const isValidNativeDate = (d: Date | undefined | null): d is Date =>
@@ -41,76 +53,4 @@ export const processLoadedLists = (rawLists: any[]): TodoList[] => {
         : undefined,
     })),
   }));
-};
-
-// Prepares TodoList[] for saving by converting Date objects to ISO strings
-export const serializeListsForSave = (listsToSave: TodoList[]): any[] => {
-  return listsToSave.map((list) => ({
-    ...list,
-    todos: list.todos.map((todo) => ({
-      ...todo,
-      dateCreated: isValidNativeDate(todo.dateCreated)
-        ? todo.dateCreated.toISOString()
-        : undefined,
-      dueDate:
-        todo.dueDate && isValidNativeDate(todo.dueDate)
-          ? todo.dueDate.toISOString()
-          : undefined,
-      dateOfCompletion:
-        todo.dateOfCompletion && isValidNativeDate(todo.dateOfCompletion)
-          ? todo.dateOfCompletion.toISOString()
-          : undefined,
-    })),
-  }));
-};
-
-// Filters todos based on the selected list and hideCompleted status
-export const getFilteredTodos = (
-  lists: TodoList[],
-  selectedList: string,
-  hideCompleted: boolean
-): Todo[] => {
-  if (selectedList === "completed") {
-    return lists
-      .filter((list) => list && list.todos)
-      .flatMap((list) => list.todos.filter((todo) => todo.completed));
-  }
-  if (selectedList === "home") {
-    return lists
-      .filter((list) => list && list.todos)
-      .flatMap((list) => list.todos.filter((todo) => !todo.completed));
-  }
-  return (
-    lists
-      .find((list) => list && list.id === selectedList)
-      ?.todos?.filter((todo) => !hideCompleted || !todo.completed) ?? []
-  );
-};
-
-// Calculates the count of todos for each list
-export const calculateTodoCountByList = (
-  lists: TodoList[]
-): Record<string, number> => {
-  return lists
-    .filter((list) => list && list.todos)
-    .reduce((acc, list) => {
-      // Count completed todos for the Completed list
-      const completedCount = list.todos.filter((todo) => todo.completed).length;
-      acc["completed"] = (acc["completed"] || 0) + completedCount;
-
-      // Count incomplete todos for the Home list
-      const incompleteCount = list.todos.filter(
-        (todo) => !todo.completed
-      ).length;
-      acc["home"] = (acc["home"] || 0) + incompleteCount;
-
-      // For other lists, count based on list's isCompletedHidden property
-      if (list.id !== "home" && list.id !== "completed") {
-        acc[list.id] = list.isCompletedHidden
-          ? list.todos.filter((todo) => !todo.completed).length // Only count incomplete if isCompletedHidden is true
-          : list.todos.length; // Count all if isCompletedHidden is false
-      }
-
-      return acc;
-    }, {} as Record<string, number>);
 };

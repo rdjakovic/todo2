@@ -1,5 +1,4 @@
 import { useState, useEffect, lazy, Suspense } from "react";
-import { confirm } from "@tauri-apps/plugin-dialog";
 import clsx from "clsx";
 import {
   DndContext,
@@ -13,38 +12,43 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { Sidebar } from "./components/Sidebar.tsx";
-import TodoItem from "./components/TodoItem"; // Changed from lazy import
+import TodoItem from "./components/TodoItem";
+import LoginForm from "./components/LoginForm";
+import { useAuthStore } from "./store/authStore";
+import { useTodoStore } from "./store/todoStore";
 const EditTodoDialog = lazy(() => import("./components/EditTodoDialog"));
 import LoadingIndicator from "./components/LoadingIndicator";
 import SettingsView from "./components/SettingsView";
-import TodoListView from "./components/TodoListView"; // Added import
-import { Todo, TodoList } from "./types/todo";
+import TodoListView from "./components/TodoListView";
 import "./App.css";
 import { useTheme } from "./hooks/useTheme";
-import { isTauri } from "./utils/environment";
-import { initialLists } from "./const/initialLists";
-import {
-  processLoadedLists,
-  serializeListsForSave,
-  getFilteredTodos,
-  calculateTodoCountByList, // Added calculateTodoCountByList
-} from "./utils/helper";
+import { Toaster } from "react-hot-toast";
 
 function App() {
+  const { user, loading: authLoading, initialize } = useAuthStore();
+  const {
+    lists,
+    todos,
+    selectedListId,
+    loading,
+    isSidebarOpen,
+    sidebarWidth,
+    windowWidth,
+    activeDraggedTodo,
+    isEditDialogOpen,
+    todoToEditDialog,
+    fetchLists,
+    saveTodos,
+    setTodos,
+    editTodo: editTodoInList,
+    setIsSidebarOpen,
+    setWindowWidth,
+    setActiveDraggedTodo,
+    closeEditDialog,
+  } = useTodoStore();
+
   const { theme, toggleTheme } = useTheme();
-  const [lists, setLists] = useState<TodoList[]>(initialLists);
-  const [selectedList, setSelectedList] = useState("home");
-  const [newTodo, setNewTodo] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
-  const [sidebarWidth, setSidebarWidth] = useState(256);
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  const [storagePath, setStoragePath] = useState<string>("");
-  const [hideCompleted, setHideCompleted] = useState(false);
-  const [activeDraggedTodo, setActiveDraggedTodo] = useState<Todo | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // Added state
-  const [todoToEditDialog, setTodoToEditDialog] = useState<Todo | null>(null); // Added state
+  const [dataInitialized, setDataInitialized] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -55,28 +59,19 @@ function App() {
   );
 
   useEffect(() => {
-    const currentList = lists.find((list) => list.id === selectedList);
-    setHideCompleted(currentList?.isCompletedHidden || false);
-  }, [selectedList, lists]);
+    initialize();
+  }, [initialize]);
 
-  const handleHideCompletedToggle = async () => {
-    const newHideCompleted = !hideCompleted;
-    setHideCompleted(newHideCompleted);
-
-    const updatedLists = lists.map((list) =>
-      list.id === selectedList
-        ? { ...list, isCompletedHidden: newHideCompleted }
-        : list
-    );
-    setLists(updatedLists);
-    await saveList(updatedLists);
-  };
+  useEffect(() => {
+    if (user && !dataInitialized) {
+      fetchLists(user);
+      setDataInitialized(true);
+    }
+  }, [user, dataInitialized, fetchLists]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    const draggedTodo = lists
-      .flatMap((list) => list.todos)
-      .find((todo) => todo.id === active.id);
+    const draggedTodo = todos.find((todo) => todo.id === active.id);
     if (draggedTodo) {
       setActiveDraggedTodo(draggedTodo);
     }
@@ -84,119 +79,74 @@ function App() {
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-
+    setActiveDraggedTodo(null);
     if (!over) return;
 
-    const todoId = Number(active.id);
-    let sourceTodo: Todo | undefined;
-    let sourceListId: string | undefined;
+    const todoId = active.id;
+    const sourceTodo = todos.find((t) => t.id === todoId);
+    if (!sourceTodo) return;
 
-    // Find the todo and its source list
-    lists.forEach((list) => {
-      const todo = list.todos.find((t) => t.id === todoId);
-      if (todo) {
-        sourceTodo = todo;
-        sourceListId = list.id;
+    // Check if dropping on a list in sidebar
+    const targetList = lists.find((list) => list.id === over.id);
+    if (targetList) {
+      // Prevent dropping onto "All" list
+      if (targetList.name.toLowerCase() === "all") {
+        return;
       }
-    });
-
-    if (!sourceTodo || !sourceListId) return;
-
-    // If dropping on a different list
-    if (typeof over.id === "string" && over.id !== sourceListId) {
-      const updatedLists = lists.map((list) => {
-        if (list.id === sourceListId) {
-          return {
-            ...list,
-            todos: list.todos.filter((t) => t.id !== todoId),
-          };
-        }
-        if (list.id === over.id) {
-          return {
-            ...list,
-            todos: [...list.todos, { ...sourceTodo! }],
-          };
-        }
-        return list;
-      });
-      setLists(updatedLists);
-      await saveList(updatedLists);
-    }
-    // If reordering within the same list
-    else if (typeof over.id === "number" && active.id !== over.id) {
-      const list = lists.find((l) => l.id === sourceListId)!;
-      const oldIndex = list.todos.findIndex((t) => t.id === active.id);
-      const newIndex = list.todos.findIndex((t) => t.id === over.id);
-
-      const updatedLists = lists.map((l) => {
-        if (l.id === sourceListId) {
-          const reorderedTodos = arrayMove(l.todos, oldIndex, newIndex);
-          return { ...l, todos: reorderedTodos };
-        }
-        return l;
-      });
-      setLists(updatedLists);
-      await saveList(updatedLists);
-    }
-
-    setActiveDraggedTodo(null);
-  };
-
-  useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        if (isTauri()) {
-          // Tauri-specific code
-          const savedPath = await import("@tauri-apps/api/core").then(
-            ({ invoke }) => invoke<string>("load_storage_path")
-          );
-          setStoragePath(await savedPath);
-          await loadLists();
-        } else {
-          // Web-specific code (e.g., using localStorage)
-          const savedLists = localStorage.getItem("lists");
-          if (savedLists) {
-            const parsedLists = processLoadedLists(JSON.parse(savedLists));
-            setLists(parsedLists);
-          } else {
-            // For initialLists, ensure dates are Date objects if they are strings
-            const processedInitialLists = processLoadedLists(
-              initialLists.map((list) => ({
-                ...list,
-                todos: list.todos.map((todo) => ({ ...todo })),
-              }))
-            ); // Ensure deep copy for processing
-            setLists(processedInitialLists);
-            // Save the processed initial lists, not the original initialLists which might have string dates
-            localStorage.setItem(
-              "lists",
-              JSON.stringify(
-                processedInitialLists.map((list) => ({
-                  ...list,
-                  todos: list.todos.map((todo) => ({
-                    ...todo,
-                    dateCreated: todo.dateCreated.toISOString(),
-                    dueDate: todo.dueDate
-                      ? todo.dueDate.toISOString()
-                      : undefined,
-                    dateOfCompletion: todo.dateOfCompletion
-                      ? todo.dateOfCompletion.toISOString()
-                      : undefined,
-                  })),
-                }))
-              )
-            );
+      
+      // Check if dragging from "All" list - only allow dropping to "Completed" list
+      const sourceList = lists.find((list) => list.id === selectedListId);
+      if (sourceList?.name.toLowerCase() === "all" && targetList.name.toLowerCase() !== "completed") {
+        return;
+      }
+      
+      // Special handling for "Completed" list
+      const isTargetCompleted = targetList.name.toLowerCase() === "completed";
+      const isSourceCompleted = sourceTodo.completed;
+      
+      // Update todo with new list ID and completion status
+      const updatedTodos = todos.map((todo) => {
+        if (todo.id === todoId) {
+          const updatedTodo = { ...todo, listId: targetList.id };
+          
+          // If dropping on "Completed" list, mark as completed
+          if (isTargetCompleted && !isSourceCompleted) {
+            updatedTodo.completed = true;
+            updatedTodo.dateOfCompletion = new Date();
           }
-          setLoading(false);
+          // If dragging from "Completed" list to another list, mark as not completed
+          else if (!isTargetCompleted && isSourceCompleted) {
+            updatedTodo.completed = false;
+            updatedTodo.dateOfCompletion = undefined;
+          }
+          
+          return updatedTodo;
         }
-      } catch (err) {
-        console.error("Error loading initial data:", err);
-        setLoading(false);
-      }
-    };
+        return todo;
+      });
+      
+      await saveTodos(updatedTodos);
+      // After saving to backend, update local state directly
+      setTodos(updatedTodos);
+      return;
+    }
 
-    loadInitialData();
-  }, []);
+    // Handle reordering within the same list
+    if (active.id !== over.id) {
+      // Find the global indices of the dragged item and drop target in the entire todos array
+      const oldIndexGlobal = todos.findIndex((t) => t.id === active.id);
+      const newIndexGlobal = todos.findIndex((t) => t.id === over.id);
+
+      if (oldIndexGlobal !== -1 && newIndexGlobal !== -1) {
+        // Directly reorder the entire todos array using the global indices
+        const reorderedTodos = arrayMove(todos, oldIndexGlobal, newIndexGlobal);
+
+        // Save the reordered todos to backend and update state
+        await saveTodos(reorderedTodos);
+        setTodos(reorderedTodos);
+      }
+    }
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -210,286 +160,41 @@ function App() {
     };
 
     window.addEventListener("resize", handleResize);
-    handleResize(); // Call it initially
+    handleResize();
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const loadLists = async () => {
-    try {
-      setLoading(true);
-      const loadedListsString = await import("@tauri-apps/api/core").then(
-        ({ invoke }) => invoke<string>("load_lists")
-      );
-      const rawLists = JSON.parse(await loadedListsString);
-
-      const loadedAndProcessedLists = processLoadedLists(rawLists);
-
-      if (loadedAndProcessedLists && loadedAndProcessedLists.length > 0) {
-        setLists(loadedAndProcessedLists);
-      } else {
-        // For initialLists, ensure dates are Date objects if they are strings
-        const processedInitialLists = processLoadedLists(
-          initialLists.map((list) => ({
-            ...list,
-            todos: list.todos.map((todo) => ({ ...todo })),
-          }))
-        ); // Ensure deep copy
-        setLists(processedInitialLists);
-        await saveList(processedInitialLists); // Save the processed initial lists
-      }
-      setError(null);
-    } catch (err) {
-      console.error("Error loading lists:", err);
-      setLists(initialLists);
-      setError("Failed to load lists");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const saveList = async (listsToSave: TodoList[]) => {
-    try {
-      const serializableLists = serializeListsForSave(listsToSave);
-
-      if (isTauri()) {
-        const { invoke } = await import("@tauri-apps/api/core");
-        await invoke("save_lists", {
-          lists: JSON.stringify(serializableLists),
-        });
-      } else {
-        localStorage.setItem("lists", JSON.stringify(serializableLists));
-      }
-      setError(null);
-    } catch (err) {
-      console.error("Error saving lists:", err);
-      setError("Failed to save lists");
-    }
-  };
-
-  const addTodo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTodo.trim()) return;
-
-    const newTodoItem: Todo = {
-      id: Date.now(),
-      title: newTodo,
-      notes: "",
-      completed: false,
-      dateCreated: new Date(),
-      priority: "medium", // Added default
-      dueDate: undefined,
-      dateOfCompletion: undefined,
-    };
-
-    try {
-      const updatedLists = lists.map((list) =>
-        list.id === selectedList
-          ? { ...list, todos: [...list.todos, newTodoItem] }
-          : list
-      );
-      setLists(updatedLists);
-      await saveList(updatedLists);
-      setNewTodo("");
-      setError(null);
-    } catch (err) {
-      setError("Failed to add todo");
-    }
-  };
-
-  const toggleTodo = async (id: number) => {
-    try {
-      const updatedLists = lists.map((list) => ({
-        ...list,
-        todos: list.todos.map((todo) =>
-          todo.id === id
-            ? {
-                ...todo,
-                completed: !todo.completed,
-                dateOfCompletion: !todo.completed // Set dateOfCompletion if todo is now completed
-                  ? new Date()
-                  : undefined, // Clear if todo is now incomplete
-              }
-            : todo
-        ),
-      }));
-      setLists(updatedLists);
-      await saveList(updatedLists);
-      setError(null);
-    } catch (err) {
-      setError("Failed to update todo");
-    }
-  };
-
-  const deleteTodo = async (id: number) => {
-    try {
-      const updatedLists = lists.map((list) => ({
-        ...list,
-        todos: list.todos.filter((todo) => todo.id !== id),
-      }));
-      setLists(updatedLists);
-      await saveList(updatedLists);
-      setError(null);
-    } catch (err) {
-      setError("Failed to delete todo");
-    }
-  };
-
-  const createList = async (name: string) => {
-    const newList: TodoList = {
-      id: `list-${Date.now()}`,
-      name,
-      icon: "home",
-      todos: [],
-      isCompletedHidden: false,
-    };
-    const updatedLists = [...lists, newList];
-    setLists(updatedLists);
-    await saveList(updatedLists);
-  };
-
-  const deleteList = async (id: string) => {
-    if (id === "home" || id === "completed") {
-      setError("Cannot delete default lists");
-      return;
-    }
-
-    try {
-      const listToDelete = lists.find((list) => list.id === id);
-      if (listToDelete && listToDelete.todos.length > 0) {
-        const confirmed = await confirm(
-          "This list contains todos. Are you sure you want to delete it?",
-          { title: "Delete List", kind: "warning" }
-        );
-        if (!confirmed) {
-          return;
-        }
-      }
-
-      const updatedLists = lists.filter((list) => list.id !== id);
-      setLists(updatedLists);
-      await saveList(updatedLists);
-      if (selectedList === id) {
-        setSelectedList("home");
-      }
-    } catch (error) {
-      setError("Failed to delete list");
-      console.error("Error deleting list:", error);
-    }
-  };
-
-  const editList = async (id: string, newName: string) => {
-    if (id === "home" || id === "completed") {
-      setError("Cannot edit default lists");
-      return;
-    }
-    const updatedLists = lists.map((list) =>
-      list.id === id ? { ...list, name: newName } : list
-    );
-    setLists(updatedLists);
-    await saveList(updatedLists);
-  };
-
-  const editTodo = async (
-    id: number,
-    newTitle: string,
-    newNotes?: string,
-    newPriority?: "low" | "medium" | "high",
-    newDueDate?: Date // Changed from string to Date
-  ) => {
-    try {
-      const updatedLists = lists.map((list) => ({
-        ...list,
-        todos: list.todos.map((todo) =>
-          todo.id === id
-            ? {
-                ...todo,
-                title: newTitle,
-                notes: newNotes ?? todo.notes,
-                priority: newPriority ?? todo.priority,
-                dueDate: newDueDate !== undefined ? newDueDate : todo.dueDate, // Ensure newDueDate is used if provided
-              }
-            : todo
-        ),
-      }));
-      setLists(updatedLists);
-      await saveList(updatedLists);
-      setError(null);
-    } catch (err) {
-      // Fixed: Added opening brace
-      setError("Failed to edit todo");
-    }
-  };
-
-  // Dialog handlers
-  const handleOpenEditDialog = (todo: Todo) => {
-    setTodoToEditDialog(todo);
-    setIsEditDialogOpen(true);
-  };
-
-  const handleCloseEditDialog = () => {
-    setTodoToEditDialog(null);
-    setIsEditDialogOpen(false);
-  };
-
   const handleSaveEditDialog = async (
-    id: number,
+    id: string,
     newTitle: string,
     newNotes?: string,
     newPriority?: "low" | "medium" | "high",
-    newDueDate?: Date // Changed from string to Date
+    newDueDate?: Date
   ) => {
-    await editTodo(id, newTitle, newNotes, newPriority, newDueDate);
-    handleCloseEditDialog();
-  };
-
-  const filteredTodos = getFilteredTodos(lists, selectedList, hideCompleted);
-
-  const todoCountByList = calculateTodoCountByList(lists);
-
-  const handleSetPath = async (path: string) => {
-    try {
-      if (isTauri()) {
-        const { invoke } = await import("@tauri-apps/api/core");
-        await invoke("set_storage_path", { path });
-      }
-      console.log("Storage path saved:", path);
-      setStoragePath(path);
-    } catch (error) {
-      console.error("Failed to save storage path:", error);
-    }
+    await editTodoInList(selectedListId, id, {
+      title: newTitle,
+      notes: newNotes,
+      priority: newPriority,
+      dueDate: newDueDate,
+    });
+    closeEditDialog();
   };
 
   const renderContent = () => {
-    if (selectedList === "settings") {
-      return (
-        <SettingsView
-          theme={theme}
-          toggleTheme={toggleTheme}
-          storagePath={storagePath}
-          setStoragePath={setStoragePath}
-          handleSetPath={handleSetPath}
-        />
-      );
+    if (selectedListId === "settings") {
+      return <SettingsView theme={theme} toggleTheme={toggleTheme} />;
     }
 
-    return (
-      <TodoListView
-        lists={lists}
-        selectedList={selectedList}
-        hideCompleted={hideCompleted}
-        handleHideCompletedToggle={handleHideCompletedToggle}
-        error={error}
-        addTodo={addTodo}
-        newTodo={newTodo}
-        setNewTodo={setNewTodo}
-        filteredTodos={filteredTodos}
-        toggleTodo={toggleTodo}
-        deleteTodo={deleteTodo}
-        editTodo={editTodo}
-        handleOpenEditDialog={handleOpenEditDialog}
-      />
-    );
+    return <TodoListView />;
   };
+
+  if (authLoading) {
+    return <LoadingIndicator />;
+  }
+
+  if (!user) {
+    return <LoginForm onSuccess={() => {}} />;
+  }
 
   if (loading) {
     return <LoadingIndicator />;
@@ -503,29 +208,17 @@ function App() {
       onDragEnd={handleDragEnd}
     >
       <div className={clsx("app", theme)}>
+        <Toaster position="top-right" />
         <div className="flex min-h-screen bg-gradient-to-br from-purple-50 dark:from-gray-900 to-blue-50 dark:to-gray-800">
-          <Sidebar
-            lists={lists}
-            selectedList={selectedList}
-            onSelectList={setSelectedList}
-            onCreateList={createList}
-            onDeleteList={deleteList}
-            onEditList={editList}
-            onSelectSettings={() => setSelectedList("settings")}
-            todoCountByList={todoCountByList}
-            isOpen={isSidebarOpen}
-            onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-            width={sidebarWidth}
-            onWidthChange={setSidebarWidth}
-          />
+          <Sidebar />
 
           <main
             className="flex-1 transition-all duration-300"
             style={{
               marginLeft:
-                windowWidth >= 768 && isSidebarOpen ? `${sidebarWidth}px` : "0",
+                windowWidth >= 1024 && isSidebarOpen ? `${sidebarWidth}px` : "0",
               paddingTop:
-                (!isSidebarOpen && windowWidth >= 768) || windowWidth < 768
+                (!isSidebarOpen && windowWidth >= 1024) || windowWidth < 1024
                   ? "4rem"
                   : "1rem",
             }}
@@ -547,8 +240,8 @@ function App() {
                     _notes,
                     _priority,
                     _dueDate
-                  ) => {}} // Matched signature
-                  onOpenEditDialog={() => {}} // No-op for dragged item
+                  ) => {}}
+                  onOpenEditDialog={() => {}}
                 />
               )}
             </div>
@@ -559,7 +252,7 @@ function App() {
             isOpen={isEditDialogOpen}
             todoToEdit={todoToEditDialog}
             onSave={handleSaveEditDialog}
-            onCancel={handleCloseEditDialog}
+            onCancel={closeEditDialog}
           />
         </Suspense>
       </div>

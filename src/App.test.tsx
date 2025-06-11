@@ -5,7 +5,7 @@ import App from "./App";
 import { invoke } from "@tauri-apps/api/core";
 
 const initialLists = [
-  { id: "home", name: "Home", icon: "home" },
+  { id: "all", name: "All", icon: "home" },
   { id: "completed", name: "Completed", icon: "check" },
   { id: "settings", name: "Settings", icon: "settings" },
 ];
@@ -44,12 +44,12 @@ describe("App", () => {
     await waitFor(() => {
       // Look for the list items within the navigation
       const nav = screen.getByRole("navigation");
-      const homeButton = screen.getByRole("button", { name: /^home\s*0$/i });
+      const allButton = screen.getByRole("button", { name: /^all\s*0$/i });
       const completedButton = screen.getByRole("button", {
         name: /^completed\s*0$/i,
       });
 
-      expect(nav).toContainElement(homeButton);
+      expect(nav).toContainElement(allButton);
       expect(nav).toContainElement(completedButton);
     });
   });
