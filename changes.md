@@ -161,3 +161,12 @@
 - Updated `src/store/todoStore.ts` with sorting state management and helper functions
 - Updated `src/components/SettingsView.tsx` with new sorting settings section
 - Enhanced user experience with immediate sorting updates when preferences change
+
+## 2025-01-27 20:45:00 - Added Due Date Display to Todo Items
+- Added due date display to todo items when a due date is set
+- Due dates appear as orange badges next to priority badges in the todo item metadata section
+- Uses the same date formatting as creation and completion dates for consistency
+- Only displays when a due date is actually set on the todo item
+- Added proper validation to ensure due date is a valid Date object before formatting
+- Updated `src/components/TodoItem.tsx` with due date badge styling and display logic
+- Improves visibility of upcoming deadlines and task scheduling information

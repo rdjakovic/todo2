@@ -164,6 +164,11 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
                       {todo.priority}
                     </span>
                   )}
+                  {todo.dueDate && (
+                    <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300">
+                      Due: {isValidNativeDate(todo.dueDate) ? formatNativeDate(todo.dueDate) : "Invalid date"}
+                    </span>
+                  )}
                 </div>
                 {todo.completed && todo.dateOfCompletion && (
                   <p className="text-xs sm:text-xs text-gray-500 dark:text-gray-400 mt-1 sm:mt-0">
