@@ -618,7 +618,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     // Special handling for "All" list - count all incomplete todos
     const allList = lists.find((list) => list.name.toLowerCase() === "all");
     if (allList) {
-      counts[allList.id] = todos.filter((todo) => !todo.completed).length;
+      counts[allList.id] = allList.showCompleted 
+        ? todos.length 
+        : todos.filter((todo) => !todo.completed).length;
     }
     
     // Special handling for "Completed" list - count all completed todos
