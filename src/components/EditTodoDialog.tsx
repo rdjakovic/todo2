@@ -68,8 +68,8 @@ const EditTodoDialog = ({
     e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>
   ) => {
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSave();
+      //e.preventDefault();
+      //handleSave();
     } else if (e.key === "Escape") {
       onCancel();
     }
