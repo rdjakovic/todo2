@@ -62,6 +62,13 @@ function App() {
     initialize();
   }, [initialize]);
 
+  // Reset dataInitialized when user changes (especially when going from authenticated to unauthenticated)
+  useEffect(() => {
+    if (!user) {
+      setDataInitialized(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (user && !dataInitialized) {
       fetchLists(user);
