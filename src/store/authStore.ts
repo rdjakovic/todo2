@@ -104,7 +104,28 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Reset todo store state and clear localStorage
       useTodoStore.getState().reset();
     } catch (error) {
-      set({ error: error instanceof Error ? error.message : 'Failed to sign out' });
+      // Handle session-related errors during sign out
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorString = JSON.stringify(error);
+      
+      if (
+        errorMessage.includes('session_not_found') ||
+        errorMessage.includes('Session from session_id claim in JWT does not exist') ||
+        errorString.includes('session_not_found') ||
+        (error as any)?.code === 'session_not_found'
+      ) {
+        // Even if logout fails due to session not found, clear local state
+        set({ user: null, error: null });
+        useTodoStore.getState().reset();
+        return;
+      }
+      
+      // For other errors, still clear the user state but set error message
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to sign out',
+        user: null 
+      });
+      useTodoStore.getState().reset();
     }
   },
 }));

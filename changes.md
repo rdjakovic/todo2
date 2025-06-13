@@ -1,8 +1,11 @@
-## Change Log
+# Project Changes Log
 
-### 2025-01-27 20:45:00
-**Enhanced session error handling in authentication store**
-- Fixed handling of session_not_found errors that come from HTTP responses
-- Added additional error detection methods to catch session errors in different formats
-- Enhanced both try/catch blocks to properly handle session_not_found error codes
-- Now handles cases where error code is in response body vs error message
+## 2025-01-05 - Fixed signOut error handling
+**Time:** Current timestamp
+**Summary:** Modified the signOut function in src/store/authStore.ts to properly handle session_not_found errors during logout. The function now clears the local user state and resets the todo store even when Supabase returns a session_not_found error, ensuring the UI correctly reflects the signed-out state.
+
+**Changes made:**
+- Enhanced error handling in signOut function catch block
+- Added specific handling for session_not_found errors during logout
+- Ensured local state is cleared even when server logout fails
+- User state is now set to null and todo store is reset regardless of logout error type
