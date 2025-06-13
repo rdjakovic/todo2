@@ -32,11 +32,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const { data: { user }, error } = await supabase.auth.getUser();
       
-      // Handle refresh token errors specifically
+      // Handle refresh token errors and session not found errors specifically
       if (error && (
         error.message.includes('Invalid Refresh Token') || 
         error.message.includes('Refresh Token Not Found') ||
-        error.message.includes('invalid_grant')
+        error.message.includes('invalid_grant') ||
+        error.message.includes('session_not_found') ||
+        error.message.includes('Session from session_id claim in JWT does not exist')
       )) {
         // Clear invalid session
         await supabase.auth.signOut();
