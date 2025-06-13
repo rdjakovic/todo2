@@ -38,7 +38,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error.message.includes('Refresh Token Not Found') ||
         error.message.includes('invalid_grant') ||
         error.message.includes('session_not_found') ||
-        error.message.includes('Session from session_id claim in JWT does not exist')
+        error.message.includes('Session from session_id claim in JWT does not exist') ||
+        // Handle error codes from API responses
+        (error as any)?.code === 'session_not_found' ||
+        // Handle cases where the error is embedded in the response
+        JSON.stringify(error).includes('session_not_found')
       )) {
         // Clear invalid session
         await supabase.auth.signOut();
@@ -68,6 +72,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         subscription.unsubscribe();
       };
     } catch (error) {
+      // Enhanced error handling for session-related errors in catch block
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorString = JSON.stringify(error);
+      
+      if (
+        errorMessage.includes('session_not_found') ||
+        errorMessage.includes('Session from session_id claim in JWT does not exist') ||
+        errorString.includes('session_not_found') ||
+        (error as any)?.code === 'session_not_found'
+      ) {
+        // Clear invalid session
+        await supabase.auth.signOut();
+        set({ user: null, initialized: true, loading: false, error: null });
+        return;
+      }
+      
       set({ 
         error: error instanceof Error ? error.message : 'Failed to initialize auth',
         user: null,

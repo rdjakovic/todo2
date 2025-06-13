@@ -1,6 +1,8 @@
-# Changes Log
+## Change Log
 
-## 2025-01-09 - Session Not Found Error Fix
-- **File**: `src/store/authStore.ts`
-- **Change**: Added handling for 'session_not_found' errors in the auth store initialization
-- **Details**: Modified the error handling in the `initialize` function to include 'session_not_found' and 'Session from session_id claim in JWT does not exist' error messages. When these errors occur, the function now clears the invalid session by calling `supabase.auth.signOut()` and resets the authentication state, which resolves the 403 error and prompts the user to re-authenticate.
+### 2025-01-27 20:45:00
+**Enhanced session error handling in authentication store**
+- Fixed handling of session_not_found errors that come from HTTP responses
+- Added additional error detection methods to catch session errors in different formats
+- Enhanced both try/catch blocks to properly handle session_not_found error codes
+- Now handles cases where error code is in response body vs error message
