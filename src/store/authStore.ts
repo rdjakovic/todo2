@@ -30,12 +30,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (get().initialized) return;
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      // Handle refresh token errors specifically
+      if (error && (
+        error.message.includes('Invalid Refresh Token') || 
+        error.message.includes('Refresh Token Not Found') ||
+        error.message.includes('invalid_grant')
+      )) {
+        // Clear invalid session
+        await supabase.auth.signOut();
+        set({ user: null, initialized: true, loading: false, error: null });
+        return;
+      }
+      
+      // Handle other errors
+      if (error) {
+        throw error;
+      }
+      
       set({ user, initialized: true, loading: false });
 
       // Set up auth state change listener
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
         set({ user: session?.user ?? null });
+        
+        // Reset todo store when user signs out
+        if (event === 'SIGNED_OUT') {
+          useTodoStore.getState().reset();
+        }
       });
 
       // Clean up subscription on unmount
