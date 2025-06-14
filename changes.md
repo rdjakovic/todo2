@@ -79,3 +79,22 @@
 - ✅ **Proper Initial Setup:** New users get correct initial lists created
 - ✅ **Better Error Handling:** Clear feedback when data loading fails
 - ✅ **Consistent State:** Eliminated race conditions in auth flow
+- ✅ **Consistent State:** Eliminated race conditions in auth flow
+
+### 2025-01-28 15:30:00 - Fix duplicate database connection success messages
+**Summary:** Fixed issue where "Connection to database successful!" message was appearing twice during sign-in.
+
+**Problem:** 
+- `fetchLists()` function was showing success toast
+- `fetchTodos()` function (called from `fetchLists()`) was also showing success toast
+- Result: Two identical success messages during sign-in
+
+**Solution:**
+- Removed success toast from `fetchTodos()` function
+- Changed `fetchLists()` success message to "Data loaded successfully!" for clarity
+- Now only shows one success message per sign-in
+
+**Benefits:**
+- ✅ **Clean User Experience:** Only one success message per sign-in
+- ✅ **Clear Messaging:** More descriptive success message
+- ✅ **Reduced Noise:** Eliminates duplicate notifications

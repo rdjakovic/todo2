@@ -331,7 +331,8 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       // Fetch todos separately
       await get().fetchTodos();
 
-      toast.success("Connection to database successful!");
+      // Only show success message once during initial load
+      toast.success("Data loaded successfully!");
     } catch (error) {
       console.error("Failed to fetch from Supabase:", error);
       set({ 
@@ -369,6 +370,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         })) || [];
 
       set({ todos: processedTodos });
+      // Don't show success toast here - it's called from fetchLists which already shows success
     } catch (error) {
       console.error("Failed to fetch todos from Supabase:", error);
       set({ error: "Failed to load todos from database" });
