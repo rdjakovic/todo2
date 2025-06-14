@@ -63,7 +63,6 @@ interface TodoState {
   fetchTodos: () => Promise<void>;
   saveLists: (listsToSave: TodoList[]) => Promise<void>;
   saveTodos: (todos: Todo[]) => Promise<void>;
-  loadFromLocalStorage: () => Promise<void>;
   addTodo: (listId: string, todo: Omit<Todo, "id">) => Promise<void>;
   toggleTodo: (todoId: string) => Promise<void>;
   deleteTodo: (todoId: string) => Promise<void>;
@@ -197,7 +196,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   // Drag and drop state
   activeDraggedTodo: null,
 
-  // Sorting settings - load from localStorage or default to dateCreated
+  // Sorting settings - load from localStorage or default to dateCreated (keep this as user preference)
   sortBy: (typeof window !== "undefined" ? 
     (localStorage.getItem("todo-sort-by") as SortOption) || "dateCreated" : 
     "dateCreated"),
@@ -217,16 +216,18 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   setActiveDraggedTodo: (todo) => set({ activeDraggedTodo: todo }),
   setSortBy: (sortBy) => {
     set({ sortBy });
+    // Keep localStorage for user preferences like sorting
     if (typeof window !== "undefined") {
       localStorage.setItem("todo-sort-by", sortBy);
     }
   },
 
-  // New reset function to clear state and localStorage
+  // Reset function - only clear sorting preference, no list/todo data
   reset: () => {
-    localStorage.removeItem("todo-lists");
-    localStorage.removeItem("todos");
-    localStorage.removeItem("todo-sort-by");
+    // Only clear user preferences, not data
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("todo-sort-by");
+    }
     set({
       lists: [],
       todos: [],
@@ -245,7 +246,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   fetchLists: async (user) => {
     set({ loading: true });
     try {
-      // First try to fetch from Supabase
+      // Fetch from Supabase only
       let { data: lists, error } = await supabase
         .from("lists")
         .select("*")
@@ -330,13 +331,13 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       await get().fetchTodos();
 
       toast.success("Connection to database successful!");
-      // Only save the database lists to localStorage (exclude "All" list)
-      const dbLists = sortedLists.filter(list => list.name !== "All");
-      localStorage.setItem("todo-lists", JSON.stringify(dbLists));
     } catch (error) {
       console.error("Failed to fetch from Supabase:", error);
-      // Try to load from localStorage with migration support
-      await get().loadFromLocalStorage();
+      set({ 
+        error: "Failed to load data from database", 
+        loading: false 
+      });
+      toast.error("Failed to load data from database");
     }
   },
 
@@ -367,15 +368,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         })) || [];
 
       set({ todos: processedTodos });
-      localStorage.setItem("todos", JSON.stringify(processedTodos));
     } catch (error) {
       console.error("Failed to fetch todos from Supabase:", error);
-      // Try to load from localStorage
-      const localTodos = localStorage.getItem("todos");
-      if (localTodos) {
-        const todos = JSON.parse(localTodos);
-        set({ todos });
-      }
+      set({ error: "Failed to load todos from database" });
+      toast.error("Failed to load todos from database");
     }
   },
 
@@ -403,55 +399,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
       if (todosError) throw todosError;
 
-      localStorage.setItem("todos", JSON.stringify(todos));
-      set({ error: null, todos }); // Update local state directly
+      set({ error: null, todos });
     } catch (error) {
       console.error("Failed to save todos to Supabase:", error);
-      localStorage.setItem("todos", JSON.stringify(todos));
-      set({ error: "Failed to save todos to database, saved locally", todos }); // Update local state directly
-      toast.error("Failed to save todos to database, saved locally");
-    }
-  },
-
-  loadFromLocalStorage: async () => {
-    try {
-      // Check for old format first (migration)
-      const oldData = localStorage.getItem("lists");
-      if (oldData) {
-        const oldLists = JSON.parse(oldData);
-        // Check if this is old format (has todos property)
-        if (oldLists.length > 0 && oldLists[0].todos) {
-          // Migrate old format to new format
-          const lists = oldLists.map(({ todos, ...list }: any) => list);
-          const todos = oldLists.flatMap((list: any) => list.todos || []);
-
-          set({ lists, todos, loading: false, error: null });
-
-          // Save in new format
-          localStorage.setItem("todo-lists", JSON.stringify(lists));
-          localStorage.setItem("todos", JSON.stringify(todos));
-          localStorage.removeItem("lists"); // Remove old format
-
-          toast("Migrated data to new format!");
-          return;
-        }
-      }
-
-      // Load new format
-      const listsData = localStorage.getItem("todo-lists");
-      const todosData = localStorage.getItem("todos");
-
-      if (listsData || todosData) {
-        const lists = listsData ? JSON.parse(listsData) : [];
-        const todos = todosData ? JSON.parse(todosData) : [];
-        set({ lists, todos, loading: false, error: null });
-        toast("Loaded data from local storage!");
-      } else {
-        set({ error: "No data found", loading: false });
-      }
-    } catch (error) {
-      console.error("Failed to load from localStorage:", error);
-      set({ error: "Failed to load local data", loading: false });
+      set({ error: "Failed to save todos to database" });
+      toast.error("Failed to save todos to database");
     }
   },
 
@@ -489,22 +441,6 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         // If it was updated, return the updated version, otherwise keep the original
         return updatedList || list;
       });
-
-      // Only update localStorage if we're saving all lists (excluding "All" list)
-      const dbLists = updatedLists.filter(list => list.name !== "All");
-      if (dbListsToSave.length === dbLists.length) {
-        localStorage.setItem("todo-lists", JSON.stringify(dbLists));
-      } else {
-        // Update just the changed lists in localStorage
-        const currentLists = JSON.parse(
-          localStorage.getItem("todo-lists") || "[]"
-        );
-        const updatedLocalLists = currentLists.map((list: TodoList) => {
-          const updatedList = listsToSave.find((l) => l.id === list.id);
-          return updatedList || list;
-        });
-        localStorage.setItem("todo-lists", JSON.stringify(updatedLocalLists));
-      }
       
       // Update state with the merged lists that include both updated and non-updated lists
       set({ error: null, lists: updatedLists });
@@ -518,14 +454,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         return updatedList || list;
       });
       
-      // Only save database lists to localStorage (exclude "All" list)
-      const dbLists = updatedLists.filter(list => list.name !== "All");
-      localStorage.setItem("todo-lists", JSON.stringify(dbLists));
       set({ 
         lists: updatedLists, 
-        error: "Failed to save lists to database, saved locally" 
+        error: "Failed to save lists to database" 
       });
-      toast.error("Failed to save lists to database, saved locally");
+      toast.error("Failed to save lists to database");
     }
   },
 
@@ -555,15 +488,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
       const updatedTodos = [...todos, newTodo];
       set({ todos: updatedTodos, error: null });
-      localStorage.setItem("todos", JSON.stringify(updatedTodos));
     } catch (error) {
-      const updatedTodos = [...todos, newTodo];
-      set({
-        todos: updatedTodos,
-        error: "Failed to save to database, saved locally",
-      });
-      localStorage.setItem("todos", JSON.stringify(updatedTodos));
-      toast.error("Failed to save to database, saved locally");
+      console.error("Failed to add todo:", error);
+      set({ error: "Failed to add todo to database" });
+      toast.error("Failed to add todo to database");
     }
   },
 
@@ -595,17 +523,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       );
 
       set({ todos: updatedTodos, error: null });
-      localStorage.setItem("todos", JSON.stringify(updatedTodos));
     } catch (error) {
-      const updatedTodos = todos.map((t) =>
-        t.id === todoId ? updatedTodo : t
-      );
-      set({
-        todos: updatedTodos,
-        error: "Failed to save to database, saved locally",
-      });
-      localStorage.setItem("todos", JSON.stringify(updatedTodos));
-      toast.error("Failed to save to database, saved locally");
+      console.error("Failed to toggle todo:", error);
+      set({ error: "Failed to update todo in database" });
+      toast.error("Failed to update todo in database");
     }
   },
 
@@ -620,15 +541,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       const updatedTodos = todos.filter((t) => t.id !== todoId);
 
       set({ todos: updatedTodos, error: null });
-      localStorage.setItem("todos", JSON.stringify(updatedTodos));
     } catch (error) {
-      const updatedTodos = todos.filter((t) => t.id !== todoId);
-      set({
-        todos: updatedTodos,
-        error: "Failed to save to database, saved locally",
-      });
-      localStorage.setItem("todos", JSON.stringify(updatedTodos));
-      toast.error("Failed to save to database, saved locally");
+      console.error("Failed to delete todo:", error);
+      set({ error: "Failed to delete todo from database" });
+      toast.error("Failed to delete todo from database");
     }
   },
 
@@ -673,17 +589,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       );
 
       set({ todos: updatedTodos, error: null });
-      localStorage.setItem("todos", JSON.stringify(updatedTodos));
     } catch (error) {
-      const updatedTodos = todos.map((t) =>
-        t.id === todoId ? updatedTodo : t
-      );
-      set({
-        todos: updatedTodos,
-        error: "Failed to save to database, saved locally",
-      });
-      localStorage.setItem("todos", JSON.stringify(updatedTodos));
-      toast.error("Failed to save to database, saved locally");
+      console.error("Failed to edit todo:", error);
+      set({ error: "Failed to update todo in database" });
+      toast.error("Failed to update todo in database");
     }
   },
 
@@ -810,7 +719,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     };
     
     try {
-      // Save to Supabase first
+      // Save to Supabase
       const { error } = await supabase.from("lists").insert([
         {
           id: newList.id,
@@ -826,24 +735,12 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       // Update local state after successful database operation
       const updatedLists = [...lists, newList];
       set({ lists: updatedLists, error: null });
-
-      // Update localStorage (exclude "All" list)
-      const dbLists = updatedLists.filter(list => list.name !== "All");
-      localStorage.setItem("todo-lists", JSON.stringify(dbLists));
       
       toast.success("List created successfully!");
     } catch (error) {
       console.error("Failed to create list in Supabase:", error);
-      
-      // Fallback to local-only creation
-      const updatedLists = [...lists, newList];
-      set({ lists: updatedLists, error: "Failed to save to database, saved locally" });
-      
-      // Update localStorage (exclude "All" list)
-      const dbLists = updatedLists.filter(list => list.name !== "All");
-      localStorage.setItem("todo-lists", JSON.stringify(dbLists));
-      
-      toast.error("Failed to save to database, saved locally");
+      set({ error: "Failed to create list in database" });
+      toast.error("Failed to create list in database");
     }
   },
 
@@ -878,22 +775,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       const updatedTodos = todos.filter((t) => t.listId !== id);
 
       set({ lists: updatedLists, todos: updatedTodos, error: null });
-
-      // Keep these as fallback for offline support
-      // Only save the database lists to localStorage (exclude "All" list)
-      const dbLists = updatedLists.filter(list => list.name !== "All");
-      localStorage.setItem("todo-lists", JSON.stringify(dbLists));
-      localStorage.setItem("todos", JSON.stringify(updatedTodos));
+      toast.success("List deleted successfully!");
     } catch (error) {
       console.error("Failed to delete from Supabase:", error);
-      // Fallback to local-only deletion
-      const updatedLists = lists.filter((l) => l.id !== id);
-      const updatedTodos = todos.filter((t) => t.listId !== id);
-
-      await saveLists(updatedLists);
-      await saveTodos(updatedTodos);
-
-      toast.error("Failed to delete from database, updated locally");
+      set({ error: "Failed to delete list from database" });
+      toast.error("Failed to delete list from database");
     }
   },
 
