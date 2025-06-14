@@ -75,3 +75,14 @@
 - Configured proper PWA shortcuts for quick actions
 - Enhanced app with standalone display mode and proper theme colors
 - Maintained full backward compatibility - app still works as normal web application
+
+## 2025-01-05 - Updated browser icon to use PWA icon
+**Time:** 2025-01-05 22:15
+**Summary:** Changed the web browser favicon from the default Vite logo to use the custom PWA icon for better branding consistency. The browser tab now displays the Todo App icon instead of the generic Vite logo.
+
+**Changes made:**
+- Updated `index.html` favicon link from `/vite.svg` to `/icons/pwa-192x192.png`
+- Changed icon type from `image/svg+xml` to `image/png` to match the new PNG format
+- Maintained all existing PWA icon configurations (Apple touch icons, Microsoft tiles)
+- Improved visual consistency across all platform implementations
+- Browser tabs now show the custom Todo App icon instead of the Vite logo
