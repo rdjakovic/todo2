@@ -37,3 +37,15 @@
 - On mobile devices (default), padding is now 0.5rem (8px) instead of 1rem (16px)
 - On small screens and larger (sm breakpoint and up), padding remains 2rem (32px) for optimal desktop experience
 - This provides maximum horizontal space for content on mobile devices while preserving the comfortable spacing on larger screens
+
+## 2025-01-24 - Match TodoForm input height to search input
+**Time:** Current timestamp
+**Summary:** Updated the "Add a new todo" input height to match the search input by using consistent padding classes.
+
+**Changes made:**
+- Updated `src/components/TodoForm.tsx`: Changed input classes from `min-h-12 sm:min-h-10 px-4` to `py-2 px-4`
+- Removed responsive minimum height classes in favor of consistent padding
+- Both search input and todo input now use `py-2` for vertical padding, ensuring identical heights
+- Updated button height to `h-10` for better visual alignment
+- Maintains responsive text sizing with `text-base sm:text-sm`
+- Both inputs now have the same visual height and proportions across all screen sizes

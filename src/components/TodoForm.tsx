@@ -11,12 +11,12 @@ const TodoForm: React.FC = () => {
           type="text"
           value={newTodo}
           onChange={(e) => setNewTodo(e.target.value)}
-          className="flex-1 min-h-12 sm:min-h-10 px-4 text-base sm:text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="flex-1 py-2 px-4 text-base sm:text-sm rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
           placeholder="Add a new todo..."
         />
         <button
           type="submit"
-          className="h-12 sm:h-10 px-6 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2 text-base sm:text-sm font-medium"
+          className="h-10 px-6 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2 text-base sm:text-sm font-medium"
         >
           <PlusIcon className="w-5 h-5" />
           Add
