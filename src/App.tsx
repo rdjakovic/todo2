@@ -68,6 +68,8 @@ function App() {
       console.log("User authenticated but no data loaded, forcing data load...");
       forceDataLoad();
     }
+  }, [user, loading, lists, forceDataLoad]);
+
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const draggedTodo = todos.find((todo) => todo.id === active.id);
