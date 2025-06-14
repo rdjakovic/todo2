@@ -24,8 +24,8 @@ export default function LoginForm() {
       // Show success message
       toast.success("Signed in successfully!");
       
-      // Auth state change will be handled by the auth store listener
-      // which will automatically fetch data
+      // Don't manually fetch data here - let the auth state change listener handle it
+      // This prevents race conditions and duplicate data loading
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);

@@ -43,3 +43,39 @@
 - ✅ **Better Error Handling:** Clear distinction between user preferences and application data
 - ✅ **Reduced Complexity:** Eliminated dual storage strategies and migration logic
 - ✅ **Consistent State:** No more localStorage/database inconsistencies
+
+### 2025-01-28 15:25:00 - Fix authentication loading and duplicate "All" list issues
+**Summary:** Fixed critical authentication and data loading issues that were causing inconsistent app behavior.
+
+**Issues Resolved:**
+1. **Sign-in button sometimes not loading data** - Fixed race condition in auth state management
+2. **Empty data loading when no lists exist** - Fixed initial lists creation logic
+3. **Duplicate "All" list in UI** - Removed "All" from database creation, kept as virtual client-side list only
+
+**Key Changes:**
+- **Fixed fetchLists() function:**
+  - Removed "All" list from initialLists constant and database insertion
+  - Only create database lists (Completed, Personal, Work) when no lists exist
+  - "All" list remains as virtual client-side list only
+  - Improved sorting logic to ensure proper list order
+
+- **Enhanced auth state management:**
+  - Added proper loading state management in auth store
+  - Added error handling for failed data loading after sign-in
+  - Prevented race conditions between auth state changes and data fetching
+
+- **Improved LoginForm component:**
+  - Removed manual data fetching to prevent race conditions
+  - Let auth state change listener handle data loading automatically
+  - Added better error handling and user feedback
+
+- **Updated initialLists constant:**
+  - Removed "All" list from the constant since it's virtual
+  - Only includes lists that should be created in the database
+
+**Benefits:**
+- ✅ **Reliable Sign-in:** Sign-in button now consistently loads data
+- ✅ **No Duplicate Lists:** "All" list appears only once in the UI
+- ✅ **Proper Initial Setup:** New users get correct initial lists created
+- ✅ **Better Error Handling:** Clear feedback when data loading fails
+- ✅ **Consistent State:** Eliminated race conditions in auth flow

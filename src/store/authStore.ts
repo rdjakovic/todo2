@@ -74,10 +74,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // Handle sign in - fetch data immediately
         if (event === "SIGNED_IN" && newUser) {
           console.log("User signed in, fetching data...");
+          // Set loading state in todo store
+          useTodoStore.getState().setLoading(true);
           try {
             await useTodoStore.getState().fetchLists(newUser);
           } catch (error) {
             console.error("Failed to fetch data after sign in:", error);
+            useTodoStore.getState().setLoading(false);
+            useTodoStore.getState().setError("Failed to load data after sign in");
           }
         }
 

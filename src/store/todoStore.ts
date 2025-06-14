@@ -257,9 +257,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
       // If no lists exist, create initial lists
       if (lists?.length === 0) {
-        //const listsToInsert = initialLists.filter(list => list.name !== "All" && list.name !== "Completed");
+        // Filter out "All" list since it's virtual - only create database lists
+        const listsToInsert = initialLists.filter(list => list.name !== "All");
         const { error: insertError } = await supabase.from("lists").insert(
-          initialLists.map((list) => ({
+          listsToInsert.map((list) => ({
             name: list.name,
             icon: list.icon,
             show_completed: list.showCompleted,
@@ -274,7 +275,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           .from("lists")
           .select("*")
           .eq("user_id", user.id)
-          .order("id");
+          .order("created_at", { ascending: true });
 
         if (refetchError) throw refetchError;
         lists = newData;

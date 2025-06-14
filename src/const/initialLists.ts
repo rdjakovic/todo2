@@ -2,11 +2,6 @@ import { TodoList } from "../types/todo";
 
 export const initialLists: Partial<TodoList>[] = [
   {
-    name: "All",
-    icon: "home",
-    showCompleted: true,
-  },
-  {
     name: "Completed",
     icon: "check",
     showCompleted: true,
