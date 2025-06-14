@@ -236,7 +236,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     if (typeof window !== "undefined") {
       localStorage.removeItem("todo-sort-by");
     }
-    // Clear IndexedDB data on reset
+    // Clear IndexedDB data on reset (but don't await it to avoid blocking)
     indexedDBManager.clearAllData().catch(console.error);
     
     set({
@@ -258,6 +258,13 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   fetchLists: async (user) => {
     set({ loading: true });
     
+    // Ensure we have a valid authenticated user before loading any data
+    if (!user) {
+      console.error("No authenticated user provided to fetchLists");
+      set({ loading: false, error: "Authentication required" });
+      return;
+    }
+    
     try {
       // First, try to load from IndexedDB for immediate UI update
       const offlineData = await indexedDBManager.hasOfflineData();
@@ -265,8 +272,15 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         console.log("Loading lists from IndexedDB...");
         const offlineLists = await indexedDBManager.getLists();
         
+        // Verify that offline data belongs to the current user
+        const userLists = offlineLists.filter(list => list.user_id === user.id);
+        if (userLists.length === 0 && offlineLists.length > 0) {
+          // Data belongs to different user, clear it
+          console.log("Clearing IndexedDB data for different user");
+          await indexedDBManager.clearAllData();
+        } else if (userLists.length > 0) {
         // Process offline lists
-        const processedLists = offlineLists.map((list) => ({
+        const processedLists = userLists.map((list) => ({
           ...list,
           showCompleted: list.show_completed,
           userId: list.user_id,
@@ -301,10 +315,15 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         // Load todos from IndexedDB too
         if (offlineData.hasTodos) {
           const offlineTodos = await indexedDBManager.getTodos();
-          set({ todos: offlineTodos });
+          // Filter todos to only include those belonging to current user's lists
+          const userTodos = offlineTodos.filter(todo => 
+            userLists.some(list => list.id === todo.listId)
+          );
+          set({ todos: userTodos });
         }
 
         toast.success("Loaded data from offline storage");
+        }
       }
 
       // Then try to sync with Supabase if online

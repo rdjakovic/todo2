@@ -194,6 +194,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     
     try {
       set({ isLoadingData: false }); // Reset loading state
+      
+      // Clear IndexedDB data BEFORE signing out
+      const { indexedDBManager } = await import("../lib/indexedDB");
+      await indexedDBManager.clearAllData();
+      
       await supabase.auth.signOut();
       set({ user: null });
       // Reset todo store state
@@ -211,12 +216,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         (error as any)?.code === "session_not_found"
       ) {
         // Even if logout fails due to session not found, clear local state
+        const { indexedDBManager } = await import("../lib/indexedDB");
+        await indexedDBManager.clearAllData();
         set({ user: null, error: null, isLoadingData: false });
         useTodoStore.getState().reset();
         return;
       }
 
       // For other errors, still clear the user state but set error message
+      const { indexedDBManager } = await import("../lib/indexedDB");
+      await indexedDBManager.clearAllData();
       set({
         error: error instanceof Error ? error.message : "Failed to sign out",
         user: null,
