@@ -19,15 +19,26 @@ export function Sidebar() {
     isSidebarOpen: isOpen,
     sidebarWidth: width,
     windowWidth,
-    setSelectedListId: onSelectList,
+    setSelectedListId: setSelectedListIdStore,
     setSidebarWidth: onWidthChange,
     toggleSidebar: onToggle,
     createList: onCreateList,
     getTodoCountByList,
+    setIsSidebarOpen,
   } = useTodoStore();
   
   const todoCountByList = getTodoCountByList();
-  const onSelectSettings = () => onSelectList("settings");
+  
+  // Wrapper function to handle list selection and close sidebar on mobile
+  const handleSelectList = useCallback((listId: string) => {
+    setSelectedListIdStore(listId);
+    // Close sidebar on mobile after selection
+    if (windowWidth < 1024) {
+      setIsSidebarOpen(false);
+    }
+  }, [setSelectedListIdStore, windowWidth, setIsSidebarOpen]);
+
+  const onSelectSettings = () => handleSelectList("settings");
   
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -125,7 +136,7 @@ export function Sidebar() {
             <ListItem
               key={list.id}
               list={list}
-              onSelect={() => onSelectList(list.id)}
+              onSelect={() => handleSelectList(list.id)}
               selected={selectedList === list.id}
               todoCount={todoCountByList[list.id] || 0}
             />
