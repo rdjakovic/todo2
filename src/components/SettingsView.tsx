@@ -45,7 +45,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme }) => {
   const { sortBy, setSortBy } = useTodoStore();
 
   return (
-    <div className="flex-1 p-4 sm:p-8">
+    <div className="flex-1 p-2 sm:p-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-4xl font-bold text-gray-800 dark:text-white mb-8">
           Settings

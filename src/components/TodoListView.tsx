@@ -114,7 +114,7 @@ const TodoListView: React.FC = () => {
 
   return (
     <>
-      <div className="flex-1 p-4 sm:p-8">
+      <div className="flex-1 p-2 sm:p-8">
         <div className="max-w-4xl mx-auto px-2 sm:px-4">
           {/* Header with List Name, Search, and Toggle */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 sm:mb-8 gap-4">

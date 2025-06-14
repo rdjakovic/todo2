@@ -26,3 +26,14 @@
 - On mobile devices (default), padding is now 1rem (16px) instead of 2rem (32px)
 - On small screens and larger (sm breakpoint and up), padding remains 2rem (32px) for optimal desktop experience
 - This provides significantly more horizontal space for content on mobile devices while maintaining the comfortable spacing on larger screens
+
+## 2025-01-24 - Reduce mobile padding to 0.5rem
+**Time:** Current timestamp
+**Summary:** Further reduced horizontal padding on mobile devices from 1rem to 0.5rem to maximize content space on small screens.
+
+**Changes made:**
+- Updated `src/components/TodoListView.tsx`: Changed outer div padding class from `p-4 sm:p-8` to `p-2 sm:p-8`
+- Updated `src/components/SettingsView.tsx`: Changed outer div padding class from `p-4 sm:p-8` to `p-2 sm:p-8`
+- On mobile devices (default), padding is now 0.5rem (8px) instead of 1rem (16px)
+- On small screens and larger (sm breakpoint and up), padding remains 2rem (32px) for optimal desktop experience
+- This provides maximum horizontal space for content on mobile devices while preserving the comfortable spacing on larger screens
