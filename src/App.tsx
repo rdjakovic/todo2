@@ -190,7 +190,7 @@ function App() {
     newPriority?: "low" | "medium" | "high",
     newDueDate?: Date
   ) => {
-    await editTodoInList(selectedListId, id, {
+    await editTodoInList(id, {
       title: newTitle,
       notes: newNotes,
       priority: newPriority,
