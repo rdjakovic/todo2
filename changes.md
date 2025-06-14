@@ -1,12 +1,6 @@
-# Changes Log
+## Changes Log
 
-## 2025-01-21 - Fix Demo User Credentials Error
-
-**Date & Time**: 2025-01-21
-
-**Summary**: Fixed Supabase authentication error "Invalid login credentials" by creating a migration to add the demo user account (demo@example.com / demo123) that is advertised in the LoginForm UI. This ensures the demo credentials actually work when users try to sign in.
-
-**Files Changed**:
-- Created `supabase/migrations/create_demo_user.sql` - Migration to create demo user account with the credentials shown in the LoginForm component
-
-**Error Fixed**: Resolved "Invalid login credentials" error when using demo credentials from the login form.
+### 2025-01-28 14:46:00 - Fix syntax error in initialLists.ts
+- Added missing comma after `id: "completed"` property in the initialLists array
+- This was causing build failures and preventing hot module reloading
+- Fixed object literal syntax error that was preventing the application from compiling

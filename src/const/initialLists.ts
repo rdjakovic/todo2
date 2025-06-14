@@ -7,7 +7,7 @@ export const initialLists: Partial<TodoList>[] = [
     showCompleted: true,
   },
   {
-    id: "completed"
+    id: "completed",
     name: "Completed",
     icon: "check",
     showCompleted: true,
