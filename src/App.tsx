@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import clsx from "clsx";
 import {
   DndContext,
@@ -61,7 +61,6 @@ function App() {
   useEffect(() => {
     initialize();
   }, [initialize]);
-
 
   // Listen for service worker sync completion messages
   useEffect(() => {
@@ -259,7 +258,7 @@ function App() {
             onCancel={closeEditDialog}
           />
         </Suspense>
-        
+
         {/* PWA Install Prompt */}
         <PWAInstallPrompt />
       </div>

@@ -1,7 +1,16 @@
 // IndexedDB utility for offline data storage and sync queue management
 export interface SyncOperation {
   id: string;
-  type: 'addTodo' | 'toggleTodo' | 'deleteTodo' | 'editTodo' | 'createList' | 'deleteList' | 'editList' | 'saveTodos' | 'saveLists';
+  type:
+    | "addTodo"
+    | "toggleTodo"
+    | "deleteTodo"
+    | "editTodo"
+    | "createList"
+    | "deleteList"
+    | "editList"
+    | "saveTodos"
+    | "saveLists";
   data: any;
   timestamp: number;
   retryCount: number;
@@ -222,7 +231,7 @@ class IndexedDBManager {
   async clearAllData(): Promise<void> {
     const db = await this.openDB();
     const transaction = db.transaction([LISTS_STORE, TODOS_STORE, SYNC_QUEUE_STORE], 'readwrite');
-    
+
     const promises = [
       new Promise<void>((resolve, reject) => {
         const request = transaction.objectStore(LISTS_STORE).clear();
@@ -251,7 +260,7 @@ class IndexedDBManager {
         this.getLists(),
         this.getTodos(),
       ]);
-      
+
       return {
         hasLists: lists.length > 0,
         hasTodos: todos.length > 0,
@@ -271,8 +280,9 @@ export const registerBackgroundSync = async (): Promise<void> => {
   if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
     try {
       const registration = await navigator.serviceWorker.ready;
-      await registration.sync.register('background-sync');
-      console.log('Background sync registered');
+      // Type assertion to handle experimental Background Sync API
+      await (registration as any).sync.register("background-sync");
+      console.log("Background sync registered");
     } catch (error) {
       console.error('Failed to register background sync:', error);
     }

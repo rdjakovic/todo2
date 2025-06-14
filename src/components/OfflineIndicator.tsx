@@ -1,7 +1,6 @@
-import React from 'react';
-import { WifiIcon, CloudIcon } from '@heroicons/react/24/outline';
-import { useTodoStore } from '../store/todoStore';
-import clsx from 'clsx';
+import React from "react";
+import { WifiIcon, CloudIcon } from "@heroicons/react/24/outline";
+import { useTodoStore } from "../store/todoStore";
 
 const OfflineIndicator: React.FC = () => {
   const { isOffline } = useTodoStore();
