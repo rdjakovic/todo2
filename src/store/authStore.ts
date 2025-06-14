@@ -63,6 +63,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       set({ user, initialized: true, loading: false });
 
+      // Track if we're already loading data to prevent duplicates
+      let isLoadingData = false;
       // Set up auth state change listener
       const {
         data: { subscription },
@@ -72,8 +74,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ user: newUser });
 
         // Handle sign in - fetch data immediately
-        if (event === "SIGNED_IN" && newUser) {
+        if (event === "SIGNED_IN" && newUser && !isLoadingData) {
           console.log("User signed in, fetching data...");
+          isLoadingData = true;
           // Set loading state in todo store
           useTodoStore.getState().setLoading(true);
           try {
@@ -82,12 +85,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             console.error("Failed to fetch data after sign in:", error);
             useTodoStore.getState().setLoading(false);
             useTodoStore.getState().setError("Failed to load data after sign in");
+          } finally {
+            isLoadingData = false;
           }
         }
 
         // Reset todo store when user signs out
         if (event === "SIGNED_OUT") {
           useTodoStore.getState().reset();
+          isLoadingData = false;
         }
       });
 
