@@ -255,13 +255,6 @@ function App() {
                   todo={activeDraggedTodo}
                   onToggle={async () => {}}
                   onDelete={async () => {}}
-                  onEdit={async (
-                    _id,
-                    _title,
-                    _notes,
-                    _priority,
-                    _dueDate
-                  ) => {}}
                   onOpenEditDialog={() => {}}
                 />
               )}
