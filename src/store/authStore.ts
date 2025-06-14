@@ -34,7 +34,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { user, isLoadingData } = get();
     if (!user || isLoadingData) return;
 
-    console.log("Force loading data for user:", user.id);
+    console.log("Force loading data for user:", user.id, "isLoadingData:", isLoadingData);
     set({ isLoadingData: true });
     useTodoStore.getState().setLoading(true);
     
@@ -113,7 +113,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log("Auth state change:", event, session?.user?.id);
+        console.log("Auth state change:", event, session?.user?.id, "isLoadingData:", get().isLoadingData);
         const newUser = session?.user ?? null;
         const currentUser = get().user;
         
@@ -122,8 +122,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           set({ user: newUser });
         }
 
-        // Handle sign in - fetch data immediately
-        if (event === "SIGNED_IN" && newUser && !get().isLoadingData) {
+        // Handle sign in - fetch data immediately (but only once)
+        if (event === "SIGNED_IN" && newUser) {
+          const { isLoadingData } = get();
+          if (isLoadingData) {
+            console.log("Data loading already in progress, skipping...");
+            return;
+          }
           console.log("User signed in, loading data...");
           await get().forceDataLoad();
         }
@@ -134,8 +139,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           set({ isLoadingData: false });
         }
 
-        // Handle token refresh
-        if (event === "TOKEN_REFRESHED" && newUser && !get().isLoadingData) {
+        // Handle token refresh (but only if no data exists and not already loading)
+        if (event === "TOKEN_REFRESHED" && newUser) {
+          const { isLoadingData } = get();
+          if (isLoadingData) {
+            console.log("Data loading already in progress during token refresh, skipping...");
+            return;
+          }
           console.log("Token refreshed, ensuring data is loaded...");
           // Check if we have data, if not, load it
           const todoStore = useTodoStore.getState();

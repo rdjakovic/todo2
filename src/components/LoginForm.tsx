@@ -26,12 +26,8 @@ export default function LoginForm() {
       // Show success message
       toast.success("Signed in successfully!");
       
-      // Force data load as a backup in case auth state change doesn't trigger
-      if (data.user) {
-        setTimeout(() => {
-          forceDataLoad();
-        }, 100); // Small delay to ensure auth state is updated
-      }
+      // Remove backup data loading - let auth state change handle it
+      // The auth state change listener will handle data loading automatically
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);
