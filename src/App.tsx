@@ -100,22 +100,25 @@ function App() {
       if (targetList.name.toLowerCase() === "all") {
         return;
       }
-      
+
       // Check if dragging from "All" list - only allow dropping to "Completed" list
       const sourceList = lists.find((list) => list.id === selectedListId);
-      if (sourceList?.name.toLowerCase() === "all" && targetList.name.toLowerCase() !== "completed") {
+      if (
+        sourceList?.name.toLowerCase() === "all" &&
+        targetList.name.toLowerCase() !== "completed"
+      ) {
         return;
       }
-      
+
       // Special handling for "Completed" list
       const isTargetCompleted = targetList.name.toLowerCase() === "completed";
       const isSourceCompleted = sourceTodo.completed;
-      
+
       // Update todo with new list ID and completion status
       const updatedTodos = todos.map((todo) => {
         if (todo.id === todoId) {
           const updatedTodo = { ...todo, listId: targetList.id };
-          
+
           // If dropping on "Completed" list, mark as completed
           if (isTargetCompleted && !isSourceCompleted) {
             updatedTodo.completed = true;
@@ -126,12 +129,12 @@ function App() {
             updatedTodo.completed = false;
             updatedTodo.dateOfCompletion = undefined;
           }
-          
+
           return updatedTodo;
         }
         return todo;
       });
-      
+
       await saveTodos(updatedTodos);
       // After saving to backend, update local state directly
       setTodos(updatedTodos);
@@ -200,13 +203,18 @@ function App() {
   }
 
   if (!user) {
-    return <LoginForm onSuccess={(user) => {
-      setDataInitialized(false);
-      const authUser = useAuthStore.getState().user;
-      if (authUser) {
-          fetchLists(authUser);
-      }
-    }} />;
+    return (
+      <LoginForm
+        onSuccess={() => {
+          const authUser = useAuthStore.getState().user;
+          if (authUser) {
+            fetchLists(authUser);
+            // Mark as initialised so the effect skips a second call
+            setDataInitialized(true);
+          }
+        }}
+      />
+    );
   }
 
   if (loading) {
@@ -229,7 +237,9 @@ function App() {
             className="flex-1 transition-all duration-300"
             style={{
               marginLeft:
-                windowWidth >= 1024 && isSidebarOpen ? `${sidebarWidth}px` : "0",
+                windowWidth >= 1024 && isSidebarOpen
+                  ? `${sidebarWidth}px`
+                  : "0",
               paddingTop:
                 (!isSidebarOpen && windowWidth >= 1024) || windowWidth < 1024
                   ? "4rem"
