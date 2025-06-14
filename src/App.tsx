@@ -37,7 +37,6 @@ function App() {
     activeDraggedTodo,
     isEditDialogOpen,
     todoToEditDialog,
-    fetchLists,
     saveTodos,
     setTodos,
     editTodo: editTodoInList,
@@ -49,6 +48,7 @@ function App() {
 
   const { theme, toggleTheme } = useTheme();
   const [dataInitialized, setDataInitialized] = useState(false);
+  const [dataFetching, setDataFetching] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -66,15 +66,23 @@ function App() {
   useEffect(() => {
     if (!user) {
       setDataInitialized(false);
+      setDataFetching(false);
     }
   }, [user]);
 
   useEffect(() => {
-    if (user && !dataInitialized) {
-      fetchLists(user);
-      setDataInitialized(true);
+    if (user && !dataInitialized && !dataFetching) {
+      console.log("Fetching data for user:", user.id);
+      setDataFetching(true);
+
+      // Call fetchLists directly from the store to avoid dependency issues
+      const todoStore = useTodoStore.getState();
+      todoStore.fetchLists(user).finally(() => {
+        setDataInitialized(true);
+        setDataFetching(false);
+      });
     }
-  }, [user, dataInitialized, fetchLists]);
+  }, [user, dataInitialized, dataFetching]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -203,9 +211,7 @@ function App() {
   }
 
   if (!user) {
-    return (
-      <LoginForm onSuccess={() => {}} />
-    );
+    return <LoginForm />;
   }
 
   if (loading) {
