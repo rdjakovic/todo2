@@ -48,8 +48,6 @@ function App() {
   } = useTodoStore();
 
   const { theme, toggleTheme } = useTheme();
-  const [dataInitialized, setDataInitialized] = useState(false);
-  const [dataFetching, setDataFetching] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -62,28 +60,6 @@ function App() {
   useEffect(() => {
     initialize();
   }, [initialize]);
-
-  // Reset dataInitialized when user changes (especially when going from authenticated to unauthenticated)
-  useEffect(() => {
-    if (!user) {
-      setDataInitialized(false);
-      setDataFetching(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (user && !dataInitialized && !dataFetching) {
-      console.log("Fetching data for user:", user.id);
-      setDataFetching(true);
-
-      // Call fetchLists directly from the store to avoid dependency issues
-      const todoStore = useTodoStore.getState();
-      todoStore.fetchLists(user).finally(() => {
-        setDataInitialized(true);
-        setDataFetching(false);
-      });
-    }
-  }, [user, dataInitialized, dataFetching]);
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;

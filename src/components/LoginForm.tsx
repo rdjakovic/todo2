@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
+import toast from "react-hot-toast";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -19,9 +20,16 @@ export default function LoginForm() {
       });
 
       if (error) throw error;
+      
+      // Show success message
+      toast.success("Signed in successfully!");
+      
       // Auth state change will be handled by the auth store listener
+      // which will automatically fetch data
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      const errorMessage = err instanceof Error ? err.message : "An error occurred";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -55,6 +63,7 @@ export default function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               required
+              disabled={loading}
             />
           </div>
 
@@ -72,17 +81,33 @@ export default function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
               required
+              disabled={loading}
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-2 px-4 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? (
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Signing in...
+              </div>
+            ) : (
+              "Sign In"
+            )}
           </button>
         </form>
+        
+        <div className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+          <p>Demo credentials:</p>
+          <p className="font-mono text-xs">
+            Email: demo@example.com<br />
+            Password: demo123
+          </p>
+        </div>
       </div>
     </div>
   );

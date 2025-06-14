@@ -66,9 +66,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Set up auth state change listener
       const {
         data: { subscription },
-      } = supabase.auth.onAuthStateChange((event, session) => {
+      } = supabase.auth.onAuthStateChange(async (event, session) => {
         console.log("Auth state change:", event, session?.user?.id);
-        set({ user: session?.user ?? null });
+        const newUser = session?.user ?? null;
+        set({ user: newUser });
+
+        // Handle sign in - fetch data immediately
+        if (event === "SIGNED_IN" && newUser) {
+          console.log("User signed in, fetching data...");
+          try {
+            await useTodoStore.getState().fetchLists(newUser);
+          } catch (error) {
+            console.error("Failed to fetch data after sign in:", error);
+          }
+        }
 
         // Reset todo store when user signs out
         if (event === "SIGNED_OUT") {

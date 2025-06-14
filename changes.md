@@ -49,3 +49,34 @@
 - Updated button height to `h-10` for better visual alignment
 - Maintains responsive text sizing with `text-base sm:text-sm`
 - Both inputs now have the same visual height and proportions across all screen sizes
+
+## 2025-01-24 - Fix login data loading issue
+**Time:** Current timestamp
+**Summary:** Fixed the issue where after signing in, the login dialog would stay open and data wouldn't load until page refresh. The authentication flow now properly triggers data fetching immediately after successful sign-in.
+
+**Changes made:**
+- **Modified `src/store/authStore.ts`**: 
+  - Enhanced the `onAuthStateChange` listener to detect "SIGNED_IN" events
+  - Added automatic data fetching when user signs in successfully
+  - Improved error handling and logging for auth state changes
+  - Data is now fetched immediately upon sign-in without requiring page refresh
+
+- **Updated `src/App.tsx`**: 
+  - Simplified the component by removing complex data initialization logic
+  - Removed `dataInitialized` and `dataFetching` state management
+  - Auth store now handles data fetching directly on sign-in
+  - Cleaner component structure with better separation of concerns
+
+- **Enhanced `src/components/LoginForm.tsx`**: 
+  - Added loading spinner and better visual feedback during sign-in
+  - Added success toast notification when sign-in completes
+  - Added demo credentials display for easier testing
+  - Improved accessibility with disabled states during loading
+  - Better error handling with toast notifications
+
+**Benefits:**
+- ✅ Login dialog now closes immediately after successful authentication
+- ✅ Data loads automatically without requiring page refresh
+- ✅ Better user experience with visual feedback and loading states
+- ✅ More reliable authentication flow with proper error handling
+- ✅ Cleaner code architecture with better separation of concerns
