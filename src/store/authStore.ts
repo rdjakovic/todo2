@@ -42,11 +42,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    console.log("Force loading data for user:", user.id, "isLoadingData:", isLoadingData);
+    console.log("Starting force data load for user:", user.id);
     set({ isLoadingData: true });
-    useTodoStore.getState().setLoading(true);
     
     try {
+      // Check if we already have data
+      const todoStore = useTodoStore.getState();
+      if (todoStore.lists.length > 0) {
+        console.log("Data already exists, skipping force load");
+        return;
+      }
+      
+      todoStore.setLoading(true);
       await useTodoStore.getState().fetchLists(user);
       console.log("Force data load completed successfully");
     } catch (error) {
@@ -125,9 +132,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log("Auth state change:", event, session?.user?.id, "isLoadingData:", get().isLoadingData);
+        console.log("Auth state change:", event, session?.user?.id);
         const newUser = session?.user ?? null;
-        const currentUser = get().user;
         
         // Always update user state to ensure UI reactivity
         set({ user: newUser, loading: false });
@@ -139,6 +145,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             console.log("Data loading already in progress, skipping...");
             return;
           }
+          
+          // Check if we already have data for this user
+          const todoStore = useTodoStore.getState();
+          if (todoStore.lists.length > 0) {
+            console.log("Data already exists for signed in user, skipping load");
+            return;
+          }
+          
           console.log("User signed in via auth state change, loading data...");
           try {
             await get().forceDataLoad();
@@ -153,23 +167,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           set({ isLoadingData: false });
         }
 
-        // Handle token refresh (but only if no data exists and not already loading)
+        // Handle token refresh - just ensure we have data
         if (event === "TOKEN_REFRESHED" && newUser) {
-          const { isLoadingData } = get();
-          if (isLoadingData) {
-            console.log("Data loading already in progress during token refresh, skipping...");
-            return;
-          }
-          console.log("Token refreshed, ensuring data is loaded...");
-          // Check if we have data, if not, load it
-          const todoStore = useTodoStore.getState();
-          if (todoStore.lists.length === 0) {
-            try {
-              await get().forceDataLoad();
-            } catch (error) {
-              console.error("Failed to load data on token refresh:", error);
-            }
-          }
+          console.log("Token refreshed for user:", newUser.id);
+          // Don't force reload if we already have data
         }
       });
 

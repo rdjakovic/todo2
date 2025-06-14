@@ -265,6 +265,17 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       return;
     }
     
+    // Check if we already have data for this user
+    const currentLists = get().lists;
+    if (currentLists.length > 0) {
+      const allList = currentLists.find(list => list.name.toLowerCase() === "all");
+      if (allList && allList.userId === user.id) {
+        console.log("Data already loaded for current user, skipping fetch");
+        set({ loading: false });
+        return;
+      }
+    }
+    
     try {
       // First, try to load from IndexedDB for immediate UI update
       const offlineData = await indexedDBManager.hasOfflineData();
@@ -322,7 +333,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           set({ todos: userTodos });
         }
 
-        toast.success("Loaded data from offline storage");
+        console.log("Loaded data from offline storage");
         }
       }
 
@@ -405,7 +416,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         // Sync any pending operations
         await get().syncPendingOperations();
 
-        toast.success("Data synced successfully!");
+        console.log("Data synced successfully!");
       } else {
         set({ isOffline: true, loading: false });
         if (!offlineData.hasLists) {
