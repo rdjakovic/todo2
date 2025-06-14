@@ -117,3 +117,42 @@
 - ✅ **No Duplicate Messages:** Only one success message per sign-in
 - ✅ **Better Performance:** Eliminates unnecessary database requests
 - ✅ **Cleaner Network Activity:** Reduces redundant API calls
+
+### 2025-01-28 15:45:00 - Fix authentication reliability and data loading issues
+**Summary:** Completely overhauled authentication flow to fix persistent sign-in and data loading issues.
+
+**Issues Resolved:**
+1. **Sign-in button sometimes not working** - Fixed by improving session handling and adding backup data loading
+2. **Data not loading even after refresh** - Added multiple fallback mechanisms to ensure data loads
+3. **Inconsistent authentication state** - Improved auth state management with better error handling
+
+**Key Changes:**
+- **Enhanced Auth Store:**
+  - Added `isLoadingData` flag to track data loading state
+  - Added `forceDataLoad()` method for manual data loading
+  - Improved session handling with both `getSession()` and `getUser()` calls
+  - Added TOKEN_REFRESHED event handling
+  - Better error handling for various auth scenarios
+
+- **Improved LoginForm:**
+  - Added backup data loading mechanism after successful sign-in
+  - Uses `forceDataLoad()` as fallback if auth state change doesn't trigger
+  - Added small delay to ensure auth state is properly updated
+
+- **Enhanced App.tsx:**
+  - Added backup data loading check in useEffect
+  - Automatically triggers data load if user is authenticated but no data exists
+  - Provides additional safety net for data loading
+
+- **Better Session Management:**
+  - Checks both session and user on initialization
+  - Handles refresh token scenarios more reliably
+  - Loads data immediately if user exists on app start
+  - Prevents duplicate data loading with proper flags
+
+**Benefits:**
+- ✅ **Reliable Sign-in:** Multiple fallback mechanisms ensure data always loads
+- ✅ **Better Session Handling:** Improved handling of refresh tokens and session states
+- ✅ **Automatic Recovery:** App automatically recovers if data loading fails initially
+- ✅ **Consistent State:** Eliminates race conditions and inconsistent auth states
+- ✅ **Better Error Handling:** More robust error handling for various auth scenarios
