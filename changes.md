@@ -45,3 +45,15 @@
 - On large screens and up: search field maintains previous styling with `max-w-md` constraint
 - Search field now perfectly aligns with todo items width across all screen sizes
 - Improved visual consistency between search field and todo items layout
+
+## 2025-01-05 - Moved due date to next line in mobile view
+**Time:** 2025-01-05 21:45
+**Summary:** Improved the mobile layout of todo items by moving the due date badge to its own line on mobile devices while keeping it inline with other elements on larger screens. This prevents overcrowding and improves readability on smaller screens.
+
+**Changes made:**
+- Modified TodoItem.tsx layout structure to separate due date display for mobile vs desktop
+- On mobile: due date now appears on its own line below the date created and priority badges
+- On desktop (sm and up): due date remains inline with other elements as before
+- Used responsive utility classes: `hidden sm:inline-block` for desktop inline display and `sm:hidden` for mobile separate line
+- Maintained existing styling and functionality while improving mobile user experience
+- Better visual hierarchy and reduced horizontal crowding on mobile devices
