@@ -53,6 +53,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     // Only initialize once
     if (get().initialized) return;
 
+    set({ loading: true });
+
     try {
       // First, check current session
       const {
@@ -117,10 +119,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const newUser = session?.user ?? null;
         const currentUser = get().user;
         
-        // Only update user if it actually changed
-        if (newUser?.id !== currentUser?.id) {
-          set({ user: newUser });
-        }
+        // Always update user state to ensure UI reactivity
+        set({ user: newUser, loading: false });
 
         // Handle sign in - fetch data immediately (but only once)
         if (event === "SIGNED_IN" && newUser) {
