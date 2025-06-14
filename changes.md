@@ -311,3 +311,40 @@
 - ✅ **Clean Sessions:** Fresh start for each authentication session
 - ✅ **No Data Leakage:** Prevents previous user's data from being visible
 - ✅ **Proper Authentication Flow:** Data only loads when properly authenticated
+
+### 2025-01-28 17:00:00 - Fix sign-in button not loading data issue
+**Summary:** Fixed issue where clicking "Sign In" button sometimes didn't load data until browser refresh, implementing multiple fallback mechanisms to ensure reliable data loading.
+
+**Problem:** 
+- Sign-in button would authenticate successfully but data wouldn't load immediately
+- Users had to refresh the browser to see their data
+- Auth state change listener wasn't always triggering reliably
+- Race condition between authentication and data loading
+
+**Solution:**
+- **Enhanced LoginForm component:**
+  - Added backup data loading mechanism with 500ms delay after successful sign-in
+  - Uses `forceDataLoad()` as fallback if auth state change doesn't trigger
+  - Provides additional safety net for data loading
+
+- **Improved error handling in forceDataLoad:**
+  - Better logging to track when data loading is skipped vs. attempted
+  - Re-throw errors to allow callers to handle failures appropriately
+  - More detailed console logging for debugging
+
+- **Enhanced auth state change listener:**
+  - Added try-catch blocks around data loading calls
+  - Better error logging for failed data loads
+  - Prevents auth state change failures from breaking the flow
+
+- **Added backup mechanism in App.tsx:**
+  - Automatically detects when user exists but no data is loaded
+  - Triggers backup data loading as additional safety net
+  - Runs after initial auth check to catch missed data loads
+
+**Benefits:**
+- ✅ **Reliable Sign-in:** Multiple fallback mechanisms ensure data always loads
+- ✅ **Better User Experience:** No need to refresh browser after sign-in
+- ✅ **Robust Error Handling:** Graceful handling of auth and data loading failures
+- ✅ **Automatic Recovery:** App automatically recovers if initial data loading fails
+- ✅ **Consistent Behavior:** Eliminates race conditions in authentication flow
