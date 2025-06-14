@@ -257,9 +257,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
       // If no lists exist, create initial lists
       if (lists?.length === 0) {
-        const listsToInsert = initialLists.filter(list => list.name !== "All" && list.name !== "Completed");
+        //const listsToInsert = initialLists.filter(list => list.name !== "All" && list.name !== "Completed");
         const { error: insertError } = await supabase.from("lists").insert(
-          listsToInsert.map((list) => ({
+          initialLists.map((list) => ({
             name: list.name,
             icon: list.icon,
             show_completed: list.showCompleted,
