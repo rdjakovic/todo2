@@ -24,3 +24,13 @@
 - Search works across all lists including "All", "Completed", and custom lists
 - Search filters both todo title and notes content
 - Added proper state reset for search query in the reset function
+
+## 2025-01-05 - Added Escape key to reset search field
+**Time:** 2025-01-05 21:15
+**Summary:** Enhanced the search functionality by adding Escape key support to clear the search field. Users can now quickly reset the search by pressing Esc in addition to clicking the clear (X) button.
+
+**Changes made:**
+- Added `handleSearchKeyDown` function to handle keyboard events in the search input
+- Added `onKeyDown` event handler to the search input field
+- Implemented Escape key detection to trigger the existing `handleClearSearch` function
+- Improved user experience with keyboard shortcuts for search management
