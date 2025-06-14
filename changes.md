@@ -61,3 +61,52 @@
 - `src/utils/helper.ts`: Removed unused utility functions
 
 The application now has a much cleaner codebase with no unused code, better type safety, and improved maintainability.
+
+## 2025-01-27 - PWA Login Issues Fix
+**Date:** January 27, 2025
+**Time:** Current timestamp
+**Summary:** Fixed PWA login issues and updated deprecated meta tags to resolve console errors and authentication problems in PWA mode.
+
+**Issues Fixed:**
+1. **Deprecated Meta Tag**: Replaced `apple-mobile-web-app-capable` with `mobile-web-app-capable` to resolve deprecation warning
+2. **Service Worker Caching Issues**: Updated service worker to exclude Supabase API requests from caching to prevent authentication interference
+3. **Cache Strategy**: Improved caching strategy to handle authentication and API requests properly
+
+**Changes made:**
+
+### index.html:
+- Replaced deprecated `<meta name="apple-mobile-web-app-capable" content="yes">` with `<meta name="mobile-web-app-capable" content="yes">`
+- Maintained all other PWA meta tags for proper mobile app behavior
+
+### public/sw.js:
+- **Updated Cache Version**: Changed cache name to 'todo-app-v2' to force cache refresh
+- **API Request Exclusion**: Added logic to exclude Supabase API requests from caching:
+  - Supabase domains (supabase.co, supabase.in)
+  - Authentication endpoints (/auth/)
+  - REST API endpoints (/rest/)
+  - Realtime endpoints (/realtime/)
+  - All non-GET requests
+- **Improved Cache Strategy**: 
+  - API requests always go to network
+  - Static resources use cache-first strategy
+  - Added fallback to index.html for offline document requests
+- **Service Worker Lifecycle**: 
+  - Added `skipWaiting()` on install for immediate activation
+  - Added `clients.claim()` on activate for immediate control
+- **Enhanced Error Handling**: Added proper error handling for offline scenarios
+- **Notification Handling**: Added notification click handler for better UX
+
+**Benefits Achieved:**
+- ✅ **Resolved Console Errors**: Eliminated deprecated meta tag warnings
+- 🔐 **Fixed Authentication**: Supabase requests no longer cached, allowing proper login/logout
+- 📱 **Better PWA Experience**: Improved offline handling and cache management
+- 🚀 **Faster Updates**: Service worker updates immediately without waiting
+- 🔄 **Reliable Sync**: API requests always fetch fresh data from server
+
+**Technical Details:**
+- The service worker now uses a sophisticated caching strategy that distinguishes between static assets (cached) and dynamic API requests (always fresh)
+- Authentication flows work properly in PWA mode as they bypass the cache
+- Users can now log in and out successfully in installed PWA mode
+- The app gracefully handles offline scenarios while maintaining authentication integrity
+
+This fix resolves the PWA login issues while maintaining optimal performance and offline capabilities.
