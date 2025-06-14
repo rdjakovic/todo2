@@ -79,7 +79,6 @@
 - ✅ **Proper Initial Setup:** New users get correct initial lists created
 - ✅ **Better Error Handling:** Clear feedback when data loading fails
 - ✅ **Consistent State:** Eliminated race conditions in auth flow
-- ✅ **Consistent State:** Eliminated race conditions in auth flow
 
 ### 2025-01-28 15:30:00 - Fix duplicate database connection success messages
 **Summary:** Fixed issue where "Connection to database successful!" message was appearing twice during sign-in.
@@ -98,3 +97,23 @@
 - ✅ **Clean User Experience:** Only one success message per sign-in
 - ✅ **Clear Messaging:** More descriptive success message
 - ✅ **Reduced Noise:** Eliminates duplicate notifications
+
+### 2025-01-28 15:35:00 - Fix duplicate data loading and multiple success messages
+**Summary:** Fixed issue where data was being loaded multiple times during sign-in, causing duplicate success messages and unnecessary database calls.
+
+**Problem:** 
+- Auth state change listener was triggering multiple SIGNED_IN events
+- Each event was calling `fetchLists()` independently
+- Result: Multiple database calls and duplicate "Data loaded successfully!" messages
+
+**Solution:**
+- Added `isLoadingData` flag to prevent concurrent data loading
+- Only allow one data loading operation at a time during sign-in
+- Reset flag on sign-out and after loading completes
+- Added proper cleanup in finally block
+
+**Benefits:**
+- ✅ **Single Data Load:** Only one database call per sign-in
+- ✅ **No Duplicate Messages:** Only one success message per sign-in
+- ✅ **Better Performance:** Eliminates unnecessary database requests
+- ✅ **Cleaner Network Activity:** Reduces redundant API calls
