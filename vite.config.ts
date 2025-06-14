@@ -53,4 +53,17 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
+  
+  // PWA configuration
+  build: {
+    rollupOptions: {
+      // Ensure service worker and manifest are included in build
+      input: {
+        main: '/index.html',
+      },
+    },
+  },
+  
+  // Copy PWA files to dist during build
+  publicDir: 'public',
 }));

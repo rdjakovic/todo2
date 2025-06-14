@@ -8,11 +8,45 @@
       name="description"
       content="A simple and efficient Todo application built with Tauri, React, and TypeScript. Organize your tasks and boost your productivity."
     />
-    <title>Tauri + React + Typescript</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#9333ea" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Todo App" />
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/icons/pwa-192x192.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icons/pwa-192x192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icons/pwa-512x512.png" />
+    
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#9333ea" />
+    <meta name="msapplication-TileImage" content="/icons/pwa-192x192.png" />
+    
+    <title>Todo App - Task Manager</title>
   </head>
 
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

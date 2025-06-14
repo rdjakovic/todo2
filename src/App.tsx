@@ -14,6 +14,7 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { Sidebar } from "./components/Sidebar.tsx";
 import TodoItem from "./components/TodoItem";
 import LoginForm from "./components/LoginForm";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import { useAuthStore } from "./store/authStore";
 import { useTodoStore } from "./store/todoStore";
 const EditTodoDialog = lazy(() => import("./components/EditTodoDialog"));
@@ -275,6 +276,9 @@ function App() {
             onCancel={closeEditDialog}
           />
         </Suspense>
+        
+        {/* PWA Install Prompt */}
+        <PWAInstallPrompt />
       </div>
     </DndContext>
   );
