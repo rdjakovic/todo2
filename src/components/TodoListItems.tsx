@@ -50,7 +50,6 @@ const TodoListItems = forwardRef<HTMLDivElement, TodoListItemsProps>(
                   todo={todo}
                   onToggle={onToggle}
                   onDelete={onDelete}
-                  onEdit={onEdit}
                   onOpenEditDialog={onOpenEditDialog}
                 />
               ))}

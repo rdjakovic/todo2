@@ -10,6 +10,7 @@ describe("TodoItem", () => {
     title: "Test Todo",
     completed: false,
     dateCreated: new Date(),
+    listId: "test-list-id", // Added required listId property
   };
 
   const mockOnToggle = vi.fn();
