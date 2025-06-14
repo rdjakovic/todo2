@@ -204,16 +204,7 @@ function App() {
 
   if (!user) {
     return (
-      <LoginForm
-        onSuccess={() => {
-          const authUser = useAuthStore.getState().user;
-          if (authUser) {
-            fetchLists(authUser);
-            // Mark as initialised so the effect skips a second call
-            setDataInitialized(true);
-          }
-        }}
-      />
+      <LoginForm onSuccess={() => {}} />
     );
   }
 
