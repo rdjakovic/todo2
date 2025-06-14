@@ -34,3 +34,14 @@
 - Added `onKeyDown` event handler to the search input field
 - Implemented Escape key detection to trigger the existing `handleClearSearch` function
 - Improved user experience with keyboard shortcuts for search management
+
+## 2025-01-05 - Fixed search field width in mobile view
+**Time:** 2025-01-05 21:30
+**Summary:** Adjusted the search field width to match the todo items container width in mobile view. Previously, the search field was constrained by max-width on mobile devices, making it narrower than the todo items.
+
+**Changes made:**
+- Changed search field container from `flex-1 max-w-md mx-auto lg:mx-0` to `w-full lg:flex-1 lg:max-w-md lg:mx-0`
+- On mobile devices: search field now uses full width (`w-full`)
+- On large screens and up: search field maintains previous styling with `max-w-md` constraint
+- Search field now perfectly aligns with todo items width across all screen sizes
+- Improved visual consistency between search field and todo items layout
