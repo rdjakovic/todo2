@@ -268,14 +268,6 @@ const TodoListView: React.FC = () => {
               filteredTodos={getFilteredTodos()}
               onToggle={toggleTodo}
               onDelete={(id) => deleteTodo(selectedListId, id)}
-              onEdit={(id, title, notes, priority, dueDate) =>
-                editTodo(selectedListId, id, {
-                  title,
-                  notes,
-                  priority,
-                  dueDate,
-                })
-              }
               onOpenEditDialog={openEditDialog}
             />
           </AnimatePresence>
@@ -284,7 +276,7 @@ const TodoListView: React.FC = () => {
 
       <ListEditDialog
         isOpen={isEditDialogOpen}
-        list={currentList}
+        list={currentList ?? null}
         onSave={handleEditList}
         onCancel={() => setIsEditDialogOpen(false)}
       />

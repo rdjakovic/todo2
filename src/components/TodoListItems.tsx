@@ -13,18 +13,11 @@ interface TodoListItemsProps {
   filteredTodos: Todo[];
   onToggle: (id: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
-  onEdit: (
-    id: string,
-    newText: string,
-    newNotes?: string,
-    newPriority?: "low" | "medium" | "high",
-    newDueDate?: Date
-  ) => Promise<void>;
   onOpenEditDialog: (todo: Todo) => void;
 }
 
 const TodoListItems = forwardRef<HTMLDivElement, TodoListItemsProps>(
-  ({ filteredTodos, onToggle, onDelete, onEdit, onOpenEditDialog }, ref) => {
+  ({ filteredTodos, onToggle, onDelete, onOpenEditDialog }, ref) => {
     if (filteredTodos.length === 0) {
       return (
         <motion.div

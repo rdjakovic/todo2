@@ -32,7 +32,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
 export async function testConnection() {
   try {
     // Test with a simple query that doesn't require authentication
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('lists')
       .select('count')
       .limit(1);
