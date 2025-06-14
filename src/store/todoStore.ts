@@ -60,15 +60,14 @@ interface TodoState {
 
   // Todo operations
   fetchLists: (user: User) => Promise<void>;
-  fetchTodos: (user: User) => Promise<void>;
+  fetchTodos: () => Promise<void>;
   saveLists: (listsToSave: TodoList[]) => Promise<void>;
   saveTodos: (todos: Todo[]) => Promise<void>;
   loadFromLocalStorage: () => Promise<void>;
   addTodo: (listId: string, todo: Omit<Todo, "id">) => Promise<void>;
   toggleTodo: (todoId: string) => Promise<void>;
-  deleteTodo: (listId: string, todoId: string) => Promise<void>;
+  deleteTodo: (todoId: string) => Promise<void>;
   editTodo: (
-    listId: string,
     todoId: string,
     updates: Partial<Todo>
   ) => Promise<void>;
@@ -328,7 +327,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       });
 
       // Fetch todos separately
-      await get().fetchTodos(user);
+      await get().fetchTodos();
 
       toast.success("Connection to database successful!");
       // Only save the database lists to localStorage (exclude "All" list)
@@ -341,7 +340,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     }
   },
 
-  fetchTodos: async (user) => {
+  fetchTodos: async () => {
     try {
       const { data: todosData, error: todosError } = await supabase
         .from("todos")
@@ -610,7 +609,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     }
   },
 
-  deleteTodo: async (listId, todoId) => {
+  deleteTodo: async (todoId) => {
     const { todos } = get();
 
     try {
@@ -633,7 +632,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     }
   },
 
-  editTodo: async (listId, todoId, updates) => {
+  editTodo: async (todoId, updates) => {
     const { todos } = get();
     const todo = todos.find((t) => t.id === todoId);
 

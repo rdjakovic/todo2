@@ -21,7 +21,6 @@ const TodoListView: React.FC = () => {
     setSearchQuery,
     toggleTodo,
     deleteTodo,
-    editTodo,
     editList,
     deleteList,
     saveLists,
@@ -267,7 +266,7 @@ const TodoListView: React.FC = () => {
             <TodoListItems
               filteredTodos={getFilteredTodos()}
               onToggle={toggleTodo}
-              onDelete={(id) => deleteTodo(selectedListId, id)}
+              onDelete={(id) => deleteTodo(id)}
               onOpenEditDialog={openEditDialog}
             />
           </AnimatePresence>
