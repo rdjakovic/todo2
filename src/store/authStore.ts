@@ -8,11 +8,14 @@ interface AuthState {
   loading: boolean;
   error: string | null;
   initialized: boolean;
+  isLoadingData: boolean;
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setIsLoadingData: (loading: boolean) => void;
   signOut: () => Promise<void>;
   initialize: () => Promise<(() => void) | undefined>;
+  forceDataLoad: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -20,80 +23,125 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loading: true,
   error: null,
   initialized: false,
+  isLoadingData: false,
 
   setUser: (user) => set({ user }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
+  setIsLoadingData: (loading) => set({ isLoadingData: loading }),
+
+  forceDataLoad: async () => {
+    const { user, isLoadingData } = get();
+    if (!user || isLoadingData) return;
+
+    console.log("Force loading data for user:", user.id);
+    set({ isLoadingData: true });
+    useTodoStore.getState().setLoading(true);
+    
+    try {
+      await useTodoStore.getState().fetchLists(user);
+    } catch (error) {
+      console.error("Failed to force load data:", error);
+      useTodoStore.getState().setError("Failed to load data");
+    } finally {
+      set({ isLoadingData: false });
+      useTodoStore.getState().setLoading(false);
+    }
+  },
 
   initialize: async () => {
     // Only initialize once
     if (get().initialized) return;
 
     try {
+      // First, check current session
       const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
 
-      // Handle refresh token errors and session not found errors specifically
-      if (
-        error &&
-        (error.message.includes("Invalid Refresh Token") ||
-          error.message.includes("Refresh Token Not Found") ||
-          error.message.includes("invalid_grant") ||
-          error.message.includes("session_not_found") ||
-          error.message.includes(
-            "Session from session_id claim in JWT does not exist"
-          ) ||
-          // Handle error codes from API responses
-          (error as any)?.code === "session_not_found" ||
-          // Handle cases where the error is embedded in the response
-          JSON.stringify(error).includes("session_not_found"))
-      ) {
-        // Clear invalid session
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        // Don't throw here, just clear session and continue
         await supabase.auth.signOut();
         set({ user: null, initialized: true, loading: false, error: null });
         return;
       }
 
-      // Handle other errors
-      if (error) {
-        throw error;
+      // If we have a valid session, get the user
+      let user = session?.user || null;
+
+      // If no session, try to get user (this handles refresh token scenarios)
+      if (!user) {
+        const {
+          data: { user: refreshedUser },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError) {
+          console.error("User error:", userError);
+          // Handle specific auth errors
+          if (
+            userError.message.includes("Invalid Refresh Token") ||
+            userError.message.includes("Refresh Token Not Found") ||
+            userError.message.includes("invalid_grant") ||
+            userError.message.includes("session_not_found") ||
+            userError.message.includes("Session from session_id claim in JWT does not exist") ||
+            (userError as any)?.code === "session_not_found" ||
+            JSON.stringify(userError).includes("session_not_found")
+          ) {
+            // Clear invalid session
+            await supabase.auth.signOut();
+            set({ user: null, initialized: true, loading: false, error: null });
+            return;
+          }
+          throw userError;
+        }
+
+        user = refreshedUser;
       }
 
       set({ user, initialized: true, loading: false });
 
-      // Track if we're already loading data to prevent duplicates
-      let isLoadingData = false;
+      // If we have a user on initialization, load their data immediately
+      if (user) {
+        console.log("User found on initialization, loading data...");
+        await get().forceDataLoad();
+      }
+
       // Set up auth state change listener
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange(async (event, session) => {
         console.log("Auth state change:", event, session?.user?.id);
         const newUser = session?.user ?? null;
-        set({ user: newUser });
+        const currentUser = get().user;
+        
+        // Only update user if it actually changed
+        if (newUser?.id !== currentUser?.id) {
+          set({ user: newUser });
+        }
 
         // Handle sign in - fetch data immediately
-        if (event === "SIGNED_IN" && newUser && !isLoadingData) {
-          console.log("User signed in, fetching data...");
-          isLoadingData = true;
-          // Set loading state in todo store
-          useTodoStore.getState().setLoading(true);
-          try {
-            await useTodoStore.getState().fetchLists(newUser);
-          } catch (error) {
-            console.error("Failed to fetch data after sign in:", error);
-            useTodoStore.getState().setLoading(false);
-            useTodoStore.getState().setError("Failed to load data after sign in");
-          } finally {
-            isLoadingData = false;
-          }
+        if (event === "SIGNED_IN" && newUser && !get().isLoadingData) {
+          console.log("User signed in, loading data...");
+          await get().forceDataLoad();
         }
 
         // Reset todo store when user signs out
         if (event === "SIGNED_OUT") {
           useTodoStore.getState().reset();
-          isLoadingData = false;
+          set({ isLoadingData: false });
+        }
+
+        // Handle token refresh
+        if (event === "TOKEN_REFRESHED" && newUser && !get().isLoadingData) {
+          console.log("Token refreshed, ensuring data is loaded...");
+          // Check if we have data, if not, load it
+          const todoStore = useTodoStore.getState();
+          if (todoStore.lists.length === 0) {
+            await get().forceDataLoad();
+          }
         }
       });
 
@@ -102,16 +150,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         subscription.unsubscribe();
       };
     } catch (error) {
+      console.error("Auth initialization error:", error);
       // Enhanced error handling for session-related errors in catch block
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       const errorString = JSON.stringify(error);
 
       if (
         errorMessage.includes("session_not_found") ||
-        errorMessage.includes(
-          "Session from session_id claim in JWT does not exist"
-        ) ||
+        errorMessage.includes("Session from session_id claim in JWT does not exist") ||
         errorString.includes("session_not_found") ||
         (error as any)?.code === "session_not_found"
       ) {
@@ -122,8 +168,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       set({
-        error:
-          error instanceof Error ? error.message : "Failed to initialize auth",
+        error: error instanceof Error ? error.message : "Failed to initialize auth",
         user: null,
         loading: false,
         initialized: true,
@@ -136,27 +181,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (get().user === null) {
       return;
     }
+    
     try {
+      set({ isLoadingData: false }); // Reset loading state
       await supabase.auth.signOut();
       set({ user: null });
-      // Reset todo store state and clear localStorage
+      // Reset todo store state
       useTodoStore.getState().reset();
     } catch (error) {
+      console.error("Sign out error:", error);
       // Handle session-related errors during sign out
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       const errorString = JSON.stringify(error);
 
       if (
         errorMessage.includes("session_not_found") ||
-        errorMessage.includes(
-          "Session from session_id claim in JWT does not exist"
-        ) ||
+        errorMessage.includes("Session from session_id claim in JWT does not exist") ||
         errorString.includes("session_not_found") ||
         (error as any)?.code === "session_not_found"
       ) {
         // Even if logout fails due to session not found, clear local state
-        set({ user: null, error: null });
+        set({ user: null, error: null, isLoadingData: false });
         useTodoStore.getState().reset();
         return;
       }
@@ -165,6 +210,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({
         error: error instanceof Error ? error.message : "Failed to sign out",
         user: null,
+        isLoadingData: false,
       });
       useTodoStore.getState().reset();
     }

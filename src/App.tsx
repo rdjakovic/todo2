@@ -26,7 +26,7 @@ import { useTheme } from "./hooks/useTheme";
 import { Toaster } from "react-hot-toast";
 
 function App() {
-  const { user, loading: authLoading, initialize } = useAuthStore();
+  const { user, loading: authLoading, initialize, forceDataLoad } = useAuthStore();
   const {
     lists,
     todos,
@@ -61,6 +61,14 @@ function App() {
     initialize();
   }, [initialize]);
 
+  // Add a backup data loading mechanism
+  useEffect(() => {
+    // If user is authenticated but no lists are loaded, force data load
+    if (user && !loading && lists.length === 0) {
+      console.log("User authenticated but no data loaded, forcing data load...");
+      forceDataLoad();
+    }
+  }, [user, loading, lists.length, forceDataLoad]);
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const draggedTodo = todos.find((todo) => todo.id === active.id);

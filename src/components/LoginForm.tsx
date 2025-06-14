@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
+import { useAuthStore } from "../store/authStore";
 import toast from "react-hot-toast";
 
 export default function LoginForm() {
+  const { forceDataLoad } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -14,7 +16,7 @@ export default function LoginForm() {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -24,8 +26,12 @@ export default function LoginForm() {
       // Show success message
       toast.success("Signed in successfully!");
       
-      // Don't manually fetch data here - let the auth state change listener handle it
-      // This prevents race conditions and duplicate data loading
+      // Force data load as a backup in case auth state change doesn't trigger
+      if (data.user) {
+        setTimeout(() => {
+          forceDataLoad();
+        }, 100); // Small delay to ensure auth state is updated
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);
