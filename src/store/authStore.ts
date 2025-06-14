@@ -32,7 +32,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   forceDataLoad: async () => {
     const { user, isLoadingData } = get();
-    if (!user || isLoadingData) return;
+    if (!user) {
+      console.log("No user found for force data load");
+      return;
+    }
+    
+    if (isLoadingData) {
+      console.log("Data loading already in progress, skipping force load");
+      return;
+    }
 
     console.log("Force loading data for user:", user.id, "isLoadingData:", isLoadingData);
     set({ isLoadingData: true });
@@ -40,9 +48,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     
     try {
       await useTodoStore.getState().fetchLists(user);
+      console.log("Force data load completed successfully");
     } catch (error) {
       console.error("Failed to force load data:", error);
       useTodoStore.getState().setError("Failed to load data");
+      throw error; // Re-throw to allow caller to handle
     } finally {
       set({ isLoadingData: false });
       useTodoStore.getState().setLoading(false);
@@ -129,8 +139,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             console.log("Data loading already in progress, skipping...");
             return;
           }
-          console.log("User signed in, loading data...");
-          await get().forceDataLoad();
+          console.log("User signed in via auth state change, loading data...");
+          try {
+            await get().forceDataLoad();
+          } catch (error) {
+            console.error("Failed to load data on sign in:", error);
+          }
         }
 
         // Reset todo store when user signs out
@@ -150,7 +164,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           // Check if we have data, if not, load it
           const todoStore = useTodoStore.getState();
           if (todoStore.lists.length === 0) {
-            await get().forceDataLoad();
+            try {
+              await get().forceDataLoad();
+            } catch (error) {
+              console.error("Failed to load data on token refresh:", error);
+            }
           }
         }
       });

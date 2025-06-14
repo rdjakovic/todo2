@@ -62,6 +62,17 @@ function App() {
     initialize();
   }, [initialize]);
 
+  // Backup mechanism: if user exists but no data is loaded, try to load it
+  useEffect(() => {
+    if (user && !loading && lists.length === 0) {
+      console.log("User exists but no data loaded, attempting backup data load...");
+      const { forceDataLoad } = useAuthStore.getState();
+      forceDataLoad().catch(error => {
+        console.error("Backup data load failed:", error);
+      });
+    }
+  }, [user, loading, lists.length]);
+
   // Listen for service worker sync completion messages
   useEffect(() => {
     if ('serviceWorker' in navigator) {

@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import toast from "react-hot-toast";
+import { useAuthStore } from "../store/authStore";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { forceDataLoad } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,8 +26,15 @@ export default function LoginForm() {
       // Show success message
       toast.success("Signed in successfully!");
       
-      // Auth state change listener will handle everything automatically
-      // No need for manual data loading or state updates
+      // Wait a moment for auth state to update, then force data load as backup
+      setTimeout(async () => {
+        try {
+          await forceDataLoad();
+        } catch (error) {
+          console.error("Backup data load failed:", error);
+        }
+      }, 500);
+      
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);
