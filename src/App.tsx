@@ -200,7 +200,13 @@ function App() {
   }
 
   if (!user) {
-    return <LoginForm onSuccess={() => {}} />;
+    return <LoginForm onSuccess={(user) => {
+      setDataInitialized(false);
+      const authUser = useAuthStore.getState().user;
+      if (authUser) {
+          fetchLists(authUser);
+      }
+    }} />;
   }
 
   if (loading) {
