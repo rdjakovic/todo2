@@ -24,6 +24,9 @@ interface TodoState {
   // Form state
   newTodo: string;
 
+  // Search state
+  searchQuery: string;
+
   // Edit dialog state
   isEditDialogOpen: boolean;
   todoToEditDialog: Todo | null;
@@ -46,6 +49,7 @@ interface TodoState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setNewTodo: (newTodo: string) => void;
+  setSearchQuery: (query: string) => void;
   setIsEditDialogOpen: (isOpen: boolean) => void;
   setTodoToEditDialog: (todo: Todo | null) => void;
   setIsSidebarOpen: (isOpen: boolean) => void;
@@ -153,6 +157,21 @@ const sortTodos = (todos: Todo[], sortBy: SortOption): Todo[] => {
   }
 };
 
+// Helper function to filter todos by search query
+const filterTodosBySearch = (todos: Todo[], searchQuery: string): Todo[] => {
+  if (!searchQuery.trim()) {
+    return todos;
+  }
+
+  const query = searchQuery.toLowerCase().trim();
+  return todos.filter((todo) => {
+    return (
+      todo.title.toLowerCase().includes(query) ||
+      (todo.notes && todo.notes.toLowerCase().includes(query))
+    );
+  });
+};
+
 export const useTodoStore = create<TodoState>((set, get) => ({
   lists: [],
   todos: [],
@@ -162,6 +181,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
   // Form state
   newTodo: "",
+
+  // Search state
+  searchQuery: "",
 
   // Edit dialog state
   isEditDialogOpen: false,
@@ -187,6 +209,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
   setNewTodo: (newTodo) => set({ newTodo }),
+  setSearchQuery: (query) => set({ searchQuery: query }),
   setIsEditDialogOpen: (isOpen) => set({ isEditDialogOpen: isOpen }),
   setTodoToEditDialog: (todo) => set({ todoToEditDialog: todo }),
   setIsSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
@@ -212,6 +235,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       loading: false,
       error: null,
       newTodo: "",
+      searchQuery: "",
       isEditDialogOpen: false,
       todoToEditDialog: null,
       activeDraggedTodo: null,
@@ -671,30 +695,35 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   },
 
   getFilteredTodos: () => {
-    const { todos, lists, selectedListId, sortBy } = get();
+    const { todos, lists, selectedListId, sortBy, searchQuery } = get();
     const currentList = lists.find((list) => list.id === selectedListId);
     if (!currentList) return [];
 
+    let filteredTodos: Todo[] = [];
+
     // Special handling for "All" list - show all todos from all lists
     if (currentList.name.toLowerCase() === "all") {
-      const filteredTodos = currentList.showCompleted
+      filteredTodos = currentList.showCompleted
         ? todos
         : todos.filter((todo) => !todo.completed);
-      return sortTodos(filteredTodos, sortBy);
     }
-
     // Special handling for "Completed" list - show all completed todos from all lists
-    if (currentList.name.toLowerCase() === "completed") {
-      const completedTodos = todos.filter((todo) => todo.completed);
-      return sortTodos(completedTodos, sortBy);
+    else if (currentList.name.toLowerCase() === "completed") {
+      filteredTodos = todos.filter((todo) => todo.completed);
+    }
+    // For other lists, filter by listId and showCompleted setting
+    else {
+      const listTodos = todos.filter((todo) => todo.listId === selectedListId);
+      filteredTodos = currentList.showCompleted
+        ? listTodos
+        : listTodos.filter((todo) => !todo.completed);
     }
 
-    // For other lists, filter by listId and showCompleted setting
-    const listTodos = todos.filter((todo) => todo.listId === selectedListId);
-    const filteredTodos = currentList.showCompleted
-      ? listTodos
-      : listTodos.filter((todo) => !todo.completed);
-    return sortTodos(filteredTodos, sortBy);
+    // Apply search filter
+    const searchFilteredTodos = filterTodosBySearch(filteredTodos, searchQuery);
+
+    // Apply sorting
+    return sortTodos(searchFilteredTodos, sortBy);
   },
 
   getTodoCountByList: () => {

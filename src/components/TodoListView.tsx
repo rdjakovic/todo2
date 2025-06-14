@@ -1,6 +1,6 @@
 import React from "react";
 import { AnimatePresence } from "framer-motion";
-import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, TrashIcon, MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 import TodoForm from "./TodoForm";
 import TodoListItems from "./TodoListItems";
@@ -17,6 +17,8 @@ const TodoListView: React.FC = () => {
     todos,
     selectedListId,
     error,
+    searchQuery,
+    setSearchQuery,
     toggleTodo,
     deleteTodo,
     editTodo,
@@ -55,6 +57,7 @@ const TodoListView: React.FC = () => {
   };
 
   const statistics = getStatistics();
+  
   const handleToggleShowCompleted = () => {
     // Prevent toggling for "Completed" list
     if (isCompletedList) {
@@ -100,17 +103,23 @@ const TodoListView: React.FC = () => {
     }
   };
 
+  const handleClearSearch = () => {
+    setSearchQuery("");
+  };
+
   return (
     <>
       <div className="flex-1 p-8">
         <div className="max-w-4xl mx-auto px-2 sm:px-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 dark:text-white">
+          {/* Header with List Name, Search, and Toggle */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 sm:mb-8 gap-4">
+            {/* Left: List name and edit/delete buttons */}
+            <div className="flex items-center gap-3 min-w-0 flex-shrink-0">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 dark:text-white truncate">
                 {currentList?.name || "Todos"}
               </h1>
               {canEditOrDelete && (
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-shrink-0">
                   <button
                     onClick={() => setIsEditDialogOpen(true)}
                     className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900"
@@ -129,8 +138,33 @@ const TodoListView: React.FC = () => {
               )}
             </div>
 
-            <div className="flex items-center gap-2 justify-between sm:justify-end">
-              <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+            {/* Middle: Search field */}
+            <div className="flex-1 max-w-md mx-auto lg:mx-0">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="block w-full pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-purple-500 dark:focus:border-purple-400 text-sm"
+                  placeholder="Search todos..."
+                />
+                {searchQuery && (
+                  <button
+                    onClick={handleClearSearch}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    <XMarkIcon className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Right: Toggle completed todos */}
+            <div className="flex items-center gap-2 justify-between lg:justify-end flex-shrink-0">
+              <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
                 {isCompletedList 
                   ? "All Completed Tasks" 
                   : currentList?.showCompleted 
@@ -163,6 +197,7 @@ const TodoListView: React.FC = () => {
               </button>
             </div>
           </div>
+
           {/* Statistics section - only show for "All" list */}
           {isAllList && (
             <div className="mb-6 sm:mb-8">

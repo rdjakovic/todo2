@@ -9,3 +9,18 @@
 - Added specific handling for session_not_found errors during logout
 - Ensured local state is cleared even when server logout fails
 - User state is now set to null and todo store is reset regardless of logout error type
+
+## 2025-01-05 - Implemented search todos functionality
+**Time:** 2025-01-05 21:00
+**Summary:** Added search functionality for todos with a search field positioned in the middle of the header area. The search works across all todo fields including title and notes, and integrates with existing filtering and sorting mechanisms.
+
+**Changes made:**
+- Added `searchQuery` state and `setSearchQuery` action to todoStore
+- Implemented `filterTodosBySearch` helper function to filter todos by search query
+- Updated `getFilteredTodos` function to apply search filtering before sorting
+- Modified TodoListView header layout to include three sections: list name (left), search field (middle), toggle (right)
+- Added search input with magnifying glass icon and clear button
+- Implemented responsive design for the new header layout
+- Search works across all lists including "All", "Completed", and custom lists
+- Search filters both todo title and notes content
+- Added proper state reset for search query in the reset function
