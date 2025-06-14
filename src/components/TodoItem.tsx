@@ -11,13 +11,6 @@ interface TodoItemProps {
   todo: Todo;
   onToggle: (id: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
-  onEdit: (
-    id: string,
-    newText: string,
-    newNotes?: string,
-    newPriority?: "low" | "medium" | "high",
-    newDueDate?: Date
-  ) => Promise<void>;
   onOpenEditDialog: (todo: Todo) => void;
   isDragging?: boolean;
 }
@@ -25,7 +18,7 @@ interface TodoItemProps {
 const MotionDiv = motion.div;
 
 // Helper function to get priority colors
-const getPriorityColors = (priority?: "low" | "medium" | "high", completed?: boolean) => {
+const getPriorityColors = (completed?: boolean) => {
   // Return consistent background and border colors regardless of priority
   return completed
     ? "bg-gray-50 dark:bg-gray-900 border-gray-100 dark:border-gray-700"
@@ -46,7 +39,7 @@ const getPriorityBadgeColors = (priority?: "low" | "medium" | "high") => {
   }
 };
 const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
-  ({ todo, onToggle, onDelete, onEdit, onOpenEditDialog, isDragging }, ref) => {
+  ({ todo, onToggle, onDelete, onOpenEditDialog, isDragging }, ref) => {
     const [showNotes, setShowNotes] = useState(false);
     
     const {
@@ -94,7 +87,7 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
         <div
           className={clsx(
             "py-3 sm:py-2 px-4 sm:px-3 rounded-lg shadow-sm border flex items-center gap-3",
-            getPriorityColors(todo.priority, todo.completed),
+            getPriorityColors(todo.completed),
             (isDragging || isSortableDragging) && "opacity-50 cursor-grabbing",
             !isDragging && !isSortableDragging && "cursor-grab"
           )}
