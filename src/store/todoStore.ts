@@ -5,6 +5,7 @@ import { initialLists } from "../const/initialLists";
 import toast from "react-hot-toast";
 import { User } from "@supabase/supabase-js";
 import { useAuthStore } from "./authStore";
+import { indexedDBManager, registerBackgroundSync, isOnline } from "../lib/indexedDB";
 
 export type SortOption = 
   | "dateCreated" 
@@ -20,6 +21,7 @@ interface TodoState {
   selectedListId: string;
   loading: boolean;
   error: string | null;
+  isOffline: boolean;
 
   // Form state
   newTodo: string;
@@ -48,6 +50,7 @@ interface TodoState {
   setSelectedListId: (id: string) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setIsOffline: (offline: boolean) => void;
   setNewTodo: (newTodo: string) => void;
   setSearchQuery: (query: string) => void;
   setIsEditDialogOpen: (isOpen: boolean) => void;
@@ -83,6 +86,9 @@ interface TodoState {
   deleteList: (id: string) => Promise<void>;
   editList: (id: string, name: string, icon?: string) => Promise<void>;
   toggleSidebar: () => void;
+
+  // Offline sync functions
+  syncPendingOperations: () => Promise<void>;
 }
 
 // Helper function to sort todos based on sort option
@@ -176,6 +182,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   selectedListId: "all",
   loading: false,
   error: null,
+  isOffline: !isOnline(),
 
   // Form state
   newTodo: "",
@@ -206,6 +213,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   setSelectedListId: (id) => set({ selectedListId: id }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
+  setIsOffline: (offline) => set({ isOffline: offline }),
   setNewTodo: (newTodo) => set({ newTodo }),
   setSearchQuery: (query) => set({ searchQuery: query }),
   setIsEditDialogOpen: (isOpen) => set({ isEditDialogOpen: isOpen }),
@@ -228,12 +236,16 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     if (typeof window !== "undefined") {
       localStorage.removeItem("todo-sort-by");
     }
+    // Clear IndexedDB data on reset
+    indexedDBManager.clearAllData().catch(console.error);
+    
     set({
       lists: [],
       todos: [],
       selectedListId: "all",
       loading: false,
       error: null,
+      isOffline: !isOnline(),
       newTodo: "",
       searchQuery: "",
       isEditDialogOpen: false,
@@ -245,168 +257,294 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
   fetchLists: async (user) => {
     set({ loading: true });
+    
     try {
-      // Fetch from Supabase only
-      let { data: lists, error } = await supabase
-        .from("lists")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: true });
+      // First, try to load from IndexedDB for immediate UI update
+      const offlineData = await indexedDBManager.hasOfflineData();
+      if (offlineData.hasLists) {
+        console.log("Loading lists from IndexedDB...");
+        const offlineLists = await indexedDBManager.getLists();
+        
+        // Process offline lists
+        const processedLists = offlineLists.map((list) => ({
+          ...list,
+          showCompleted: list.show_completed,
+          userId: list.user_id,
+        }));
 
-      if (error) throw error;
+        // Create the "All" list as a client-side only list
+        const allList: TodoList = {
+          id: "all",
+          name: "All",
+          icon: "home",
+          showCompleted: true,
+          userId: user.id,
+        };
 
-      // If no lists exist, create initial lists
-      if (lists?.length === 0) {
-        // Filter out "All" list since it's virtual - only create database lists
-        const listsToInsert = initialLists.filter(list => list.name !== "All");
-        const { error: insertError } = await supabase.from("lists").insert(
-          listsToInsert.map((list) => ({
-            name: list.name,
-            icon: list.icon,
-            show_completed: list.showCompleted,
-            user_id: user.id,
-          }))
-        );
+        const allLists = [allList, ...processedLists];
+        const sortedLists = allLists.sort((a, b) => {
+          if (a.name.toLowerCase() === "all") return -1;
+          if (b.name.toLowerCase() === "all") return 1;
+          if (a.name.toLowerCase() === "completed") return -1;
+          if (b.name.toLowerCase() === "completed") return 1;
+          const aDate = new Date(a.created_at || 0);
+          const bDate = new Date(b.created_at || 0);
+          return aDate.getTime() - bDate.getTime();
+        });
 
-        if (insertError) throw insertError;
+        set({
+          lists: sortedLists,
+          selectedListId: "all",
+          loading: false,
+        });
 
-        // Fetch the newly inserted lists
-        const { data: newData, error: refetchError } = await supabase
+        // Load todos from IndexedDB too
+        if (offlineData.hasTodos) {
+          const offlineTodos = await indexedDBManager.getTodos();
+          set({ todos: offlineTodos });
+        }
+
+        toast.success("Loaded data from offline storage");
+      }
+
+      // Then try to sync with Supabase if online
+      if (isOnline()) {
+        console.log("Syncing with Supabase...");
+        let { data: lists, error } = await supabase
           .from("lists")
           .select("*")
           .eq("user_id", user.id)
           .order("created_at", { ascending: true });
 
-        if (refetchError) throw refetchError;
-        lists = newData;
+        if (error) throw error;
+
+        // If no lists exist in Supabase, create initial lists
+        if (lists?.length === 0) {
+          const listsToInsert = initialLists.filter(list => list.name !== "All");
+          const { error: insertError } = await supabase.from("lists").insert(
+            listsToInsert.map((list) => ({
+              name: list.name,
+              icon: list.icon,
+              show_completed: list.showCompleted,
+              user_id: user.id,
+            }))
+          );
+
+          if (insertError) throw insertError;
+
+          const { data: newData, error: refetchError } = await supabase
+            .from("lists")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: true });
+
+          if (refetchError) throw refetchError;
+          lists = newData;
+        }
+
+        // Process and update lists
+        const processedLists = lists?.map((list) => ({
+          ...list,
+          showCompleted: list.show_completed,
+          id: list.id,
+          userId: list.user_id,
+        }));
+
+        const allList: TodoList = {
+          id: "all",
+          name: "All",
+          icon: "home",
+          showCompleted: true,
+          userId: user.id,
+        };
+
+        const allLists = [allList, ...(processedLists || [])];
+        const sortedLists = allLists.sort((a, b) => {
+          if (a.name.toLowerCase() === "all") return -1;
+          if (b.name.toLowerCase() === "all") return 1;
+          if (a.name.toLowerCase() === "completed") return -1;
+          if (b.name.toLowerCase() === "completed") return 1;
+          const aDate = new Date(a.created_at || 0);
+          const bDate = new Date(b.created_at || 0);
+          return aDate.getTime() - bDate.getTime();
+        });
+
+        set({
+          lists: sortedLists,
+          selectedListId: "all",
+          loading: false,
+          error: null,
+          isOffline: false,
+        });
+
+        // Save to IndexedDB for offline access
+        await indexedDBManager.saveLists(lists || []);
+
+        // Fetch and sync todos
+        await get().fetchTodos();
+
+        // Sync any pending operations
+        await get().syncPendingOperations();
+
+        toast.success("Data synced successfully!");
+      } else {
+        set({ isOffline: true, loading: false });
+        if (!offlineData.hasLists) {
+          toast.error("No internet connection and no offline data available");
+        }
       }
-
-      const processedLists = lists?.map((list) => ({
-        ...list,
-        showCompleted: list.show_completed,
-        id: list.id,
-        userId: list.user_id,
-      }));
-
-      // Create the "All" list as a client-side only list
-      const allList: TodoList = {
-        id: "all",
-        name: "All",
-        icon: "home",
-        showCompleted: true,
-        userId: user.id,
-      };
-
-      // Prepend the "All" list to the processed lists
-      const allLists = [allList, ...(processedLists || [])];
-
-      // Sort lists: Home first, Completed second, others by creation date
-      const sortedLists = allLists.sort((a, b) => {
-        // All list always comes first
-        if (a.name.toLowerCase() === "all") return -1;
-        if (b.name.toLowerCase() === "all") return 1;
-        
-        // Completed list always comes second
-        if (a.name.toLowerCase() === "completed") return -1;
-        if (b.name.toLowerCase() === "completed") return 1;
-        
-        // For other lists, sort by creation date (created_at field)
-        const aDate = new Date(a.created_at || 0);
-        const bDate = new Date(b.created_at || 0);
-        return aDate.getTime() - bDate.getTime();
-      });
-
-      // Set the selectedListId to the All list's ID
-      const allListFound = sortedLists.find(
-        (list) => list.name.toLowerCase() === "all"
-      );
-
-      set({
-        lists: sortedLists,
-        selectedListId: allListFound?.id || "all",
-        loading: false,
-        error: null,
-      });
-
-      // Fetch todos separately
-      await get().fetchTodos();
-
-      // Only show success message once during initial load
-      toast.success("Data loaded successfully!");
     } catch (error) {
-      console.error("Failed to fetch from Supabase:", error);
+      console.error("Failed to fetch lists:", error);
       set({ 
-        error: "Failed to load data from database", 
-        loading: false 
+        error: "Failed to load data", 
+        loading: false,
+        isOffline: !isOnline(),
       });
-      toast.error("Failed to load data from database");
+      
+      // Try to load from offline storage as fallback
+      try {
+        const offlineData = await indexedDBManager.hasOfflineData();
+        if (offlineData.hasLists) {
+          const offlineLists = await indexedDBManager.getLists();
+          const processedLists = offlineLists.map((list) => ({
+            ...list,
+            showCompleted: list.show_completed,
+            userId: list.user_id,
+          }));
+
+          const allList: TodoList = {
+            id: "all",
+            name: "All",
+            icon: "home",
+            showCompleted: true,
+            userId: user.id,
+          };
+
+          const allLists = [allList, ...processedLists];
+          set({ lists: allLists });
+          
+          if (offlineData.hasTodos) {
+            const offlineTodos = await indexedDBManager.getTodos();
+            set({ todos: offlineTodos });
+          }
+          
+          toast.error("Using offline data - sync will resume when online");
+        } else {
+          toast.error("Failed to load data and no offline backup available");
+        }
+      } catch (offlineError) {
+        console.error("Failed to load offline data:", offlineError);
+        toast.error("Failed to load data from database");
+      }
     }
   },
 
   fetchTodos: async () => {
     try {
-      const { data: todosData, error: todosError } = await supabase
-        .from("todos")
-        .select(
-          "id, list_id, title, notes, completed, priority, date_created, due_date, date_of_completion"
-        )
-        .order("date_created");
+      if (isOnline()) {
+        const { data: todosData, error: todosError } = await supabase
+          .from("todos")
+          .select(
+            "id, list_id, title, notes, completed, priority, date_created, due_date, date_of_completion"
+          )
+          .order("date_created");
 
-      if (todosError) throw todosError;
+        if (todosError) throw todosError;
 
-      const processedTodos =
-        todosData?.map((todo) => ({
-          id: todo.id,
-          listId: todo.list_id,
-          title: todo.title,
-          notes: todo.notes,
-          completed: todo.completed,
-          priority: todo.priority,
-          dateCreated: new Date(todo.date_created),
-          dueDate: todo.due_date ? new Date(todo.due_date) : undefined,
-          dateOfCompletion: todo.date_of_completion
-            ? new Date(todo.date_of_completion)
-            : undefined,
-        })) || [];
+        const processedTodos =
+          todosData?.map((todo) => ({
+            id: todo.id,
+            listId: todo.list_id,
+            title: todo.title,
+            notes: todo.notes,
+            completed: todo.completed,
+            priority: todo.priority,
+            dateCreated: new Date(todo.date_created),
+            dueDate: todo.due_date ? new Date(todo.due_date) : undefined,
+            dateOfCompletion: todo.date_of_completion
+              ? new Date(todo.date_of_completion)
+              : undefined,
+          })) || [];
 
-      set({ todos: processedTodos });
-      // Don't show success toast here - it's called from fetchLists which already shows success
+        set({ todos: processedTodos, isOffline: false });
+        
+        // Save to IndexedDB for offline access
+        await indexedDBManager.saveTodos(processedTodos);
+      }
     } catch (error) {
       console.error("Failed to fetch todos from Supabase:", error);
-      set({ error: "Failed to load todos from database" });
-      toast.error("Failed to load todos from database");
+      set({ error: "Failed to load todos from database", isOffline: !isOnline() });
+      
+      // Try to load from IndexedDB as fallback
+      try {
+        const offlineTodos = await indexedDBManager.getTodos();
+        set({ todos: offlineTodos });
+        toast.error("Using offline todos - sync will resume when online");
+      } catch (offlineError) {
+        console.error("Failed to load offline todos:", offlineError);
+        toast.error("Failed to load todos from database");
+      }
     }
   },
 
   saveTodos: async (todos) => {
+    // Update local state immediately
+    set({ todos });
+    
     try {
-      // Get current user from auth store
-      const currentUser = useAuthStore.getState().user;
-      if (!currentUser) {
-        throw new Error("User not authenticated");
+      // Save to IndexedDB immediately
+      await indexedDBManager.saveTodos(todos);
+      
+      if (isOnline()) {
+        // Get current user from auth store
+        const currentUser = useAuthStore.getState().user;
+        if (!currentUser) {
+          throw new Error("User not authenticated");
+        }
+
+        const { error: todosError } = await supabase.from("todos").upsert(
+          todos.map((todo) => ({
+            id: todo.id,
+            list_id: todo.listId,
+            title: todo.title,
+            notes: todo.notes,
+            completed: todo.completed,
+            priority: todo.priority,
+            date_created: todo.dateCreated.toISOString(),
+            due_date: todo.dueDate?.toISOString(),
+            date_of_completion: todo.dateOfCompletion?.toISOString(),
+          }))
+        );
+
+        if (todosError) throw todosError;
+
+        set({ error: null, isOffline: false });
+      } else {
+        // Queue for sync when online
+        await indexedDBManager.addToSyncQueue({
+          type: 'saveTodos',
+          data: { todos },
+        });
+        await registerBackgroundSync();
+        set({ isOffline: true });
+        toast.success("Saved offline - will sync when online");
       }
-
-      const { error: todosError } = await supabase.from("todos").upsert(
-        todos.map((todo) => ({
-          id: todo.id,
-          list_id: todo.listId,
-          title: todo.title,
-          notes: todo.notes,
-          completed: todo.completed,
-          priority: todo.priority,
-          date_created: todo.dateCreated.toISOString(),
-          due_date: todo.dueDate?.toISOString(),
-          date_of_completion: todo.dateOfCompletion?.toISOString(),
-        }))
-      );
-
-      if (todosError) throw todosError;
-
-      set({ error: null, todos });
     } catch (error) {
-      console.error("Failed to save todos to Supabase:", error);
-      set({ error: "Failed to save todos to database" });
-      toast.error("Failed to save todos to database");
+      console.error("Failed to save todos:", error);
+      set({ error: "Failed to save todos", isOffline: !isOnline() });
+      
+      // Still queue for sync even if Supabase fails
+      try {
+        await indexedDBManager.addToSyncQueue({
+          type: 'saveTodos',
+          data: { todos },
+        });
+        await registerBackgroundSync();
+        toast.error("Saved offline - will retry sync when online");
+      } catch (queueError) {
+        console.error("Failed to queue operation:", queueError);
+        toast.error("Failed to save todos");
+      }
     }
   },
 
@@ -421,36 +559,48 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       // Get the current full list of lists
       const allCurrentLists = get().lists;
 
-      // Filter out the "All" list as it's a client-side only virtual list
-      const dbListsToSave = listsToSave.filter(list => list.name !== "All");
-
-      const { error: listsError } = await supabase.from("lists").upsert(
-        dbListsToSave.map(({ showCompleted, ...list }) => ({
-          id: list.id,
-          name: list.name,
-          icon: list.icon,
-          show_completed: showCompleted,
-          user_id: currentUser.id,
-        })),
-        { onConflict: "id" }
-      );
-
-      if (listsError) throw listsError;
-
-      // Update the current lists with the changes from listsToSave
+      // Update local state immediately
       const updatedLists = allCurrentLists.map((list) => {
-        // Find if this list was updated
         const updatedList = listsToSave.find((l) => l.id === list.id);
-        // If it was updated, return the updated version, otherwise keep the original
         return updatedList || list;
       });
+      set({ lists: updatedLists });
+
+      // Filter out the "All" list as it's a client-side only virtual list
+      const dbListsToSave = listsToSave.filter(list => list.name !== "All");
       
-      // Update state with the merged lists that include both updated and non-updated lists
-      set({ error: null, lists: updatedLists });
+      // Save to IndexedDB immediately
+      await indexedDBManager.saveLists(dbListsToSave);
+
+      if (isOnline()) {
+        const { error: listsError } = await supabase.from("lists").upsert(
+          dbListsToSave.map(({ showCompleted, ...list }) => ({
+            id: list.id,
+            name: list.name,
+            icon: list.icon,
+            show_completed: showCompleted,
+            user_id: currentUser.id,
+          })),
+          { onConflict: "id" }
+        );
+
+        if (listsError) throw listsError;
+
+        set({ error: null, isOffline: false });
+      } else {
+        // Queue for sync when online
+        await indexedDBManager.addToSyncQueue({
+          type: 'saveLists',
+          data: { lists: dbListsToSave },
+        });
+        await registerBackgroundSync();
+        set({ isOffline: true });
+        toast.success("Saved offline - will sync when online");
+      }
     } catch (error) {
-      console.error("Failed to save lists to Supabase:", error);
+      console.error("Failed to save lists:", error);
       
-      // Even in case of error, we need to update the state correctly
+      // Still update local state and queue for sync
       const allCurrentLists = get().lists;
       const updatedLists = allCurrentLists.map((list) => {
         const updatedList = listsToSave.find((l) => l.id === list.id);
@@ -459,9 +609,22 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       
       set({ 
         lists: updatedLists, 
-        error: "Failed to save lists to database" 
+        error: "Failed to save lists",
+        isOffline: !isOnline(),
       });
-      toast.error("Failed to save lists to database");
+      
+      try {
+        const dbListsToSave = listsToSave.filter(list => list.name !== "All");
+        await indexedDBManager.addToSyncQueue({
+          type: 'saveLists',
+          data: { lists: dbListsToSave },
+        });
+        await registerBackgroundSync();
+        toast.error("Saved offline - will retry sync when online");
+      } catch (queueError) {
+        console.error("Failed to queue operation:", queueError);
+        toast.error("Failed to save lists");
+      }
     }
   },
 
@@ -472,29 +635,58 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       id: crypto.randomUUID(),
       listId,
     };
+    
+    // Update local state immediately
+    const updatedTodos = [...todos, newTodo];
+    set({ todos: updatedTodos });
+    
     try {
-      const { error } = await supabase.from("todos").insert([
-        {
-          id: newTodo.id,
-          list_id: newTodo.listId,
-          title: newTodo.title,
-          notes: newTodo.notes,
-          completed: newTodo.completed,
-          priority: newTodo.priority,
-          date_created: newTodo.dateCreated.toISOString(),
-          due_date: newTodo.dueDate?.toISOString(),
-          date_of_completion: newTodo.dateOfCompletion?.toISOString(),
-        },
-      ]);
+      // Save to IndexedDB immediately
+      await indexedDBManager.saveTodos(updatedTodos);
+      
+      if (isOnline()) {
+        const { error } = await supabase.from("todos").insert([
+          {
+            id: newTodo.id,
+            list_id: newTodo.listId,
+            title: newTodo.title,
+            notes: newTodo.notes,
+            completed: newTodo.completed,
+            priority: newTodo.priority,
+            date_created: newTodo.dateCreated.toISOString(),
+            due_date: newTodo.dueDate?.toISOString(),
+            date_of_completion: newTodo.dateOfCompletion?.toISOString(),
+          },
+        ]);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      const updatedTodos = [...todos, newTodo];
-      set({ todos: updatedTodos, error: null });
+        set({ error: null, isOffline: false });
+      } else {
+        // Queue for sync when online
+        await indexedDBManager.addToSyncQueue({
+          type: 'addTodo',
+          data: { listId, todo: newTodo },
+        });
+        await registerBackgroundSync();
+        set({ isOffline: true });
+        toast.success("Added offline - will sync when online");
+      }
     } catch (error) {
       console.error("Failed to add todo:", error);
-      set({ error: "Failed to add todo to database" });
-      toast.error("Failed to add todo to database");
+      set({ error: "Failed to add todo", isOffline: !isOnline() });
+      
+      try {
+        await indexedDBManager.addToSyncQueue({
+          type: 'addTodo',
+          data: { listId, todo: newTodo },
+        });
+        await registerBackgroundSync();
+        toast.error("Added offline - will retry sync when online");
+      } catch (queueError) {
+        console.error("Failed to queue operation:", queueError);
+        toast.error("Failed to add todo");
+      }
     }
   },
 
@@ -510,44 +702,100 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       dateOfCompletion: !todo.completed ? new Date() : undefined,
     };
 
+    // Update local state immediately
+    const updatedTodos = todos.map((t) =>
+      t.id === todoId ? updatedTodo : t
+    );
+    set({ todos: updatedTodos });
+
     try {
-      const { error } = await supabase
-        .from("todos")
-        .update({
-          completed: updatedTodo.completed,
-          date_of_completion: updatedTodo.dateOfCompletion?.toISOString(),
-        })
-        .eq("id", todoId);
+      // Save to IndexedDB immediately
+      await indexedDBManager.saveTodos(updatedTodos);
+      
+      if (isOnline()) {
+        const { error } = await supabase
+          .from("todos")
+          .update({
+            completed: updatedTodo.completed,
+            date_of_completion: updatedTodo.dateOfCompletion?.toISOString(),
+          })
+          .eq("id", todoId);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      const updatedTodos = todos.map((t) =>
-        t.id === todoId ? updatedTodo : t
-      );
-
-      set({ todos: updatedTodos, error: null });
+        set({ error: null, isOffline: false });
+      } else {
+        // Queue for sync when online
+        await indexedDBManager.addToSyncQueue({
+          type: 'toggleTodo',
+          data: { todoId, completed: updatedTodo.completed, dateOfCompletion: updatedTodo.dateOfCompletion },
+        });
+        await registerBackgroundSync();
+        set({ isOffline: true });
+      }
     } catch (error) {
       console.error("Failed to toggle todo:", error);
-      set({ error: "Failed to update todo in database" });
-      toast.error("Failed to update todo in database");
+      set({ error: "Failed to update todo", isOffline: !isOnline() });
+      
+      try {
+        await indexedDBManager.addToSyncQueue({
+          type: 'toggleTodo',
+          data: { todoId, completed: updatedTodo.completed, dateOfCompletion: updatedTodo.dateOfCompletion },
+        });
+        await registerBackgroundSync();
+        if (isOnline()) {
+          toast.error("Update failed - will retry sync when online");
+        }
+      } catch (queueError) {
+        console.error("Failed to queue operation:", queueError);
+        toast.error("Failed to update todo");
+      }
     }
   },
 
   deleteTodo: async (todoId) => {
     const { todos } = get();
 
+    // Update local state immediately
+    const updatedTodos = todos.filter((t) => t.id !== todoId);
+    set({ todos: updatedTodos });
+
     try {
-      const { error } = await supabase.from("todos").delete().eq("id", todoId);
+      // Save to IndexedDB immediately
+      await indexedDBManager.saveTodos(updatedTodos);
+      
+      if (isOnline()) {
+        const { error } = await supabase.from("todos").delete().eq("id", todoId);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      const updatedTodos = todos.filter((t) => t.id !== todoId);
-
-      set({ todos: updatedTodos, error: null });
+        set({ error: null, isOffline: false });
+      } else {
+        // Queue for sync when online
+        await indexedDBManager.addToSyncQueue({
+          type: 'deleteTodo',
+          data: { todoId },
+        });
+        await registerBackgroundSync();
+        set({ isOffline: true });
+      }
     } catch (error) {
       console.error("Failed to delete todo:", error);
-      set({ error: "Failed to delete todo from database" });
-      toast.error("Failed to delete todo from database");
+      set({ error: "Failed to delete todo", isOffline: !isOnline() });
+      
+      try {
+        await indexedDBManager.addToSyncQueue({
+          type: 'deleteTodo',
+          data: { todoId },
+        });
+        await registerBackgroundSync();
+        if (isOnline()) {
+          toast.error("Delete failed - will retry sync when online");
+        }
+      } catch (queueError) {
+        console.error("Failed to queue operation:", queueError);
+        toast.error("Failed to delete todo");
+      }
     }
   },
 
@@ -562,40 +810,68 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       ...updates,
     };
 
+    // Update local state immediately
+    const updatedTodos = todos.map((t) =>
+      t.id === todoId ? updatedTodo : t
+    );
+    set({ todos: updatedTodos });
+
     try {
-      const payload: any = {
-        title: updates.title,
-        notes: updates.notes,
-        completed: updates.completed,
-        priority: updates.priority,
-      };
+      // Save to IndexedDB immediately
+      await indexedDBManager.saveTodos(updatedTodos);
+      
+      if (isOnline()) {
+        const payload: any = {
+          title: updates.title,
+          notes: updates.notes,
+          completed: updates.completed,
+          priority: updates.priority,
+        };
 
-      if (updates.dueDate !== undefined) {
-        payload.due_date = updates.dueDate?.toISOString();
+        if (updates.dueDate !== undefined) {
+          payload.due_date = updates.dueDate?.toISOString();
+        }
+        if (updates.dateOfCompletion !== undefined) {
+          payload.date_of_completion = updates.dateOfCompletion?.toISOString();
+        }
+        if (updates.dateCreated !== undefined) {
+          payload.date_created = updates.dateCreated.toISOString();
+        }
+
+        const { error } = await supabase
+          .from("todos")
+          .update(payload)
+          .eq("id", todoId);
+
+        if (error) throw error;
+
+        set({ error: null, isOffline: false });
+      } else {
+        // Queue for sync when online
+        await indexedDBManager.addToSyncQueue({
+          type: 'editTodo',
+          data: { todoId, updates },
+        });
+        await registerBackgroundSync();
+        set({ isOffline: true });
       }
-      if (updates.dateOfCompletion !== undefined) {
-        payload.date_of_completion = updates.dateOfCompletion?.toISOString();
-      }
-      if (updates.dateCreated !== undefined) {
-        payload.date_created = updates.dateCreated.toISOString();
-      }
-
-      const { error } = await supabase
-        .from("todos")
-        .update(payload)
-        .eq("id", todoId);
-
-      if (error) throw error;
-
-      const updatedTodos = todos.map((t) =>
-        t.id === todoId ? updatedTodo : t
-      );
-
-      set({ todos: updatedTodos, error: null });
     } catch (error) {
       console.error("Failed to edit todo:", error);
-      set({ error: "Failed to update todo in database" });
-      toast.error("Failed to update todo in database");
+      set({ error: "Failed to update todo", isOffline: !isOnline() });
+      
+      try {
+        await indexedDBManager.addToSyncQueue({
+          type: 'editTodo',
+          data: { todoId, updates },
+        });
+        await registerBackgroundSync();
+        if (isOnline()) {
+          toast.error("Update failed - will retry sync when online");
+        }
+      } catch (queueError) {
+        console.error("Failed to queue operation:", queueError);
+        toast.error("Failed to update todo");
+      }
     }
   },
 
@@ -721,34 +997,60 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       userId: currentUser.id,
     };
     
+    // Update local state immediately
+    const updatedLists = [...lists, newList];
+    set({ lists: updatedLists });
+    
     try {
-      // Save to Supabase
-      const { error } = await supabase.from("lists").insert([
-        {
-          id: newList.id,
-          name: newList.name,
-          icon: newList.icon,
-          show_completed: newList.showCompleted,
-          user_id: currentUser.id,
-        },
-      ]);
-
-      if (error) throw error;
-
-      // Update local state after successful database operation
-      const updatedLists = [...lists, newList];
-      set({ lists: updatedLists, error: null });
+      // Save to IndexedDB immediately
+      await indexedDBManager.saveLists([newList]);
       
-      toast.success("List created successfully!");
+      if (isOnline()) {
+        // Save to Supabase
+        const { error } = await supabase.from("lists").insert([
+          {
+            id: newList.id,
+            name: newList.name,
+            icon: newList.icon,
+            show_completed: newList.showCompleted,
+            user_id: currentUser.id,
+          },
+        ]);
+
+        if (error) throw error;
+
+        set({ error: null, isOffline: false });
+        toast.success("List created successfully!");
+      } else {
+        // Queue for sync when online
+        await indexedDBManager.addToSyncQueue({
+          type: 'createList',
+          data: { list: newList },
+        });
+        await registerBackgroundSync();
+        set({ isOffline: true });
+        toast.success("List created offline - will sync when online");
+      }
     } catch (error) {
-      console.error("Failed to create list in Supabase:", error);
-      set({ error: "Failed to create list in database" });
-      toast.error("Failed to create list in database");
+      console.error("Failed to create list:", error);
+      set({ error: "Failed to create list", isOffline: !isOnline() });
+      
+      try {
+        await indexedDBManager.addToSyncQueue({
+          type: 'createList',
+          data: { list: newList },
+        });
+        await registerBackgroundSync();
+        toast.error("List created offline - will retry sync when online");
+      } catch (queueError) {
+        console.error("Failed to queue operation:", queueError);
+        toast.error("Failed to create list");
+      }
     }
   },
 
   deleteList: async (id: string) => {
-    const { lists, todos, saveLists, saveTodos } = get();
+    const { lists, todos } = get();
 
     // Prevent deletion of "All" list
     const listToDelete = lists.find(l => l.id === id);
@@ -756,38 +1058,66 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       toast.error("Cannot delete the All list");
       return;
     }
+    
+    // Update local state immediately
+    const updatedLists = lists.filter((l) => l.id !== id);
+    const updatedTodos = todos.filter((t) => t.listId !== id);
+    set({ lists: updatedLists, todos: updatedTodos });
+    
     try {
-      // First delete the todos belonging to this list from Supabase
-      const { error: todosDeleteError } = await supabase
-        .from("todos")
-        .delete()
-        .eq("list_id", id);
+      // Save to IndexedDB immediately
+      await indexedDBManager.saveLists(updatedLists.filter(l => l.name !== "All"));
+      await indexedDBManager.saveTodos(updatedTodos);
+      
+      if (isOnline()) {
+        // First delete the todos belonging to this list from Supabase
+        const { error: todosDeleteError } = await supabase
+          .from("todos")
+          .delete()
+          .eq("list_id", id);
 
-      if (todosDeleteError) throw todosDeleteError;
+        if (todosDeleteError) throw todosDeleteError;
 
-      // Then delete the list itself from Supabase
-      const { error: listDeleteError } = await supabase
-        .from("lists")
-        .delete()
-        .eq("id", id);
+        // Then delete the list itself from Supabase
+        const { error: listDeleteError } = await supabase
+          .from("lists")
+          .delete()
+          .eq("id", id);
 
-      if (listDeleteError) throw listDeleteError;
+        if (listDeleteError) throw listDeleteError;
 
-      // Update local state after successful database operations
-      const updatedLists = lists.filter((l) => l.id !== id);
-      const updatedTodos = todos.filter((t) => t.listId !== id);
-
-      set({ lists: updatedLists, todos: updatedTodos, error: null });
-      toast.success("List deleted successfully!");
+        set({ error: null, isOffline: false });
+        toast.success("List deleted successfully!");
+      } else {
+        // Queue for sync when online
+        await indexedDBManager.addToSyncQueue({
+          type: 'deleteList',
+          data: { listId: id },
+        });
+        await registerBackgroundSync();
+        set({ isOffline: true });
+        toast.success("List deleted offline - will sync when online");
+      }
     } catch (error) {
-      console.error("Failed to delete from Supabase:", error);
-      set({ error: "Failed to delete list from database" });
-      toast.error("Failed to delete list from database");
+      console.error("Failed to delete list:", error);
+      set({ error: "Failed to delete list", isOffline: !isOnline() });
+      
+      try {
+        await indexedDBManager.addToSyncQueue({
+          type: 'deleteList',
+          data: { listId: id },
+        });
+        await registerBackgroundSync();
+        toast.error("List deleted offline - will retry sync when online");
+      } catch (queueError) {
+        console.error("Failed to queue operation:", queueError);
+        toast.error("Failed to delete list");
+      }
     }
   },
 
   editList: async (id: string, name: string, icon?: string) => {
-    const { lists, saveLists } = get();
+    const { lists } = get();
     
     // Prevent editing of "All" list
     const listToEdit = lists.find(l => l.id === id);
@@ -799,11 +1129,211 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     const updatedLists = lists.map((l) => 
       l.id === id ? { ...l, name, ...(icon && { icon }) } : l
     );
-    await saveLists(updatedLists);
+    
+    // Update local state immediately
+    set({ lists: updatedLists });
+    
+    try {
+      // Save to IndexedDB immediately
+      const dbLists = updatedLists.filter(l => l.name !== "All");
+      await indexedDBManager.saveLists(dbLists);
+      
+      if (isOnline()) {
+        await get().saveLists(updatedLists);
+      } else {
+        // Queue for sync when online
+        await indexedDBManager.addToSyncQueue({
+          type: 'editList',
+          data: { listId: id, name, icon },
+        });
+        await registerBackgroundSync();
+        set({ isOffline: true });
+        toast.success("List updated offline - will sync when online");
+      }
+    } catch (error) {
+      console.error("Failed to edit list:", error);
+      set({ error: "Failed to update list", isOffline: !isOnline() });
+      
+      try {
+        await indexedDBManager.addToSyncQueue({
+          type: 'editList',
+          data: { listId: id, name, icon },
+        });
+        await registerBackgroundSync();
+        toast.error("List updated offline - will retry sync when online");
+      } catch (queueError) {
+        console.error("Failed to queue operation:", queueError);
+        toast.error("Failed to update list");
+      }
+    }
   },
 
   toggleSidebar: () => {
     const { isSidebarOpen, setIsSidebarOpen } = get();
     setIsSidebarOpen(!isSidebarOpen);
   },
+
+  // Sync pending operations
+  syncPendingOperations: async () => {
+    if (!isOnline()) return;
+
+    try {
+      const pendingOperations = await indexedDBManager.getSyncQueue();
+      console.log(`Syncing ${pendingOperations.length} pending operations...`);
+
+      for (const operation of pendingOperations) {
+        try {
+          const currentUser = useAuthStore.getState().user;
+          if (!currentUser) continue;
+
+          switch (operation.type) {
+            case 'addTodo':
+              await supabase.from("todos").insert([
+                {
+                  id: operation.data.todo.id,
+                  list_id: operation.data.todo.listId,
+                  title: operation.data.todo.title,
+                  notes: operation.data.todo.notes,
+                  completed: operation.data.todo.completed,
+                  priority: operation.data.todo.priority,
+                  date_created: operation.data.todo.dateCreated.toISOString(),
+                  due_date: operation.data.todo.dueDate?.toISOString(),
+                  date_of_completion: operation.data.todo.dateOfCompletion?.toISOString(),
+                },
+              ]);
+              break;
+
+            case 'toggleTodo':
+              await supabase
+                .from("todos")
+                .update({
+                  completed: operation.data.completed,
+                  date_of_completion: operation.data.dateOfCompletion?.toISOString(),
+                })
+                .eq("id", operation.data.todoId);
+              break;
+
+            case 'deleteTodo':
+              await supabase.from("todos").delete().eq("id", operation.data.todoId);
+              break;
+
+            case 'editTodo':
+              const payload: any = {
+                title: operation.data.updates.title,
+                notes: operation.data.updates.notes,
+                completed: operation.data.updates.completed,
+                priority: operation.data.updates.priority,
+              };
+
+              if (operation.data.updates.dueDate !== undefined) {
+                payload.due_date = operation.data.updates.dueDate?.toISOString();
+              }
+              if (operation.data.updates.dateOfCompletion !== undefined) {
+                payload.date_of_completion = operation.data.updates.dateOfCompletion?.toISOString();
+              }
+              if (operation.data.updates.dateCreated !== undefined) {
+                payload.date_created = operation.data.updates.dateCreated.toISOString();
+              }
+
+              await supabase
+                .from("todos")
+                .update(payload)
+                .eq("id", operation.data.todoId);
+              break;
+
+            case 'createList':
+              await supabase.from("lists").insert([
+                {
+                  id: operation.data.list.id,
+                  name: operation.data.list.name,
+                  icon: operation.data.list.icon,
+                  show_completed: operation.data.list.showCompleted,
+                  user_id: currentUser.id,
+                },
+              ]);
+              break;
+
+            case 'deleteList':
+              await supabase.from("todos").delete().eq("list_id", operation.data.listId);
+              await supabase.from("lists").delete().eq("id", operation.data.listId);
+              break;
+
+            case 'editList':
+              await supabase.from("lists").update({
+                name: operation.data.name,
+                ...(operation.data.icon && { icon: operation.data.icon }),
+              }).eq("id", operation.data.listId);
+              break;
+
+            case 'saveTodos':
+              await supabase.from("todos").upsert(
+                operation.data.todos.map((todo: any) => ({
+                  id: todo.id,
+                  list_id: todo.listId,
+                  title: todo.title,
+                  notes: todo.notes,
+                  completed: todo.completed,
+                  priority: todo.priority,
+                  date_created: todo.dateCreated.toISOString(),
+                  due_date: todo.dueDate?.toISOString(),
+                  date_of_completion: todo.dateOfCompletion?.toISOString(),
+                }))
+              );
+              break;
+
+            case 'saveLists':
+              await supabase.from("lists").upsert(
+                operation.data.lists.map((list: any) => ({
+                  id: list.id,
+                  name: list.name,
+                  icon: list.icon,
+                  show_completed: list.showCompleted,
+                  user_id: currentUser.id,
+                })),
+                { onConflict: "id" }
+              );
+              break;
+          }
+
+          // Remove successfully synced operation
+          await indexedDBManager.removeFromSyncQueue(operation.id);
+          console.log(`Synced operation: ${operation.type}`);
+        } catch (error) {
+          console.error(`Failed to sync operation ${operation.type}:`, error);
+          
+          // Increment retry count
+          operation.retryCount++;
+          if (operation.retryCount < 3) {
+            await indexedDBManager.updateSyncOperation(operation);
+          } else {
+            // Remove after 3 failed attempts
+            await indexedDBManager.removeFromSyncQueue(operation.id);
+            console.error(`Giving up on operation ${operation.type} after 3 attempts`);
+          }
+        }
+      }
+
+      if (pendingOperations.length > 0) {
+        toast.success(`Synced ${pendingOperations.length} offline changes`);
+      }
+    } catch (error) {
+      console.error("Failed to sync pending operations:", error);
+    }
+  },
 }));
+
+// Listen for online/offline events
+if (typeof window !== "undefined") {
+  window.addEventListener('online', () => {
+    const store = useTodoStore.getState();
+    store.setIsOffline(false);
+    store.syncPendingOperations();
+    toast.success("Back online - syncing changes...");
+  });
+
+  window.addEventListener('offline', () => {
+    const store = useTodoStore.getState();
+    store.setIsOffline(true);
+    toast.error("You're offline - changes will sync when reconnected");
+  });
+}

@@ -15,6 +15,7 @@ import { Sidebar } from "./components/Sidebar.tsx";
 import TodoItem from "./components/TodoItem";
 import LoginForm from "./components/LoginForm";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import OfflineIndicator from "./components/OfflineIndicator";
 import { useAuthStore } from "./store/authStore";
 import { useTodoStore } from "./store/todoStore";
 const EditTodoDialog = lazy(() => import("./components/EditTodoDialog"));
@@ -61,6 +62,16 @@ function App() {
     initialize();
   }, [initialize]);
 
+  // Listen for service worker sync completion messages
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'SYNC_COMPLETE') {
+          console.log(`Background sync completed: ${event.data.syncedCount} operations synced`);
+        }
+      });
+    }
+  }, []);
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -205,6 +216,7 @@ function App() {
     >
       <div className={clsx("app", theme)}>
         <Toaster position="top-right" />
+        <OfflineIndicator />
         <div className="flex min-h-screen bg-gradient-to-br from-purple-50 dark:from-gray-900 to-blue-50 dark:to-gray-800">
           <Sidebar />
 
