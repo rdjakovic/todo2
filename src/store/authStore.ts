@@ -98,6 +98,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
+    // Check if a user is already signed out
+    if (get().user === null) {
+      return;
+    }
     try {
       await supabase.auth.signOut();
       set({ user: null });
