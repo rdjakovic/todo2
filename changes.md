@@ -278,3 +278,36 @@
 - ✅ **Background Sync:** Service worker handles sync even when app is closed
 - ✅ **Conflict Resolution:** Proper handling of sync conflicts and retry logic
 - ✅ **User Feedback:** Clear indication of offline status and sync progress
+
+### 2025-01-28 16:45:00 - Fix sign out data persistence issue
+**Summary:** Fixed critical security issue where user data persisted in IndexedDB after sign out, allowing data to be visible after browser refresh even when not authenticated.
+
+**Problem:** 
+- When signing out, IndexedDB data was not being cleared
+- On browser refresh, `fetchLists()` would load data from IndexedDB regardless of authentication state
+- This allowed previous user's data to be visible even when not logged in
+- Created a security vulnerability where data could persist across user sessions
+
+**Solution:**
+- **Enhanced sign out process:**
+  - Clear IndexedDB data BEFORE calling `supabase.auth.signOut()`
+  - Ensure data is cleared even if sign out fails due to session errors
+  - Added IndexedDB clearing to all error handling paths in sign out
+
+- **Improved data loading security:**
+  - Added authentication check at the start of `fetchLists()` function
+  - Verify that offline data belongs to the current authenticated user
+  - Clear IndexedDB if data belongs to a different user
+  - Filter todos to only include those belonging to current user's lists
+
+- **Better user data isolation:**
+  - Prevent cross-user data contamination in offline storage
+  - Ensure each user only sees their own data
+  - Clear all local data on authentication state changes
+
+**Benefits:**
+- ✅ **Data Security:** No data persists after sign out
+- ✅ **User Privacy:** Each user only sees their own data
+- ✅ **Clean Sessions:** Fresh start for each authentication session
+- ✅ **No Data Leakage:** Prevents previous user's data from being visible
+- ✅ **Proper Authentication Flow:** Data only loads when properly authenticated
