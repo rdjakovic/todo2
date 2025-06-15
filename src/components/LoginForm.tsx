@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import toast from "react-hot-toast";
+import { useAuthStore } from "../store/authStore";
 
 export default function LoginForm() {
+  const { setUser, forceDataLoad } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -14,18 +16,24 @@ export default function LoginForm() {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error, data } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
-      
+      console.log("## Sign in data:", data);
+      if (data.user) {
+        console.log("## User signed in:", data.user);
+        setUser(data.user);
+        forceDataLoad();
+      }
+
       // Show success message
       toast.success("Signed in successfully!");
-      
+
       // Auth state change listener will handle data loading automatically
-      
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "An error occurred";
       setError(errorMessage);
@@ -100,7 +108,7 @@ export default function LoginForm() {
             )}
           </button>
         </form>
-        
+
         <div className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
           <p>Demo credentials:</p>
           <p className="font-mono text-xs">

@@ -36,7 +36,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.log("No user found for force data load");
       return;
     }
-    
+
     if (isLoadingData) {
       console.log("Data loading already in progress, skipping force load");
       return;
@@ -44,7 +44,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     console.log("Starting force data load for user:", user.id);
     set({ isLoadingData: true });
-    
+
     try {
       // Check if we already have data
       const todoStore = useTodoStore.getState();
@@ -52,7 +52,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         console.log("Data already exists, skipping force load");
         return;
       }
-      
+
       todoStore.setLoading(true);
       await useTodoStore.getState().fetchLists(user);
       console.log("Force data load completed successfully");
@@ -67,6 +67,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   initialize: async () => {
+    console.log("Initializing auth store...", get().initialized);
     // Only initialize once
     if (get().initialized) return;
 
@@ -89,6 +90,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // If we have a valid session, get the user
       let user = session?.user || null;
+      console.log("## User from initialize session.user:", user);
 
       // If no session, try to get user (this handles refresh token scenarios)
       if (!user) {
@@ -134,7 +136,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } = supabase.auth.onAuthStateChange(async (event, session) => {
         console.log("Auth state change:", event, session?.user?.id);
         const newUser = session?.user ?? null;
-        
+
         // Always update user state to ensure UI reactivity
         set({ user: newUser, loading: false });
 
@@ -145,14 +147,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             console.log("Data loading already in progress, skipping...");
             return;
           }
-          
+
           // Check if we already have data for this user
           const todoStore = useTodoStore.getState();
           if (todoStore.lists.length > 0) {
             console.log("Data already exists for signed in user, skipping load");
             return;
           }
-          
+
           console.log("User signed in via auth state change, loading data...");
           try {
             await get().forceDataLoad();
@@ -210,14 +212,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (get().user === null) {
       return;
     }
-    
+
     try {
       set({ isLoadingData: false }); // Reset loading state
-      
+
       // Clear IndexedDB data BEFORE signing out
       const { indexedDBManager } = await import("../lib/indexedDB");
       await indexedDBManager.clearAllData();
-      
+
       await supabase.auth.signOut();
       set({ user: null });
       // Reset todo store state
