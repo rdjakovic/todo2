@@ -399,3 +399,63 @@ Implemented a **backend-only solution** that handles window size saving entirely
 The solution leverages Tauri's native window event system (`window.on_window_event`) to detect resize events and directly saves the window size to the config file using the existing `load_or_create_config()` and `save_config()` functions. This approach is more reliable than the previous event-based system and requires no frontend coordination.
 
 ---
+
+Date: 2025-06-16
+Description: Extracted drag and drop functionality into a custom hook to improve App.tsx modularity and readability.
+
+**Problem:**
+The App.tsx file contained complex drag and drop logic (handleDragStart and handleDragEnd functions) that made the component large and harder to maintain. The drag and drop handlers were tightly coupled with the main component logic.
+
+**Solution:**
+Created a custom React hook `useDragAndDrop` following React best practices to encapsulate all drag and drop functionality.
+
+**Key Changes:**
+
+1. **Created Custom Hook (src/hooks/useDragAndDrop.ts)**
+   - ✅ Extracted `handleDragStart` and `handleDragEnd` functions from App.tsx
+   - ✅ Encapsulated all drag and drop logic including:
+     - Todo reordering within the same list using `arrayMove`
+     - Moving todos between different lists
+     - Special handling for "All" and "Completed" lists
+     - Completion status updates when moving to/from "Completed" list
+   - ✅ Uses `useTodoStore` to access necessary state and actions
+   - ✅ Returns handlers object for use with DndContext
+
+2. **Simplified App.tsx**
+   - ✅ Removed inline drag handlers (82+ lines of code)
+   - ✅ Added `useDragAndDrop` hook import and usage
+   - ✅ Removed unused imports: `DragStartEvent`, `DragEndEvent`, `arrayMove`
+   - ✅ Cleaned up store destructuring to only include needed properties
+   - ✅ Maintained all existing functionality while reducing component complexity
+
+3. **Followed React Best Practices**
+   - ✅ Named hook with "use" prefix following React conventions
+   - ✅ Encapsulated related logic in a single, focused hook
+   - ✅ Made the hook reusable and testable
+   - ✅ Improved separation of concerns
+
+**Benefits:**
+
+- 🚀 **Modularity**: Drag and drop logic is now isolated and reusable
+- 🔧 **Maintainability**: App.tsx is significantly smaller and more focused
+- 📖 **Readability**: Complex drag logic is abstracted away from the main component
+- 🧪 **Testability**: Drag and drop logic can be tested independently
+- 🎯 **Single Responsibility**: App.tsx focuses on layout and routing, hook handles drag operations
+- ♻️ **Reusability**: Hook can be easily reused in other components if needed
+
+**Files Modified:**
+
+- `src/hooks/useDragAndDrop.ts`: New custom hook containing all drag and drop logic
+- `src/App.tsx`: Simplified by removing inline handlers and using the custom hook
+
+**Technical Implementation:**
+
+The custom hook follows React's custom hook patterns by:
+- Using the "use" prefix for proper naming convention
+- Calling other hooks (useTodoStore) at the top level
+- Returning an object with handler functions for external use
+- Encapsulating all related state and logic in one place
+
+This refactoring maintains 100% of the existing drag and drop functionality while significantly improving code organization and maintainability.
+
+---
