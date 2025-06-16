@@ -307,3 +307,95 @@ Implemented a complete refactoring to separate lists and todos into independent 
 The refactoring is complete and the application now uses a normalized data architecture with separate collections for lists and todos, significantly improving performance and maintainability while preserving all existing functionality.
 
 ---
+
+Date: 2025-06-16
+Description: Fixed window size saving functionality in Tauri v2 application to persist window dimensions across app restarts.
+
+**Problem:**
+The window size saving functionality was implemented but not working correctly. The config.json file was missing the `window_size` field, and window dimensions were not being saved when the user resized the window.
+
+**Root Cause Analysis:**
+1. **Backend Implementation**: The Rust backend had the `save_window_size` command and window resize event detection, but was emitting events to the frontend instead of saving directly
+2. **Frontend Missing**: No frontend event listener was properly set up to receive the `save_window_size` events and call the Tauri command
+3. **Event System Complexity**: The original approach relied on a complex event system between Rust and JavaScript that wasn't working reliably
+
+**Solution:**
+Implemented a **backend-only solution** that handles window size saving entirely in Rust without requiring any frontend changes.
+
+**Key Changes:**
+
+1. **Default Window Size (src-tauri/src/main.rs)**
+   ```rust
+   // Set window size from config if available, otherwise use default
+   let window_size = config.window_size.unwrap_or(WindowSize {
+       width: 1200.0,
+       height: 800.0,
+   });
+   ```
+
+2. **Direct Window Size Saving (src-tauri/src/main.rs)**
+   ```rust
+   // Listen for resize events and save directly
+   window.on_window_event(move |event| {
+       if let tauri::WindowEvent::Resized(_) = event {
+           let size = window_clone.inner_size().unwrap();
+
+           // Save window size directly
+           let window_size = WindowSize {
+               width: size.width as f64,
+               height: size.height as f64,
+           };
+
+           // Load current config, update window size, and save
+           match load_or_create_config() {
+               Ok(mut config) => {
+                   config.window_size = Some(window_size);
+                   match save_config(&config) {
+                       Ok(_) => println!("Window size saved successfully: {}x{}", size.width, size.height),
+                       Err(e) => println!("Failed to save window size: {}", e),
+                   }
+               }
+               Err(e) => println!("Failed to load config: {}", e),
+           }
+       }
+   });
+   ```
+
+3. **Cleanup**
+   - ✅ Removed unused `save_window_size` Tauri command
+   - ✅ Removed frontend event listener code from App.tsx
+   - ✅ Removed unused imports (`Emitter`, `isTauri`)
+
+**Implementation Details:**
+
+- **Window Size Structure**: Uses existing `WindowSize` struct with `width` and `height` as `f64`
+- **Config Integration**: Seamlessly integrates with existing `AppConfig` structure
+- **Default Behavior**: Sets default window size of 1200x800 when no saved size exists
+- **Automatic Saving**: Every window resize event triggers an immediate save to config.json
+- **Automatic Restoration**: Window size is restored from config.json on application startup
+
+**Benefits:**
+
+- 🚀 **Reliability**: Backend-only solution eliminates frontend event listener complexity
+- 🔧 **Simplicity**: No frontend changes required, purely Tauri backend implementation
+- 💾 **Persistence**: Window size persists across application restarts
+- 🛡️ **Fallback**: Uses sensible defaults (1200x800) when no saved size exists
+- ⚡ **Performance**: Direct saving without event system overhead
+
+**Testing Results:**
+
+- ✅ Window size is saved to config.json on every resize
+- ✅ Window size is restored correctly on application restart
+- ✅ Default size (1200x800) is applied when no saved size exists
+- ✅ Config.json now contains: `{"storage_path":"","theme":"dark","window_size":{"width":1433.0,"height":865.0}}`
+
+**Files Modified:**
+
+- `src-tauri/src/main.rs`: Implemented direct window size saving in resize event handler, added default window size, removed unused command
+- `src/App.tsx`: Removed frontend event listener code and unused imports
+
+**Technical Implementation:**
+
+The solution leverages Tauri's native window event system (`window.on_window_event`) to detect resize events and directly saves the window size to the config file using the existing `load_or_create_config()` and `save_config()` functions. This approach is more reliable than the previous event-based system and requires no frontend coordination.
+
+---

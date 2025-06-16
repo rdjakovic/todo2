@@ -13,8 +13,8 @@
     "windows": [
       {
         "title": "todo2",
-        "width": 800,
-        "height": 600
+        "resizable": true,
+        "maximized": false
       }
     ],
     "security": {
