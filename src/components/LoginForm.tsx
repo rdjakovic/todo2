@@ -23,10 +23,10 @@ export default function LoginForm() {
 
       if (error) throw error;
       console.log("## Sign in data:", data);
-      if (data.user) {
+      if (data.user && navigator.onLine) {
         console.log("## User signed in:", data.user);
         setUser(data.user);
-        forceDataLoad();
+        await forceDataLoad();
       }
 
       // Show success message

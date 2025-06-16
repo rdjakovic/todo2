@@ -73,6 +73,8 @@ function App() {
     }
   }, []);
 
+
+
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const draggedTodo = todos.find((todo) => todo.id === active.id);
