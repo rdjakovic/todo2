@@ -6,9 +6,9 @@ import TodoForm from "./TodoForm";
 import TodoListItems from "./TodoListItems";
 import ListEditDialog from "./ListEditDialog";
 import DeleteListDialog from "./DeleteListDialog";
-import { getListById, sortTodos, filterTodosBySearch } from "../utils/helper";
+import { getListById } from "../utils/helper";
 import clsx from "clsx";
-import { useTodoStore } from "../store/todoStore";
+import { useTodoStore, sortTodos, filterTodosBySearch } from "../store/todoStore";
 import { useState } from "react";
 
 const TodoListView: React.FC = () => {
