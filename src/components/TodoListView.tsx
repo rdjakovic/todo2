@@ -6,7 +6,7 @@ import TodoForm from "./TodoForm";
 import TodoListItems from "./TodoListItems";
 import ListEditDialog from "./ListEditDialog";
 import DeleteListDialog from "./DeleteListDialog";
-import { getListById } from "../utils/helper";
+import { getListById, sortTodos, filterTodosBySearch } from "../utils/helper";
 import clsx from "clsx";
 import { useTodoStore } from "../store/todoStore";
 import { useState } from "react";
@@ -18,6 +18,7 @@ const TodoListView: React.FC = () => {
     selectedListId,
     error,
     searchQuery,
+    sortBy,
     setSearchQuery,
     toggleTodo,
     deleteTodo,
@@ -25,7 +26,6 @@ const TodoListView: React.FC = () => {
     deleteList,
     saveLists,
     setLists,
-    getFilteredTodos,
     openEditDialog,
   } = useTodoStore();
   
@@ -60,7 +60,6 @@ const TodoListView: React.FC = () => {
   
   // Get completed and incomplete todos separately
   const getCompletedAndIncompleteTodos = () => {
-    const { todos, lists, selectedListId, searchQuery } = get();
     const currentList = lists.find((list) => list.id === selectedListId);
     if (!currentList) return { incompleteTodos: [], completedTodos: [] };
 
@@ -302,7 +301,7 @@ const TodoListView: React.FC = () => {
           {incompleteTodos.length > 0 && (
             <AnimatePresence mode="popLayout">
               <TodoListItems
-                filteredTodos={sortTodos(incompleteTodos, get().sortBy)}
+                filteredTodos={sortTodos(incompleteTodos, sortBy)}
                 onToggle={toggleTodo}
                 onDelete={(id) => deleteTodo(id)}
                 onOpenEditDialog={openEditDialog}
@@ -330,7 +329,7 @@ const TodoListView: React.FC = () => {
               {showCompletedSection && (
                 <AnimatePresence mode="popLayout">
                   <TodoListItems
-                    filteredTodos={sortTodos(completedTodos, get().sortBy)}
+                    filteredTodos={sortTodos(completedTodos, sortBy)}
                     onToggle={toggleTodo}
                     onDelete={(id) => deleteTodo(id)}
                     onOpenEditDialog={openEditDialog}
