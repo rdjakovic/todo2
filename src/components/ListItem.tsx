@@ -124,7 +124,7 @@ export const ListItem = ({
         selected
           ? "bg-purple-100 dark:bg-purple-900 text-purple-900 dark:text-purple-100"
           : "hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100",
-        isOver && "bg-purple-50 dark:bg-purple-900/50"
+        isOver && "bg-purple-50 dark:bg-purple-900/50 border-2 border-purple-400 dark:border-purple-500"
       )}
     >
       <div className="flex items-center gap-3">

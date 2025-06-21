@@ -474,3 +474,23 @@
 - ✅ **Responsive Design:** Works seamlessly across all device sizes
 - ✅ **Theme Integration:** Matches existing dark/light theme styling
 - ✅ **Intuitive UX:** Easy-to-use interface with Apply/Reset functionality
+
+### 2025-01-21 18:15:00 - Enhanced drag and drop visual feedback with distinctive borders
+**Summary:** Added distinctive purple borders to sidebar list items when they detect drag hover, providing clearer visual feedback during drag and drop operations.
+
+**Key Changes:**
+- **Enhanced ListItem hover state:**
+  - Added `border-2 border-purple-400 dark:border-purple-500` to the drag hover state
+  - Maintains existing purple background color change
+  - Creates more prominent visual distinction when dragging todos over list items
+
+- **Improved drag and drop UX:**
+  - Clear visual indication of valid drop targets
+  - Distinctive border color that works in both light and dark themes
+  - Enhanced accessibility for drag and drop operations
+
+**Benefits:**
+- ✅ **Better Visual Feedback:** Clear indication of where todos can be dropped
+- ✅ **Enhanced Accessibility:** More prominent visual cues for drag operations
+- ✅ **Theme Consistency:** Purple border matches the app's color scheme
+- ✅ **Improved UX:** Users can easily identify valid drop targets during drag operations
