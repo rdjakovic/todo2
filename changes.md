@@ -390,6 +390,7 @@
 - ✅ **Cleaner Code:** Simplified authentication flow with clear responsibilities
 - ✅ **Consistent Experience:** Same behavior regardless of network conditions or timing
 - ✅ **Reduced Complexity:** Eliminated redundant backup mechanisms and simplified state management
+
 ### 2025-01-28 17:30:00 - Implement collapsible completed section and remove toggle from non-All pages
 **Summary:** Redesigned the todo display to show incomplete and completed todos separately, with a collapsible "Completed" section below the main todo list.
 
@@ -422,3 +423,11 @@
 - ✅ **Consistent UX:** Same behavior across all list types except "All" which retains global toggle
 - ✅ **Visual Clarity:** Completed count is visible even when section is collapsed
 - ✅ **Maintained Functionality:** All existing features (search, sort, edit, delete) work in both sections
+
+### 2025-01-21 15:32:00 - Fixed ReferenceError in TodoListView
+- Fixed `get is not defined` error in TodoListView component
+- Removed incorrect `get()` call from `getCompletedAndIncompleteTodos` function
+- Added missing imports for `sortTodos` and `filterTodosBySearch` helper functions
+- Added `sortBy` to destructured store variables
+- Updated `sortTodos` calls to use `sortBy` variable instead of `get().sortBy`
+- Removed unused `getFilteredTodos` from store destructuring
