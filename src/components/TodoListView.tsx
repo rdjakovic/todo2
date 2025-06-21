@@ -36,11 +36,9 @@ const TodoListView: React.FC = () => {
     deleteTodo,
     editList,
     deleteList,
-    saveLists,
-    setLists,
     openEditDialog,
   } = useTodoStore();
-  
+
   const currentList = getListById(lists, selectedListId);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -56,10 +54,10 @@ const TodoListView: React.FC = () => {
     hasDueDate: false,
   });
 
-  const canEditOrDelete = currentList && 
-    currentList.name !== "All" && 
+  const canEditOrDelete = currentList &&
+    currentList.name !== "All" &&
     currentList.name !== "Completed";
-  
+
   const isCompletedList = currentList?.name.toLowerCase() === "completed";
   const isAllList = currentList?.name.toLowerCase() === "all";
 
@@ -69,7 +67,7 @@ const TodoListView: React.FC = () => {
     const completedTasks = todos.filter(todo => todo.completed).length;
     const highPriorityTasks = todos.filter(todo => todo.priority === "high" && !todo.completed).length;
     const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-    
+
     return {
       totalTasks,
       completedTasks,
@@ -104,7 +102,7 @@ const TodoListView: React.FC = () => {
       return true;
     });
   };
-  
+
   // Get completed and incomplete todos separately
   const getCompletedAndIncompleteTodos = () => {
     const currentList = lists.find((list) => list.id === selectedListId);
@@ -139,39 +137,6 @@ const TodoListView: React.FC = () => {
   };
 
   const { incompleteTodos, completedTodos } = getCompletedAndIncompleteTodos();
-  
-  const handleToggleShowCompleted = () => {
-    // Prevent toggling for "Completed" list
-    if (isCompletedList) {
-      return;
-    }
-    
-    if (currentList) {
-      // For "All" list, only update local state without saving to database
-      if (isAllList) {
-        const updatedList = {
-          ...currentList,
-          showCompleted: !currentList.showCompleted,
-        };
-        const newLists = lists.map((list) =>
-          list.id === selectedListId ? updatedList : list
-        );
-        setLists(newLists);
-        return;
-      }
-      
-      // For regular lists, update state and save to database
-      const updatedList = {
-        ...currentList,
-        showCompleted: !currentList.showCompleted,
-      };
-      const newLists = lists.map((list) =>
-        list.id === selectedListId ? updatedList : list
-      );
-      setLists(newLists);
-      saveLists([updatedList]); // Only save the changed list
-    }
-  };
 
   const handleEditList = async (id: string, name: string, icon: string) => {
     await editList(id, name, icon);
@@ -200,8 +165,8 @@ const TodoListView: React.FC = () => {
   };
 
   // Check if any filters are active
-  const hasActiveFilters = activeFilters.showCompleted || 
-    Object.values(activeFilters.priorities).some(Boolean) || 
+  const hasActiveFilters = activeFilters.showCompleted ||
+    Object.values(activeFilters.priorities).some(Boolean) ||
     activeFilters.hasDueDate;
 
   return (
@@ -291,7 +256,7 @@ const TodoListView: React.FC = () => {
                       Total Tasks
                     </div>
                   </div>
-                  
+
                   {/* Completed - Green */}
                   <div className="text-center p-4 rounded-xl bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 border border-green-200 dark:border-green-700/50">
                     <div className="text-2xl sm:text-3xl font-bold mb-1 text-green-700 dark:text-green-300">
@@ -301,7 +266,7 @@ const TodoListView: React.FC = () => {
                       Completed
                     </div>
                   </div>
-                  
+
                   {/* High Priority - Red */}
                   <div className="text-center p-4 rounded-xl bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 border border-red-200 dark:border-red-700/50">
                     <div className="text-2xl sm:text-3xl font-bold mb-1 text-red-700 dark:text-red-300">
@@ -311,7 +276,7 @@ const TodoListView: React.FC = () => {
                       High Priority
                     </div>
                   </div>
-                  
+
                   {/* Progress - Purple */}
                   <div className="text-center p-4 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 border border-purple-200 dark:border-purple-700/50">
                     <div className="text-2xl sm:text-3xl font-bold mb-1 text-purple-700 dark:text-purple-300">
