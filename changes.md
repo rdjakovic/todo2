@@ -431,3 +431,9 @@
 - Added `sortBy` to destructured store variables
 - Updated `sortTodos` calls to use `sortBy` variable instead of `get().sortBy`
 - Removed unused `getFilteredTodos` from store destructuring
+
+## 2025-01-27 - Fixed Import Error in TodoListView
+- Fixed import statements in TodoListView.tsx
+- Moved sortTodos and filterTodosBySearch imports from ../utils/helper to ../store/todoStore
+- Kept getListById import from ../utils/helper
+- Resolved "The requested module does not provide an export named 'filterTodosBySearch'" error
