@@ -1,15 +1,27 @@
 import React from "react";
 import { AnimatePresence } from "framer-motion";
-import { PencilIcon, TrashIcon, MagnifyingGlassIcon, XMarkIcon, ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, TrashIcon, MagnifyingGlassIcon, XMarkIcon, ChevronDownIcon, ChevronUpIcon, FunnelIcon } from "@heroicons/react/24/outline";
 
 import TodoForm from "./TodoForm";
 import TodoListItems from "./TodoListItems";
 import ListEditDialog from "./ListEditDialog";
 import DeleteListDialog from "./DeleteListDialog";
+import FilterDialog from "./FilterDialog";
 import { getListById } from "../utils/helper";
 import clsx from "clsx";
 import { useTodoStore, sortTodos, filterTodosBySearch } from "../store/todoStore";
 import { useState } from "react";
+import { Todo } from "../types/todo";
+
+interface FilterOptions {
+  showCompleted: boolean;
+  priorities: {
+    low: boolean;
+    medium: boolean;
+    high: boolean;
+  };
+  hasDueDate: boolean;
+}
 
 const TodoListView: React.FC = () => {
   const {
@@ -33,6 +45,16 @@ const TodoListView: React.FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [showCompletedSection, setShowCompletedSection] = useState(false);
+  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<FilterOptions>({
+    showCompleted: false,
+    priorities: {
+      low: false,
+      medium: false,
+      high: false,
+    },
+    hasDueDate: false,
+  });
 
   const canEditOrDelete = currentList && 
     currentList.name !== "All" && 
@@ -57,6 +79,31 @@ const TodoListView: React.FC = () => {
   };
 
   const statistics = getStatistics();
+
+  // Apply filters to todos
+  const applyFilters = (todos: Todo[], filters: FilterOptions): Todo[] => {
+    return todos.filter(todo => {
+      // Filter by completion status
+      if (!filters.showCompleted && todo.completed) {
+        return false;
+      }
+
+      // Filter by priority (if any priority is selected)
+      const anyPrioritySelected = Object.values(filters.priorities).some(Boolean);
+      if (anyPrioritySelected && todo.priority) {
+        if (!filters.priorities[todo.priority]) {
+          return false;
+        }
+      }
+
+      // Filter by due date
+      if (filters.hasDueDate && !todo.dueDate) {
+        return false;
+      }
+
+      return true;
+    });
+  };
   
   // Get completed and incomplete todos separately
   const getCompletedAndIncompleteTodos = () => {
@@ -81,9 +128,12 @@ const TodoListView: React.FC = () => {
     // Apply search filter
     const searchFilteredTodos = filterTodosBySearch(allTodos, searchQuery);
 
+    // Apply additional filters
+    const filteredTodos = applyFilters(searchFilteredTodos, activeFilters);
+
     // Separate completed and incomplete todos
-    const incompleteTodos = searchFilteredTodos.filter(todo => !todo.completed);
-    const completedTodos = searchFilteredTodos.filter(todo => todo.completed);
+    const incompleteTodos = filteredTodos.filter(todo => !todo.completed);
+    const completedTodos = filteredTodos.filter(todo => todo.completed);
 
     return { incompleteTodos, completedTodos };
   };
@@ -145,6 +195,15 @@ const TodoListView: React.FC = () => {
     }
   };
 
+  const handleApplyFilters = (filters: FilterOptions) => {
+    setActiveFilters(filters);
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters = activeFilters.showCompleted || 
+    Object.values(activeFilters.priorities).some(Boolean) || 
+    activeFilters.hasDueDate;
+
   return (
     <>
       <div className="flex-1 p-2 sm:p-8">
@@ -199,6 +258,22 @@ const TodoListView: React.FC = () => {
                   </button>
                 )}
               </div>
+            </div>
+
+            {/* Right: Filter icon */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => setIsFilterDialogOpen(true)}
+                className={clsx(
+                  "p-2 rounded-lg transition-colors",
+                  hasActiveFilters
+                    ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                )}
+                title="Filter tasks"
+              >
+                <FunnelIcon className="w-5 h-5" />
+              </button>
             </div>
           </div>
 
@@ -323,6 +398,13 @@ const TodoListView: React.FC = () => {
         listName={currentList?.name || null}
         onConfirm={handleDeleteList}
         onCancel={() => setIsDeleteDialogOpen(false)}
+      />
+
+      <FilterDialog
+        isOpen={isFilterDialogOpen}
+        onClose={() => setIsFilterDialogOpen(false)}
+        onApply={handleApplyFilters}
+        currentFilters={activeFilters}
       />
     </>
   );

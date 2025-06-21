@@ -437,3 +437,40 @@
 - Moved sortTodos and filterTodosBySearch imports from ../utils/helper to ../store/todoStore
 - Kept getListById import from ../utils/helper
 - Resolved "The requested module does not provide an export named 'filterTodosBySearch'" error
+
+### 2025-01-21 17:49:00 - Add filter dialog with priority and completion filters
+**Summary:** Added a comprehensive filter dialog accessible via a filter icon in the TodoListView header, allowing users to filter tasks by completion status, priority levels, and due date presence.
+
+**Key Changes:**
+- **Created FilterDialog component:**
+  - Modal dialog with filter options matching the provided screenshot design
+  - Checkbox for "Show completed tasks"
+  - Priority filters for Low, Medium, and High priorities
+  - "Has due date" filter option
+  - Apply and Reset buttons with proper styling
+  - Keyboard navigation support (Enter to apply, Escape to close)
+
+- **Added filter icon to TodoListView header:**
+  - Filter icon (FunnelIcon) positioned on the right side of the header
+  - Icon changes color when filters are active (purple highlight)
+  - Responsive positioning that works on all screen sizes
+
+- **Implemented filter logic:**
+  - `applyFilters()` function to filter todos based on selected criteria
+  - Integration with existing search and sorting functionality
+  - State management for active filters with proper TypeScript interfaces
+  - Visual indicator when filters are active
+
+- **Enhanced user experience:**
+  - Filters work in combination with search functionality
+  - Maintains existing sorting behavior
+  - Clean, accessible dialog design matching app's dark/light theme
+  - Proper focus management and keyboard accessibility
+
+**Benefits:**
+- ✅ **Advanced Filtering:** Users can filter tasks by multiple criteria simultaneously
+- ✅ **Visual Feedback:** Clear indication when filters are active
+- ✅ **Accessibility:** Full keyboard navigation and screen reader support
+- ✅ **Responsive Design:** Works seamlessly across all device sizes
+- ✅ **Theme Integration:** Matches existing dark/light theme styling
+- ✅ **Intuitive UX:** Easy-to-use interface with Apply/Reset functionality
