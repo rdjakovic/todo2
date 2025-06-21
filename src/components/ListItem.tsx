@@ -115,25 +115,45 @@ export const ListItem = ({
     data: list,
   });
 
+  // Only log when hover detection occurs
+  if (isOver) {
+    console.log('🎯 HOVER DETECTED on:', {
+      listId: list.id,
+      listName: list.name,
+      idType: typeof list.id,
+      idLength: list.id.length,
+      hasCreatedAt: !!(list as any).created_at,
+      listData: list
+    });
+  }
+
   return (
-    <button
+    <div
       ref={setNodeRef}
-      onClick={onSelect}
       className={clsx(
-        "list-item-container w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg transition-colors",
-        selected
-          ? "bg-purple-100 dark:bg-purple-900 text-purple-900 dark:text-purple-100"
-          : "hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100",
-        isOver && "bg-purple-50 dark:bg-purple-900/50 border-2 border-purple-400 dark:border-purple-500"
+        "list-item-container w-full transition-all duration-200",
+        // Increase drop zone area significantly
+        "py-2 px-2 -mx-2 -my-1",
+        isOver && "bg-purple-50 dark:bg-purple-900/50 border-2 border-purple-400 dark:border-purple-500 scale-105 shadow-md rounded-lg"
       )}
     >
-      <div className="flex items-center gap-3">
-        {getIconForList(list.icon)}
-        <span>{list.name}</span>
-      </div>
-      <span className="text-sm text-gray-500 dark:text-gray-400">
-        {todoCount}
-      </span>
-    </button>
+      <button
+        onClick={onSelect}
+        className={clsx(
+          "w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg transition-all duration-200",
+          selected
+            ? "bg-purple-100 dark:bg-purple-900 text-purple-900 dark:text-purple-100"
+            : "hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-100"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          {getIconForList(list.icon)}
+          <span>{list.name}</span>
+        </div>
+        <span className="text-sm text-gray-500 dark:text-gray-400">
+          {todoCount}
+        </span>
+      </button>
+    </div>
   );
 };

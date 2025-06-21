@@ -26,9 +26,9 @@ export function Sidebar() {
     getTodoCountByList,
     setIsSidebarOpen,
   } = useTodoStore();
-  
+
   const todoCountByList = getTodoCountByList();
-  
+
   // Wrapper function to handle list selection and close sidebar on mobile
   const handleSelectList = useCallback((listId: string) => {
     setSelectedListIdStore(listId);
@@ -39,7 +39,7 @@ export function Sidebar() {
   }, [setSelectedListIdStore, windowWidth, setIsSidebarOpen]);
 
   const onSelectSettings = () => handleSelectList("settings");
-  
+
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
 

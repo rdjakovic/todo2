@@ -5,7 +5,7 @@ import { useTodoStore } from "../store/todoStore";
 /**
  * Custom hook for handling drag and drop functionality in the todo application.
  * Encapsulates all drag and drop logic including todo reordering and list movement.
- * 
+ *
  * @returns Object containing drag event handlers for use with DndContext
  */
 export const useDragAndDrop = () => {

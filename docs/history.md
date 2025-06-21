@@ -459,3 +459,124 @@ The custom hook follows React's custom hook patterns by:
 This refactoring maintains 100% of the existing drag and drop functionality while significantly improving code organization and maintainability.
 
 ---
+
+Date: 2025-06-21
+Description: Improved drag and drop collision detection for desktop screens with focused enhancements.
+
+**Problem:**
+After attempting comprehensive mobile improvements that broke drag and drop functionality, reverted changes and focused specifically on desktop screen improvements. The original issue was that drag hover detection varied between screen sizes, with some inconsistency in when drop zones would activate.
+
+**Solution:**
+Implemented targeted desktop-focused improvements with minimal changes to maintain stability while enhancing the user experience.
+
+**Key Changes:**
+
+1. **Enhanced Collision Detection (src/App.tsx)**
+   - ✅ Changed from `closestCenter` to `closestCorners` collision detection
+   - ✅ Provides more reliable drop zone detection without breaking existing functionality
+   - ✅ Better corner-based detection for rectangular drop zones
+
+2. **Improved Visual Feedback (src/components/ListItem.tsx)**
+   - ✅ Enhanced hover state with scale animation (`scale-105`) and shadow (`shadow-md`)
+   - ✅ Changed transition from `transition-colors` to `transition-all duration-200` for smoother animations
+   - ✅ Maintained all existing styling while adding subtle visual enhancements
+
+**Benefits:**
+
+- 🖥️ **Desktop-Optimized**: Focused improvements specifically for desktop drag and drop experience
+- 🎯 **Better Detection**: `closestCorners` provides more reliable collision detection than `closestCenter`
+- 🎨 **Enhanced Feedback**: Subtle scale and shadow effects provide clear visual feedback during drag operations
+- ⚡ **Stable**: Minimal changes ensure existing functionality remains intact
+- 🔄 **Smooth Animations**: Improved transitions for better user experience
+
+**Technical Implementation:**
+
+- **Collision Detection**: `closestCorners` algorithm provides better detection for rectangular drop zones compared to center-based detection
+- **Visual Enhancements**: Added scale and shadow effects only during drag hover state
+- **Smooth Transitions**: Enhanced CSS transitions for all properties with 200ms duration
+
+**Files Modified:**
+
+- `src/App.tsx`: Updated collision detection import and usage
+- `src/components/ListItem.tsx`: Enhanced visual feedback and transitions
+
+**Testing Results:**
+
+- ✅ Drag and drop functionality maintained and working properly
+- ✅ Better visual feedback during drag operations
+- ✅ Improved collision detection for desktop screens
+- ✅ Smooth animations and transitions
+- ✅ No breaking changes to existing functionality
+
+This focused approach maintains stability while providing meaningful improvements to the desktop drag and drop experience.
+
+---
+
+Date: 2025-06-21
+Description: Enhanced drag and drop detection for different screen sizes with adaptive collision detection strategy.
+
+**Problem:**
+After the initial desktop improvements, drag and drop detection was still inconsistent across different screen sizes. On 2K screens, detection worked well and activated early, but on Full HD and smaller screens, the drop zones required precise positioning (almost covering the list item) before detecting hover.
+
+**Root Cause:**
+The sidebar width varies significantly between screen sizes, making the effective drop zone area much smaller on smaller screens. The `closestCorners` collision detection was still too restrictive for narrower sidebars.
+
+**Solution:**
+Implemented an adaptive collision detection strategy that uses different algorithms based on screen width, combined with extended drop zones for better targeting.
+
+**Key Changes:**
+
+1. **Adaptive Collision Detection (src/App.tsx)**
+   ```typescript
+   // Custom collision detection that's more forgiving on smaller screens
+   const customCollisionDetection: CollisionDetection = (args) => {
+     // On smaller screens (narrower sidebar), use more forgiving rectangle intersection
+     if (windowWidth < 1600) {
+       const rectCollisions = rectIntersection(args);
+       if (rectCollisions.length > 0) {
+         return rectCollisions;
+       }
+     }
+
+     // Fall back to corner-based detection for larger screens or when rect intersection fails
+     return closestCorners(args);
+   };
+   ```
+
+2. **Extended Drop Zones (src/components/ListItem.tsx)**
+   - ✅ Wrapped button in a container div with the droppable reference
+   - ✅ Added padding (`p-1 -m-1`) to extend the effective drop zone area
+   - ✅ Moved hover styling to the container for better visual feedback
+   - ✅ Maintained button functionality while expanding the drop target
+
+**Benefits:**
+
+- 📏 **Screen-Adaptive**: Uses `rectIntersection` for screens < 1600px width, `closestCorners` for larger screens
+- 🎯 **Better Targeting**: Extended drop zones make it easier to target list items on smaller screens
+- 🖥️ **Optimized Detection**: Different collision algorithms optimized for different screen sizes
+- 🎨 **Consistent Feedback**: Visual hover effects work consistently across all screen sizes
+- ⚡ **Performance**: Efficient fallback strategy ensures reliable detection
+
+**Technical Implementation:**
+
+- **Screen Width Threshold**: Uses 1600px as the breakpoint between collision detection strategies
+- **Rectangle Intersection**: More forgiving algorithm for smaller screens with narrower sidebars
+- **Extended Drop Zones**: Container-based drop zones with padding to increase effective area
+- **Fallback Strategy**: Ensures detection works even if primary algorithm fails
+
+**Files Modified:**
+
+- `src/App.tsx`: Added adaptive collision detection based on screen width
+- `src/components/ListItem.tsx`: Extended drop zones with container wrapper and padding
+
+**Testing Results:**
+
+- ✅ Improved detection on Full HD and smaller screens
+- ✅ Maintains precise detection on larger screens (2K+)
+- ✅ Extended drop zones make targeting easier
+- ✅ Consistent visual feedback across all screen sizes
+- ✅ No breaking changes to existing functionality
+
+This adaptive approach provides optimal drag and drop experience across all desktop screen sizes while maintaining the enhanced visual feedback.
+
+---

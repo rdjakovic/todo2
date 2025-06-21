@@ -6,7 +6,9 @@ import {
   useSensor,
   useSensors,
   PointerSensor,
-  closestCenter,
+  closestCorners,
+  rectIntersection,
+  CollisionDetection,
 } from "@dnd-kit/core";
 import { Sidebar } from "./components/Sidebar.tsx";
 import TodoItem from "./components/TodoItem";
@@ -43,6 +45,33 @@ function App() {
 
   const { theme, toggleTheme } = useTheme();
   const { handleDragStart, handleDragEnd } = useDragAndDrop();
+
+  // Custom collision detection that prioritizes sidebar lists over todo items
+  const customCollisionDetection: CollisionDetection = (args) => {
+    // Use rectangle intersection - works better for both directions than corners
+    const rectCollisions = rectIntersection(args);
+
+    if (rectCollisions.length > 0) {
+      // Filter to prioritize sidebar lists (shorter width = sidebar items)
+      const sidebarCollisions = rectCollisions.filter(collision => {
+        const container = args.droppableContainers.find(c => c.id === collision.id);
+        return container && container.rect.current && container.rect.current.width < 300; // Sidebar items are narrower
+      });
+
+      // If we have sidebar collisions, prioritize them
+      if (sidebarCollisions.length > 0) {
+        console.log('🎯 Sidebar collision prioritized:', sidebarCollisions.map(c => c.id));
+        return sidebarCollisions;
+      }
+
+      // Otherwise return all collisions
+      console.log('📝 Todo collision found:', rectCollisions.map(c => c.id));
+      return rectCollisions;
+    }
+
+    // Fall back to corner-based detection as last resort
+    return closestCorners(args);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -122,7 +151,7 @@ function App() {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={customCollisionDetection}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
