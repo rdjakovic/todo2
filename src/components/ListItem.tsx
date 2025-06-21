@@ -115,17 +115,7 @@ export const ListItem = ({
     data: list,
   });
 
-  // Only log when hover detection occurs
-  if (isOver) {
-    console.log('🎯 HOVER DETECTED on:', {
-      listId: list.id,
-      listName: list.name,
-      idType: typeof list.id,
-      idLength: list.id.length,
-      hasCreatedAt: !!(list as any).created_at,
-      listData: list
-    });
-  }
+
 
   return (
     <div

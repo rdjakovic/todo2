@@ -60,12 +60,10 @@ function App() {
 
       // If we have sidebar collisions, prioritize them
       if (sidebarCollisions.length > 0) {
-        console.log('🎯 Sidebar collision prioritized:', sidebarCollisions.map(c => c.id));
         return sidebarCollisions;
       }
 
       // Otherwise return all collisions
-      console.log('📝 Todo collision found:', rectCollisions.map(c => c.id));
       return rectCollisions;
     }
 

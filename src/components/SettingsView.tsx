@@ -39,6 +39,11 @@ const sortOptions: { value: SortOption; label: string; description: string }[] =
       label: "Due Date",
       description: "Sort by due date (earliest first), then by creation date",
     },
+    {
+      value: "custom",
+      label: "Custom Sort (Drag & Drop)",
+      description: "Enable drag & drop reordering within lists",
+    },
   ];
 
 const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme }) => {

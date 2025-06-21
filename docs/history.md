@@ -580,3 +580,194 @@ Implemented an adaptive collision detection strategy that uses different algorit
 This adaptive approach provides optimal drag and drop experience across all desktop screen sizes while maintaining the enhanced visual feedback.
 
 ---
+
+Date: 2025-06-21
+Description: Implemented conditional drag & drop reordering with "Custom Sort" setting and comprehensive logging.
+
+**Problem:**
+Drag and drop for moving todos between lists was working perfectly, but drag and drop reordering within the same list should only be enabled when the user specifically chooses "Custom Sort" from the settings. This prevents accidental reordering when users prefer other sorting methods.
+
+**Solution:**
+Added a new "Custom Sort (Drag & Drop)" option to the Settings and implemented conditional logic to only allow within-list reordering when this option is selected.
+
+**Key Changes:**
+
+1. **Extended SortOption Type (src/store/todoStore.ts)**
+   ```typescript
+   export type SortOption =
+     | "dateCreated"
+     | "priority"
+     | "dateCompleted"
+     | "completedFirst"
+     | "completedLast"
+     | "dueDate"
+     | "custom";  // New option
+   ```
+
+2. **Updated Sort Logic**
+   - ✅ Added "custom" case to `sortTodos` function that returns todos in their current order
+   - ✅ Preserves drag & drop reordering when custom sort is selected
+   - ✅ Maintains all existing sort functionality for other options
+
+3. **Enhanced Settings UI (src/components/SettingsView.tsx)**
+   - ✅ Added "Custom Sort (Drag & Drop)" option to the sorting section
+   - ✅ Clear description: "Enable drag & drop reordering within lists"
+   - ✅ Integrated seamlessly with existing radio button interface
+
+4. **Conditional Drag & Drop Logic (src/hooks/useDragAndDrop.ts)**
+   ```typescript
+   // Only allow reordering if custom sort is enabled
+   if (sortBy !== 'custom') {
+     console.log('❌ Reordering blocked - Custom sort not enabled. Current sort:', sortBy);
+     return;
+   }
+   ```
+
+5. **Comprehensive Console Logging**
+   - ✅ **📋 List-to-List Moves**: Logs when moving todos between different lists
+   - ✅ **🔄 Reordering Attempts**: Logs when attempting to reorder within same list
+   - ✅ **❌ Blocked Operations**: Logs when reordering is blocked due to sort setting
+   - ✅ **✅ Success Messages**: Logs successful operations for both types of moves
+   - ✅ **📍 Index Information**: Logs reordering indices for debugging
+
+**Behavior:**
+
+- **List-to-List Drag & Drop**: Always works regardless of sort setting
+- **Within-List Reordering**: Only works when "Custom Sort (Drag & Drop)" is selected
+- **Other Sort Options**: Prevent reordering to maintain their sorting logic
+- **Visual Feedback**: Drag and drop visual effects work consistently for both scenarios
+
+**Benefits:**
+
+- 🎛️ **User Control**: Users can choose when drag & drop reordering is enabled
+- 🔒 **Sort Integrity**: Prevents accidental reordering when using other sort methods
+- 📊 **Comprehensive Logging**: Easy debugging and monitoring of drag & drop operations
+- 🔄 **Flexible**: Maintains all existing functionality while adding new capability
+- 🎯 **Intuitive**: Clear setting name and description for user understanding
+
+**Files Modified:**
+
+- `src/store/todoStore.ts`: Added "custom" sort option and logic
+- `src/components/SettingsView.tsx`: Added custom sort option to UI
+- `src/hooks/useDragAndDrop.ts`: Added conditional logic and comprehensive logging
+
+**Testing Results:**
+
+- ✅ Custom sort enables within-list reordering
+- ✅ Other sort options block within-list reordering
+- ✅ List-to-list moves work regardless of sort setting
+- ✅ Console logs provide clear feedback for all operations
+- ✅ Settings UI integrates seamlessly with existing options
+
+This implementation provides users with full control over when drag & drop reordering is enabled while maintaining the robust list-to-list functionality.
+
+---
+
+Date: 2025-06-21
+Description: Added visual drop indicators for drag and drop reordering with animated horizontal lines.
+
+**Problem:**
+While the drag and drop functionality was working correctly, users needed visual feedback to see exactly where their dragged todo item would be dropped when reordering within a list. Without clear visual indicators, it was difficult to achieve precise positioning.
+
+**Solution:**
+Implemented animated horizontal drop indicators that appear between todo items during drag operations, providing clear visual feedback for drop positioning.
+
+**Key Changes:**
+
+1. **DropZone Component (src/components/TodoListItems.tsx)**
+   ```typescript
+   const DropZone = ({ dropId }: { dropId: string }) => {
+     const { setNodeRef, isOver } = useDroppable({
+       id: dropId,
+     });
+
+     return (
+       <div
+         ref={setNodeRef}
+         className={clsx(
+           "transition-all duration-200",
+           isOver ? "h-2 my-2" : "h-0 my-0"
+         )}
+       >
+         {isOver && (
+           <div className="relative h-2">
+             <div className="absolute inset-0 bg-purple-500 rounded-full shadow-lg animate-pulse" />
+             <div className="absolute -left-2 -right-2 h-2 bg-purple-400 rounded-full opacity-50" />
+           </div>
+         )}
+       </div>
+     );
+   };
+   ```
+
+2. **Enhanced TodoListItems Structure**
+   - ✅ Added drop zones before the first item and after each item
+   - ✅ Generated unique drop zone IDs: `drop-before-{todoId}` and `drop-after-{todoId}`
+   - ✅ Integrated seamlessly with existing todo item rendering
+   - ✅ Maintains proper spacing and layout
+
+3. **Advanced Drop Zone Logic (src/hooks/useDragAndDrop.ts)**
+   ```typescript
+   // Check if dropping on a drop zone
+   if (typeof over.id === 'string' && over.id.startsWith('drop-')) {
+     const dropZoneId = over.id as string;
+
+     if (dropZoneId.startsWith('drop-before-')) {
+       const targetTodoId = dropZoneId.replace('drop-before-', '');
+       newIndexGlobal = todos.findIndex((t) => t.id === targetTodoId);
+     } else if (dropZoneId.startsWith('drop-after-')) {
+       const targetTodoId = dropZoneId.replace('drop-after-', '');
+       const targetIndex = todos.findIndex((t) => t.id === targetTodoId);
+       newIndexGlobal = targetIndex + 1;
+     }
+   }
+   ```
+
+4. **Visual Design Features**
+   - ✅ **Animated Appearance**: Smooth height transition from 0 to 8px when hovering
+   - ✅ **Dual-Layer Design**: Primary purple line with subtle background glow
+   - ✅ **Pulsing Animation**: `animate-pulse` for attention-grabbing feedback
+   - ✅ **Responsive Sizing**: Extends slightly beyond content width for better visibility
+   - ✅ **Smooth Transitions**: 200ms duration for all state changes
+
+**Behavior:**
+
+- **Before First Item**: Drop zone appears above the first todo when dragging
+- **Between Items**: Drop zones appear between each todo item during drag operations
+- **After Last Item**: Drop zone appears below the last todo item
+- **Precise Positioning**: Distinguishes between "before" and "after" positions
+- **Only When Enabled**: Drop indicators only work when "Custom Sort" is selected
+
+**Benefits:**
+
+- 🎯 **Precise Positioning**: Users can see exactly where items will be dropped
+- 🎨 **Visual Clarity**: Clear purple horizontal lines indicate drop positions
+- ⚡ **Smooth Animations**: Elegant transitions enhance user experience
+- 📱 **Responsive Design**: Works consistently across different screen sizes
+- 🔄 **Seamless Integration**: Maintains all existing drag & drop functionality
+
+**Technical Implementation:**
+
+- **Drop Zone IDs**: Uses prefixed IDs (`drop-before-`, `drop-after-`) for precise positioning
+- **Conditional Rendering**: Drop indicators only appear during active drag operations
+- **Index Calculation**: Accurately calculates insertion positions for both before/after scenarios
+- **State Management**: Integrates with existing `useDroppable` hooks from dnd-kit
+- **CSS Animations**: Uses Tailwind classes for smooth transitions and pulsing effects
+
+**Files Modified:**
+
+- `src/components/TodoListItems.tsx`: Added DropZone component and drop zone rendering
+- `src/hooks/useDragAndDrop.ts`: Enhanced drop logic to handle drop zone positioning
+
+**Testing Results:**
+
+- ✅ Drop indicators appear between todos during drag operations
+- ✅ Precise positioning works for both "before" and "after" drop zones
+- ✅ Smooth animations and visual feedback
+- ✅ Only active when "Custom Sort" is enabled
+- ✅ Maintains all existing drag & drop functionality
+- ✅ Console logging shows accurate drop zone detection
+
+This enhancement significantly improves the user experience by providing clear visual feedback for drag and drop positioning, making todo reordering intuitive and precise.
+
+---

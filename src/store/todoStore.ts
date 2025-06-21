@@ -7,13 +7,14 @@ import { User } from "@supabase/supabase-js";
 import { useAuthStore } from "./authStore";
 import { indexedDBManager, registerBackgroundSync, isOnline } from "../lib/indexedDB";
 
-export type SortOption = 
-  | "dateCreated" 
-  | "priority" 
-  | "dateCompleted" 
-  | "completedFirst" 
+export type SortOption =
+  | "dateCreated"
+  | "priority"
+  | "dateCompleted"
+  | "completedFirst"
   | "completedLast"
-  | "dueDate";
+  | "dueDate"
+  | "custom";
 
 interface TodoState {
   lists: TodoList[];
@@ -94,13 +95,13 @@ interface TodoState {
 // Helper function to sort todos based on sort option
 const sortTodos = (todos: Todo[], sortBy: SortOption): Todo[] => {
   const sortedTodos = [...todos];
-  
+
   switch (sortBy) {
     case "dateCreated":
-      return sortedTodos.sort((a, b) => 
+      return sortedTodos.sort((a, b) =>
         new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()
       );
-    
+
     case "priority":
       const priorityOrder = { high: 3, medium: 2, low: 1 };
       return sortedTodos.sort((a, b) => {
@@ -112,7 +113,7 @@ const sortTodos = (todos: Todo[], sortBy: SortOption): Todo[] => {
         // If same priority, sort by date created (newest first)
         return new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime();
       });
-    
+
     case "dateCompleted":
       return sortedTodos.sort((a, b) => {
         // Completed items first, sorted by completion date (newest first)
@@ -127,7 +128,7 @@ const sortTodos = (todos: Todo[], sortBy: SortOption): Todo[] => {
         // If both incomplete, sort by date created
         return new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime();
       });
-    
+
     case "completedFirst":
       return sortedTodos.sort((a, b) => {
         if (a.completed && !b.completed) return -1;
@@ -135,7 +136,7 @@ const sortTodos = (todos: Todo[], sortBy: SortOption): Todo[] => {
         // If same completion status, sort by date created
         return new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime();
       });
-    
+
     case "completedLast":
       return sortedTodos.sort((a, b) => {
         if (a.completed && !b.completed) return 1;
@@ -143,7 +144,7 @@ const sortTodos = (todos: Todo[], sortBy: SortOption): Todo[] => {
         // If same completion status, sort by date created
         return new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime();
       });
-    
+
     case "dueDate":
       return sortedTodos.sort((a, b) => {
         // Items with due dates come first, sorted by due date (earliest first)
@@ -155,7 +156,12 @@ const sortTodos = (todos: Todo[], sortBy: SortOption): Todo[] => {
         // If both have no due date, sort by date created
         return new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime();
       });
-    
+
+    case "custom":
+      // For custom sort, return todos in their current order (no sorting)
+      // This allows drag & drop reordering to be preserved
+      return sortedTodos;
+
     default:
       return sortedTodos;
   }
@@ -207,8 +213,8 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   activeDraggedTodo: null,
 
   // Sorting settings - load from localStorage or default to dateCreated (keep this as user preference)
-  sortBy: (typeof window !== "undefined" ? 
-    (localStorage.getItem("todo-sort-by") as SortOption) || "dateCreated" : 
+  sortBy: (typeof window !== "undefined" ?
+    (localStorage.getItem("todo-sort-by") as SortOption) || "dateCreated" :
     "dateCreated"),
 
   setLists: (lists) => set({ lists }),
@@ -241,7 +247,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     }
     // Clear IndexedDB data on reset (but don't await it to avoid blocking)
     indexedDBManager.clearAllData().catch(console.error);
-    
+
     set({
       lists: [],
       todos: [],
@@ -260,14 +266,14 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
   fetchLists: async (user) => {
     set({ loading: true });
-    
+
     // Ensure we have a valid authenticated user before loading any data
     if (!user) {
       console.error("No authenticated user provided to fetchLists");
       set({ loading: false, error: "Authentication required" });
       return;
     }
-    
+
     // Check if we already have data for this user
     const currentLists = get().lists;
     if (currentLists.length > 0) {
@@ -278,14 +284,14 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         return;
       }
     }
-    
+
     try {
       // First, try to load from IndexedDB for immediate UI update
       const offlineData = await indexedDBManager.hasOfflineData();
       if (offlineData.hasLists) {
         console.log("Loading lists from IndexedDB...");
         const offlineLists = await indexedDBManager.getLists();
-        
+
         // Verify that offline data belongs to the current user
         const userLists = offlineLists.filter(list => list.user_id === user.id);
         if (userLists.length === 0 && offlineLists.length > 0) {
@@ -330,7 +336,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         if (offlineData.hasTodos) {
           const offlineTodos = await indexedDBManager.getTodos();
           // Filter todos to only include those belonging to current user's lists
-          const userTodos = offlineTodos.filter(todo => 
+          const userTodos = offlineTodos.filter(todo =>
             userLists.some(list => list.id === todo.listId)
           );
           set({ todos: userTodos });
@@ -428,12 +434,12 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       }
     } catch (error) {
       console.error("Failed to fetch lists:", error);
-      set({ 
-        error: "Failed to load data", 
+      set({
+        error: "Failed to load data",
         loading: false,
         isOffline: !isOnline(),
       });
-      
+
       // Try to load from offline storage as fallback
       try {
         const offlineData = await indexedDBManager.hasOfflineData();
@@ -455,12 +461,12 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
           const allLists = [allList, ...processedLists];
           set({ lists: allLists });
-          
+
           if (offlineData.hasTodos) {
             const offlineTodos = await indexedDBManager.getTodos();
             set({ todos: offlineTodos });
           }
-          
+
           toast.error("Using offline data - sync will resume when online");
         } else {
           toast.error("Failed to load data and no offline backup available");
@@ -500,14 +506,14 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           })) || [];
 
         set({ todos: processedTodos, isOffline: false });
-        
+
         // Save to IndexedDB for offline access
         await indexedDBManager.saveTodos(processedTodos);
       }
     } catch (error) {
       console.error("Failed to fetch todos from Supabase:", error);
       set({ error: "Failed to load todos from database", isOffline: !isOnline() });
-      
+
       // Try to load from IndexedDB as fallback
       try {
         const offlineTodos = await indexedDBManager.getTodos();
@@ -523,11 +529,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   saveTodos: async (todos) => {
     // Update local state immediately
     set({ todos });
-    
+
     try {
       // Save to IndexedDB immediately
       await indexedDBManager.saveTodos(todos);
-      
+
       if (isOnline()) {
         // Get current user from auth store
         const currentUser = useAuthStore.getState().user;
@@ -565,7 +571,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     } catch (error) {
       console.error("Failed to save todos:", error);
       set({ error: "Failed to save todos", isOffline: !isOnline() });
-      
+
       // Still queue for sync even if Supabase fails
       try {
         await indexedDBManager.addToSyncQueue({
@@ -601,7 +607,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
       // Filter out the "All" list as it's a client-side only virtual list
       const dbListsToSave = listsToSave.filter(list => list.name !== "All");
-      
+
       // Save to IndexedDB immediately
       await indexedDBManager.saveLists(dbListsToSave);
 
@@ -632,20 +638,20 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       }
     } catch (error) {
       console.error("Failed to save lists:", error);
-      
+
       // Still update local state and queue for sync
       const allCurrentLists = get().lists;
       const updatedLists = allCurrentLists.map((list) => {
         const updatedList = listsToSave.find((l) => l.id === list.id);
         return updatedList || list;
       });
-      
-      set({ 
-        lists: updatedLists, 
+
+      set({
+        lists: updatedLists,
         error: "Failed to save lists",
         isOffline: !isOnline(),
       });
-      
+
       try {
         const dbListsToSave = listsToSave.filter(list => list.name !== "All");
         await indexedDBManager.addToSyncQueue({
@@ -668,15 +674,15 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       id: crypto.randomUUID(),
       listId,
     };
-    
+
     // Update local state immediately
     const updatedTodos = [...todos, newTodo];
     set({ todos: updatedTodos });
-    
+
     try {
       // Save to IndexedDB immediately
       await indexedDBManager.saveTodos(updatedTodos);
-      
+
       if (isOnline()) {
         const { error } = await supabase.from("todos").insert([
           {
@@ -708,7 +714,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     } catch (error) {
       console.error("Failed to add todo:", error);
       set({ error: "Failed to add todo", isOffline: !isOnline() });
-      
+
       try {
         await indexedDBManager.addToSyncQueue({
           type: 'addTodo',
@@ -744,7 +750,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     try {
       // Save to IndexedDB immediately
       await indexedDBManager.saveTodos(updatedTodos);
-      
+
       if (isOnline()) {
         const { error } = await supabase
           .from("todos")
@@ -769,7 +775,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     } catch (error) {
       console.error("Failed to toggle todo:", error);
       set({ error: "Failed to update todo", isOffline: !isOnline() });
-      
+
       try {
         await indexedDBManager.addToSyncQueue({
           type: 'toggleTodo',
@@ -796,7 +802,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     try {
       // Save to IndexedDB immediately
       await indexedDBManager.saveTodos(updatedTodos);
-      
+
       if (isOnline()) {
         const { error } = await supabase.from("todos").delete().eq("id", todoId);
 
@@ -815,7 +821,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     } catch (error) {
       console.error("Failed to delete todo:", error);
       set({ error: "Failed to delete todo", isOffline: !isOnline() });
-      
+
       try {
         await indexedDBManager.addToSyncQueue({
           type: 'deleteTodo',
@@ -852,7 +858,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     try {
       // Save to IndexedDB immediately
       await indexedDBManager.saveTodos(updatedTodos);
-      
+
       if (isOnline()) {
         const payload: any = {
           title: updates.title,
@@ -891,7 +897,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     } catch (error) {
       console.error("Failed to edit todo:", error);
       set({ error: "Failed to update todo", isOffline: !isOnline() });
-      
+
       try {
         await indexedDBManager.addToSyncQueue({
           type: 'editTodo',
@@ -949,33 +955,33 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   getTodoCountByList: () => {
     const { todos, lists } = get();
     const counts: Record<string, number> = {};
-    
+
     // Initialize counts for all lists
     lists.forEach((list) => {
       counts[list.id] = 0;
     });
-    
+
     todos.forEach((todo) => {
       // For regular lists, count incomplete todos
       if (!todo.completed && counts.hasOwnProperty(todo.listId)) {
         counts[todo.listId]++;
       }
     });
-    
+
     // Special handling for "All" list - count all incomplete todos
     const allList = lists.find((list) => list.name.toLowerCase() === "all");
     if (allList) {
-      counts[allList.id] = allList.showCompleted 
-        ? todos.length 
+      counts[allList.id] = allList.showCompleted
+        ? todos.length
         : todos.filter((todo) => !todo.completed).length;
     }
-    
+
     // Special handling for "Completed" list - count all completed todos
     const completedList = lists.find((list) => list.name.toLowerCase() === "completed");
     if (completedList) {
       counts[completedList.id] = todos.filter((todo) => todo.completed).length;
     }
-    
+
     return counts;
   },
 
@@ -1029,15 +1035,15 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       showCompleted: true,
       userId: currentUser.id,
     };
-    
+
     // Update local state immediately
     const updatedLists = [...lists, newList];
     set({ lists: updatedLists });
-    
+
     try {
       // Save to IndexedDB immediately
       await indexedDBManager.saveLists([newList]);
-      
+
       if (isOnline()) {
         // Save to Supabase
         const { error } = await supabase.from("lists").insert([
@@ -1067,7 +1073,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     } catch (error) {
       console.error("Failed to create list:", error);
       set({ error: "Failed to create list", isOffline: !isOnline() });
-      
+
       try {
         await indexedDBManager.addToSyncQueue({
           type: 'createList',
@@ -1091,17 +1097,17 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       toast.error("Cannot delete the All list");
       return;
     }
-    
+
     // Update local state immediately
     const updatedLists = lists.filter((l) => l.id !== id);
     const updatedTodos = todos.filter((t) => t.listId !== id);
     set({ lists: updatedLists, todos: updatedTodos });
-    
+
     try {
       // Save to IndexedDB immediately
       await indexedDBManager.saveLists(updatedLists.filter(l => l.name !== "All"));
       await indexedDBManager.saveTodos(updatedTodos);
-      
+
       if (isOnline()) {
         // First delete the todos belonging to this list from Supabase
         const { error: todosDeleteError } = await supabase
@@ -1134,7 +1140,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     } catch (error) {
       console.error("Failed to delete list:", error);
       set({ error: "Failed to delete list", isOffline: !isOnline() });
-      
+
       try {
         await indexedDBManager.addToSyncQueue({
           type: 'deleteList',
@@ -1151,26 +1157,26 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
   editList: async (id: string, name: string, icon?: string) => {
     const { lists } = get();
-    
+
     // Prevent editing of "All" list
     const listToEdit = lists.find(l => l.id === id);
     if (listToEdit?.name.toLowerCase() === "all") {
       toast.error("Cannot edit the All list");
       return;
     }
-    
-    const updatedLists = lists.map((l) => 
+
+    const updatedLists = lists.map((l) =>
       l.id === id ? { ...l, name, ...(icon && { icon }) } : l
     );
-    
+
     // Update local state immediately
     set({ lists: updatedLists });
-    
+
     try {
       // Save to IndexedDB immediately
       const dbLists = updatedLists.filter(l => l.name !== "All");
       await indexedDBManager.saveLists(dbLists);
-      
+
       if (isOnline()) {
         await get().saveLists(updatedLists);
       } else {
@@ -1186,7 +1192,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     } catch (error) {
       console.error("Failed to edit list:", error);
       set({ error: "Failed to update list", isOffline: !isOnline() });
-      
+
       try {
         await indexedDBManager.addToSyncQueue({
           type: 'editList',
@@ -1333,7 +1339,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           console.log(`Synced operation: ${operation.type}`);
         } catch (error) {
           console.error(`Failed to sync operation ${operation.type}:`, error);
-          
+
           // Increment retry count
           operation.retryCount++;
           if (operation.retryCount < 3) {
