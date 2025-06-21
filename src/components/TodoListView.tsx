@@ -200,7 +200,7 @@ const TodoListView: React.FC = () => {
                 )}
               </div>
             </div>
-
+          </div>
 
           {/* Statistics section - only show for "All" list */}
           {isAllList && (
