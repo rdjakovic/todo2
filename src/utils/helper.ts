@@ -1,3 +1,4 @@
+import { CollisionDetection, rectIntersection, closestCorners } from "@dnd-kit/core";
 import { TodoList } from "../types/todo";
 
 export const getListById = (lists: TodoList[], id: string) => {
@@ -31,3 +32,31 @@ export const formatNativeDate = (date: Date): string => {
   const minutes = date.getMinutes().toString().padStart(2, "0");
   return `${month} ${day}, ${year} - ${hours}:${minutes}`;
 };
+
+// Custom collision detection that prioritizes sidebar lists over todo items
+export const customCollisionDetection: CollisionDetection = (args) => {
+  // Use rectangle intersection - works better for both directions than corners
+  const rectCollisions = rectIntersection(args);
+
+  if (rectCollisions.length > 0) {
+    // Filter to prioritize sidebar lists (shorter width = sidebar items)
+    const sidebarCollisions = rectCollisions.filter((collision) => {
+      const container = args.droppableContainers.find(
+        (c) => c.id === collision.id
+      );
+            return (
+              container &&
+              container.rect.current &&
+              container.rect.current.width < 300 // Sidebar items are narrower
+            );
+          });
+
+          if (sidebarCollisions.length > 0) {
+            return sidebarCollisions;
+          }
+          return rectCollisions;
+        }
+
+        // Fallback to closestCorners if no rectCollisions
+        return closestCorners(args);
+      };

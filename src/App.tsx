@@ -6,9 +6,6 @@ import {
   useSensor,
   useSensors,
   PointerSensor,
-  closestCorners,
-  rectIntersection,
-  CollisionDetection,
 } from "@dnd-kit/core";
 import { Sidebar } from "./components/Sidebar.tsx";
 import TodoItem from "./components/TodoItem";
@@ -17,6 +14,7 @@ import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import OfflineIndicator from "./components/OfflineIndicator";
 import { useAuthStore } from "./store/authStore";
 import { useTodoStore } from "./store/todoStore";
+import { customCollisionDetection } from "./utils/helper";
 const EditTodoDialog = lazy(() => import("./components/EditTodoDialog"));
 import LoadingIndicator from "./components/LoadingIndicator";
 import SettingsView from "./components/SettingsView";
@@ -45,31 +43,6 @@ function App() {
 
   const { theme, toggleTheme } = useTheme();
   const { handleDragStart, handleDragEnd } = useDragAndDrop();
-
-  // Custom collision detection that prioritizes sidebar lists over todo items
-  const customCollisionDetection: CollisionDetection = (args) => {
-    // Use rectangle intersection - works better for both directions than corners
-    const rectCollisions = rectIntersection(args);
-
-    if (rectCollisions.length > 0) {
-      // Filter to prioritize sidebar lists (shorter width = sidebar items)
-      const sidebarCollisions = rectCollisions.filter(collision => {
-        const container = args.droppableContainers.find(c => c.id === collision.id);
-        return container && container.rect.current && container.rect.current.width < 300; // Sidebar items are narrower
-      });
-
-      // If we have sidebar collisions, prioritize them
-      if (sidebarCollisions.length > 0) {
-        return sidebarCollisions;
-      }
-
-      // Otherwise return all collisions
-      return rectCollisions;
-    }
-
-    // Fall back to corner-based detection as last resort
-    return closestCorners(args);
-  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
