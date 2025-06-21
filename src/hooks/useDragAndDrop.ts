@@ -39,17 +39,8 @@ export const useDragAndDrop = () => {
     // Check if dropping on a list in sidebar
     const targetList = lists.find((list) => list.id === over.id);
     if (targetList) {
-      console.log('📋 Moving todo to different list:', {
-        todoId: sourceTodo.id,
-        todoTitle: sourceTodo.title,
-        fromList: sourceTodo.listId,
-        toList: targetList.id,
-        toListName: targetList.name
-      });
-
       // Prevent dropping onto "All" list
       if (targetList.name.toLowerCase() === "all") {
-        console.log('❌ Cannot drop on "All" list');
         return;
       }
 
@@ -59,7 +50,6 @@ export const useDragAndDrop = () => {
         sourceList?.name.toLowerCase() === "all" &&
         targetList.name.toLowerCase() !== "completed"
       ) {
-        console.log('❌ From "All" list, can only drop to "Completed" list');
         return;
       }
 
@@ -91,49 +81,27 @@ export const useDragAndDrop = () => {
       await saveTodos(updatedTodos);
       // After saving to backend, update local state directly
       setTodos(updatedTodos);
-
-      console.log('✅ Todo moved to different list successfully');
       return;
     }
 
     // Handle reordering within the same list
     if (active.id !== over.id) {
-      console.log('🔄 Attempting todo reordering:', {
-        activeId: active.id,
-        overId: over.id,
-        sortBy,
-        isCustomSort: sortBy === 'custom'
-      });
-
       // Only allow reordering if custom sort is enabled
       if (sortBy !== 'custom') {
-        console.log('❌ Reordering blocked - Custom sort not enabled. Current sort:', sortBy);
         return;
       }
-
-      console.log('✅ Custom sort enabled - proceeding with reordering');
 
       // Find the global indices of the dragged item and drop target in the entire todos array
       const oldIndexGlobal = todos.findIndex((t) => t.id === active.id);
       const newIndexGlobal = todos.findIndex((t) => t.id === over.id);
 
-      console.log('📍 Reordering indices:', {
-        oldIndex: oldIndexGlobal,
-        newIndex: newIndexGlobal,
-        totalTodos: todos.length
-      });
-
       if (oldIndexGlobal !== -1 && newIndexGlobal !== -1) {
         // Directly reorder the entire todos array using the global indices
         const reorderedTodos = arrayMove(todos, oldIndexGlobal, newIndexGlobal);
 
-        console.log('🔄 Todos reordered successfully');
-
         // Save the reordered todos to backend and update state
         await saveTodos(reorderedTodos);
         setTodos(reorderedTodos);
-      } else {
-        console.log('❌ Invalid indices for reordering');
       }
     }
   };

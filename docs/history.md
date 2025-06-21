@@ -771,3 +771,79 @@ Implemented animated horizontal drop indicators that appear between todo items d
 This enhancement significantly improves the user experience by providing clear visual feedback for drag and drop positioning, making todo reordering intuitive and precise.
 
 ---
+
+Date: 2025-06-21
+Description: Refactored DropIndicator into separate component and cleaned up console logs.
+
+**Problem:**
+The DropIndicator component was embedded within TodoListItems.tsx, making the file larger and less maintainable. Additionally, console logs were cluttering the output during normal drag and drop operations.
+
+**Solution:**
+Extracted the DropIndicator into its own reusable component file and removed all debugging console logs for cleaner production code.
+
+**Key Changes:**
+
+1. **Created Separate DropIndicator Component (src/components/DropIndicator.tsx)**
+   ```typescript
+   interface DropIndicatorProps {
+     todoId: string;
+     position: 'before' | 'after';
+     allTodos: Todo[];
+   }
+
+   const DropIndicator = ({ todoId, position, allTodos }: DropIndicatorProps) => {
+     // Clean implementation without console logs
+     // Visual purple horizontal line with pulsing animation
+   };
+   ```
+
+2. **Updated TodoListItems.tsx**
+   - ✅ Removed local DropIndicator component definition
+   - ✅ Added import for the new DropIndicator component
+   - ✅ Maintained all existing functionality
+   - ✅ Cleaner, more focused component structure
+
+3. **Cleaned Up Console Logs (src/hooks/useDragAndDrop.ts)**
+   - ❌ Removed: `🔄 Attempting todo reordering` logs
+   - ❌ Removed: `❌ Reordering blocked` logs
+   - ❌ Removed: `✅ Custom sort enabled` logs
+   - ❌ Removed: `📍 Reordering indices` logs
+   - ❌ Removed: `📋 Moving todo to different list` logs
+   - ❌ Removed: `✅ Todo moved successfully` logs
+
+**Benefits:**
+
+- 🧩 **Better Code Organization**: DropIndicator is now a reusable component
+- 🔧 **Easier Maintenance**: Separate file for drop indicator logic
+- 🎯 **Focused Components**: TodoListItems.tsx is cleaner and more focused
+- 🔇 **Clean Console**: No debugging noise during normal operations
+- ♻️ **Reusability**: DropIndicator can be used in other parts of the app if needed
+- 📝 **Better TypeScript**: Proper interface definition for component props
+
+**File Structure:**
+
+```
+src/components/
+├── DropIndicator.tsx          # New: Extracted drop indicator component
+├── TodoListItems.tsx          # Updated: Cleaner, imports DropIndicator
+└── ...
+```
+
+**Functionality Preserved:**
+
+- ✅ Visual drop indicators still work perfectly
+- ✅ Purple horizontal lines appear during drag operations
+- ✅ "Before" and "after" positioning logic intact
+- ✅ Smooth animations and transitions
+- ✅ Only shows when "Custom Sort" is enabled
+- ✅ All drag and drop operations function normally
+
+**Files Modified:**
+
+- `src/components/DropIndicator.tsx`: New component file
+- `src/components/TodoListItems.tsx`: Removed local component, added import
+- `src/hooks/useDragAndDrop.ts`: Removed all console.log statements
+
+This refactoring improves code organization and maintainability while preserving all existing functionality and visual behavior.
+
+---
