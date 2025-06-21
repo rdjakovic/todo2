@@ -176,6 +176,9 @@ const filterTodosBySearch = (todos: Todo[], searchQuery: string): Todo[] => {
   });
 };
 
+// Export helper functions for use in components
+export { sortTodos, filterTodosBySearch };
+
 export const useTodoStore = create<TodoState>((set, get) => ({
   lists: [],
   todos: [],

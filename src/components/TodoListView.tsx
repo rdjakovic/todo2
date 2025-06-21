@@ -1,6 +1,6 @@
 import React from "react";
 import { AnimatePresence } from "framer-motion";
-import { PencilIcon, TrashIcon, MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, TrashIcon, MagnifyingGlassIcon, XMarkIcon, ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 
 import TodoForm from "./TodoForm";
 import TodoListItems from "./TodoListItems";
@@ -32,6 +32,7 @@ const TodoListView: React.FC = () => {
   const currentList = getListById(lists, selectedListId);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [showCompletedSection, setShowCompletedSection] = useState(false);
 
   const canEditOrDelete = currentList && 
     currentList.name !== "All" && 
@@ -56,6 +57,39 @@ const TodoListView: React.FC = () => {
   };
 
   const statistics = getStatistics();
+  
+  // Get completed and incomplete todos separately
+  const getCompletedAndIncompleteTodos = () => {
+    const { todos, lists, selectedListId, searchQuery } = get();
+    const currentList = lists.find((list) => list.id === selectedListId);
+    if (!currentList) return { incompleteTodos: [], completedTodos: [] };
+
+    let allTodos: Todo[] = [];
+
+    // Special handling for "All" list - show all todos from all lists
+    if (currentList.name.toLowerCase() === "all") {
+      allTodos = todos;
+    }
+    // Special handling for "Completed" list - show all completed todos from all lists
+    else if (currentList.name.toLowerCase() === "completed") {
+      allTodos = todos.filter((todo) => todo.completed);
+    }
+    // For other lists, filter by listId
+    else {
+      allTodos = todos.filter((todo) => todo.listId === selectedListId);
+    }
+
+    // Apply search filter
+    const searchFilteredTodos = filterTodosBySearch(allTodos, searchQuery);
+
+    // Separate completed and incomplete todos
+    const incompleteTodos = searchFilteredTodos.filter(todo => !todo.completed);
+    const completedTodos = searchFilteredTodos.filter(todo => todo.completed);
+
+    return { incompleteTodos, completedTodos };
+  };
+
+  const { incompleteTodos, completedTodos } = getCompletedAndIncompleteTodos();
   
   const handleToggleShowCompleted = () => {
     // Prevent toggling for "Completed" list
@@ -169,7 +203,8 @@ const TodoListView: React.FC = () => {
             </div>
 
             {/* Right: Toggle completed todos */}
-            <div className="flex items-center gap-2 justify-between lg:justify-end flex-shrink-0">
+            {isAllList && (
+              <div className="flex items-center gap-2 justify-between lg:justify-end flex-shrink-0">
               <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
                 {isCompletedList 
                   ? "All Completed Tasks" 
@@ -201,7 +236,8 @@ const TodoListView: React.FC = () => {
                   )}
                 />
               </button>
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Statistics section - only show for "All" list */}
@@ -262,14 +298,54 @@ const TodoListView: React.FC = () => {
           {/* Only show TodoForm for regular lists, not for "All" or "Completed" */}
           {!isAllList && !isCompletedList && <TodoForm />}
 
-          <AnimatePresence mode="popLayout">
-            <TodoListItems
-              filteredTodos={getFilteredTodos()}
-              onToggle={toggleTodo}
-              onDelete={(id) => deleteTodo(id)}
-              onOpenEditDialog={openEditDialog}
-            />
-          </AnimatePresence>
+          {/* Incomplete Todos */}
+          {incompleteTodos.length > 0 && (
+            <AnimatePresence mode="popLayout">
+              <TodoListItems
+                filteredTodos={sortTodos(incompleteTodos, get().sortBy)}
+                onToggle={toggleTodo}
+                onDelete={(id) => deleteTodo(id)}
+                onOpenEditDialog={openEditDialog}
+              />
+            </AnimatePresence>
+          )}
+
+          {/* Completed Section */}
+          {completedTodos.length > 0 && (
+            <div className="mt-8">
+              <button
+                onClick={() => setShowCompletedSection(!showCompletedSection)}
+                className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors mb-4"
+              >
+                {showCompletedSection ? (
+                  <ChevronUpIcon className="w-4 h-4" />
+                ) : (
+                  <ChevronDownIcon className="w-4 h-4" />
+                )}
+                <span className="text-sm font-medium">
+                  Completed ({completedTodos.length})
+                </span>
+              </button>
+
+              {showCompletedSection && (
+                <AnimatePresence mode="popLayout">
+                  <TodoListItems
+                    filteredTodos={sortTodos(completedTodos, get().sortBy)}
+                    onToggle={toggleTodo}
+                    onDelete={(id) => deleteTodo(id)}
+                    onOpenEditDialog={openEditDialog}
+                  />
+                </AnimatePresence>
+              )}
+            </div>
+          )}
+
+          {/* Show message when no todos exist */}
+          {incompleteTodos.length === 0 && completedTodos.length === 0 && (
+            <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+              No todos yet. Add one above!
+            </div>
+          )}
         </div>
       </div>
 

@@ -390,3 +390,35 @@
 - ✅ **Cleaner Code:** Simplified authentication flow with clear responsibilities
 - ✅ **Consistent Experience:** Same behavior regardless of network conditions or timing
 - ✅ **Reduced Complexity:** Eliminated redundant backup mechanisms and simplified state management
+### 2025-01-28 17:30:00 - Implement collapsible completed section and remove toggle from non-All pages
+**Summary:** Redesigned the todo display to show incomplete and completed todos separately, with a collapsible "Completed" section below the main todo list.
+
+**Key Changes:**
+- **Removed "Show/Hide Completed" toggle from all pages except "All" list:**
+  - Toggle now only appears on the "All" list page where it makes sense to show/hide completed todos from all lists
+  - Other lists now always show their incomplete todos in the main section
+
+- **Added collapsible "Completed" section:**
+  - New expandable section below the main todo list showing completed todos
+  - Toggle button with chevron icon and count: "Completed (X)"
+  - Section can be expanded/collapsed by clicking the toggle
+  - Uses same TodoListItems component for consistency
+
+- **Enhanced todo filtering logic:**
+  - Created `getCompletedAndIncompleteTodos()` function to separate todos by completion status
+  - Maintains existing search and sorting functionality for both sections
+  - Exported `sortTodos` and `filterTodosBySearch` helper functions from store for component use
+
+- **Improved user experience:**
+  - Cleaner interface with completed todos organized separately
+  - Better visual hierarchy with incomplete todos prominently displayed
+  - Completed todos accessible but not cluttering the main view
+  - Consistent behavior across all list types
+
+**Benefits:**
+- ✅ **Cleaner Interface:** Incomplete todos are prominently displayed without completed items cluttering the view
+- ✅ **Better Organization:** Clear separation between active and completed tasks
+- ✅ **Flexible Viewing:** Users can expand completed section when needed
+- ✅ **Consistent UX:** Same behavior across all list types except "All" which retains global toggle
+- ✅ **Visual Clarity:** Completed count is visible even when section is collapsed
+- ✅ **Maintained Functionality:** All existing features (search, sort, edit, delete) work in both sections
