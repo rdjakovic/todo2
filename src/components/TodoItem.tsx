@@ -11,7 +11,7 @@ interface TodoItemProps {
   todo: Todo;
   onToggle: (id: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
-  onOpenEditDialog: (todo: Todo) => void;
+  onOpenEditDialog: (todo: Todo, viewMode?: boolean) => void;
   isDragging?: boolean;
 }
 
@@ -104,7 +104,15 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
             {todo.completed && <CheckIcon className="w-4 h-4 sm:w-3 sm:h-3 text-white" />}
           </button>
 
-          <div className="flex-1">
+          <div
+            className="flex-1 cursor-pointer sm:cursor-auto"
+            onClick={() => {
+              // Only make clickable on mobile (screen width < 640px)
+              if (window.innerWidth < 640) {
+                onOpenEditDialog(todo, true); // Open in view mode
+              }
+            }}
+          >
             <>
               <p
                 className={clsx(
@@ -192,11 +200,14 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
             </>
           </div>
 
-          {/* Action buttons - Edit button now opens dialog */}
-          <div className="flex gap-1 flex-shrink-0">
+          {/* Action buttons - Vertical on mobile, horizontal on desktop */}
+          <div className="flex flex-col sm:flex-row gap-1 flex-shrink-0">
             {!todo.completed && (
               <button
-                onClick={() => onOpenEditDialog(todo)} // Changed onClick handler
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent triggering the div click
+                  onOpenEditDialog(todo, false); // Open in edit mode
+                }}
                 className="p-2 sm:p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900"
                 title="Edit todo"
               >
@@ -204,7 +215,10 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
               </button>
             )}
             <button
-              onClick={() => onDelete(todo.id)}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent triggering the div click
+                onDelete(todo.id);
+              }}
               className="p-2 sm:p-1.5 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
               title="Delete todo"
             >

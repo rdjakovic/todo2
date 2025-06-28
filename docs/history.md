@@ -895,3 +895,69 @@ Description: Fixed unused variable issue in formatMobileDate function by removin
 This enhancement provides mobile users with the ability to move todos between lists through the edit dialog, complementing the existing drag & drop functionality available on desktop screens.
 
 ---
+
+Date: 2025-06-28
+Description: Enhanced mobile user experience by implementing vertical icon alignment and view/edit mode functionality for todo items.
+
+**Key Changes:**
+
+1. **Vertical Icon Alignment on Mobile (src/components/TodoItem.tsx)**
+   - ✅ Changed action buttons container from `flex gap-1` to `flex flex-col sm:flex-row gap-1`
+   - ✅ Icons now stack vertically on mobile screens and remain horizontal on desktop
+   - ✅ Improved mobile layout with better touch target accessibility
+
+2. **Clickable Todo Cards for Mobile (src/components/TodoItem.tsx)**
+   - ✅ Made todo content area clickable on mobile devices (screen width < 640px)
+   - ✅ Tapping todo card opens EditTodoDialog in view mode
+   - ✅ Added `stopPropagation()` to action buttons to prevent triggering card click
+   - ✅ Desktop behavior unchanged (no clickable area)
+
+3. **View/Edit Mode in EditTodoDialog (src/components/EditTodoDialog.tsx)**
+   - ✅ Added `viewMode` prop and `isViewMode` state management
+   - ✅ Implemented read-only view mode with styled display fields
+   - ✅ Added edit icon next to title in view mode to switch to edit mode
+   - ✅ Dynamic title: "Todo Details" in view mode, "Edit Todo" in edit mode
+   - ✅ Hide Save/Cancel buttons in view mode
+
+4. **Enhanced Dialog Scrolling (src/components/EditTodoDialog.tsx)**
+   - ✅ Restructured dialog layout with fixed header and footer
+   - ✅ Added scrollable content area between header and footer
+   - ✅ Fixed scrolling issues in view mode with proper flex layout
+   - ✅ Improved mobile viewing experience for long content
+
+5. **Store Integration (src/store/todoStore.ts)**
+   - ✅ Added `editDialogViewMode` state to track view/edit mode
+   - ✅ Enhanced `openEditDialog` function to accept optional `viewMode` parameter
+   - ✅ Updated `closeEditDialog` to reset view mode state
+   - ✅ Proper state management for dialog mode switching
+
+6. **App Integration (src/App.tsx)**
+   - ✅ Updated EditTodoDialog component to receive `viewMode` prop from store
+   - ✅ Seamless integration with existing dialog functionality
+
+**Mobile UX Improvements:**
+
+- 📱 **Touch-Friendly**: Vertical icon alignment provides better touch targets
+- 👆 **Intuitive Navigation**: Tap todo card to view details, tap edit icon to modify
+- 📖 **Read-Only View**: Clean, distraction-free view mode for reviewing todo details
+- ✏️ **Easy Editing**: One-tap switch from view to edit mode
+- 📜 **Proper Scrolling**: Fixed scrolling issues for long content in dialogs
+
+**Benefits:**
+
+- 🎯 **Mobile-First Design**: Optimized layout and interactions for mobile users
+- 🔄 **Seamless Mode Switching**: Smooth transition between view and edit modes
+- 📱 **Better Accessibility**: Larger touch targets and clearer visual hierarchy
+- 🎨 **Consistent UI**: Maintains design consistency across desktop and mobile
+- 🚀 **Enhanced UX**: Improved user experience with intuitive mobile interactions
+
+**Files Modified:**
+
+- `src/components/TodoItem.tsx`: Vertical icon alignment, clickable cards, view mode support
+- `src/components/EditTodoDialog.tsx`: View/edit mode implementation, improved scrolling
+- `src/store/todoStore.ts`: Added view mode state management
+- `src/App.tsx`: Updated dialog integration with view mode support
+
+This enhancement significantly improves the mobile user experience by providing intuitive touch interactions and a clean view/edit mode system for todo management.
+
+---

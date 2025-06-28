@@ -33,6 +33,7 @@ interface TodoState {
   // Edit dialog state
   isEditDialogOpen: boolean;
   todoToEditDialog: Todo | null;
+  editDialogViewMode: boolean;
 
   // UI state
   isSidebarOpen: boolean;
@@ -80,7 +81,7 @@ interface TodoState {
   getCurrentList: () => TodoList | undefined;
   getFilteredTodos: () => Todo[];
   getTodoCountByList: () => Record<string, number>;
-  openEditDialog: (todo: Todo) => void;
+  openEditDialog: (todo: Todo, viewMode?: boolean) => void;
   closeEditDialog: () => void;
   addTodoFromForm: (e: React.FormEvent) => Promise<void>;
   createList: (name: string, icon?: string) => Promise<void>;
@@ -202,6 +203,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   // Edit dialog state
   isEditDialogOpen: false,
   todoToEditDialog: null,
+  editDialogViewMode: false,
 
   // UI state
   isSidebarOpen:
@@ -988,10 +990,11 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     return counts;
   },
 
-  openEditDialog: (todo: Todo) => {
+  openEditDialog: (todo: Todo, viewMode = false) => {
     set({
       todoToEditDialog: todo,
       isEditDialogOpen: true,
+      editDialogViewMode: viewMode,
     });
   },
 
@@ -999,6 +1002,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     set({
       todoToEditDialog: null,
       isEditDialogOpen: false,
+      editDialogViewMode: false,
     });
   },
 

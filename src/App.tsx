@@ -35,6 +35,7 @@ function App() {
     activeDraggedTodo,
     isEditDialogOpen,
     todoToEditDialog,
+    editDialogViewMode,
     editTodo: editTodoInList,
     setIsSidebarOpen,
     setWindowWidth,
@@ -168,6 +169,7 @@ function App() {
           <EditTodoDialog
             isOpen={isEditDialogOpen}
             todoToEdit={todoToEditDialog}
+            viewMode={editDialogViewMode}
             onSave={handleSaveEditDialog}
             onCancel={closeEditDialog}
           />
