@@ -1,6 +1,12 @@
 import { CollisionDetection, rectIntersection, closestCorners } from "@dnd-kit/core";
 import { TodoList } from "../types/todo";
 
+// Reusable months array for date formatting
+const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
+
 export const getListById = (lists: TodoList[], id: string) => {
   return lists.find((list) => list.id === id);
 };
@@ -11,21 +17,7 @@ export const isValidNativeDate = (d: Date | undefined | null): d is Date =>
 
 // Helper function for native date formatting
 export const formatNativeDate = (date: Date): string => {
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const month = months[date.getMonth()];
+  const month = MONTHS[date.getMonth()];
   const day = date.getDate();
   const year = date.getFullYear();
   const hours = date.getHours().toString().padStart(2, "0");
@@ -35,11 +27,7 @@ export const formatNativeDate = (date: Date): string => {
 
 // Helper function for compact mobile date formatting
 export const formatMobileDate = (date: Date): string => {
-  const months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-  ];
-  const month = months[date.getMonth()];
+  const month = MONTHS[date.getMonth()];
   const day = date.getDate();
 
   // Only show hours and minutes
