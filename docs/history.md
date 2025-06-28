@@ -847,3 +847,51 @@ src/components/
 This refactoring improves code organization and maintainability while preserving all existing functionality and visual behavior.
 
 ---
+
+Date: 2025-06-28
+Description: Fixed unused variable issue in formatMobileDate function by removing the unused 'year' variable. Extracted duplicated months array into a reusable MONTHS constant to eliminate code duplication between formatNativeDate and formatMobileDate functions. Added list selection dropdown to EditTodoDialog for mobile users to change todo item's list assignment, enabling users to move todos between lists when drag & drop is not available on mobile devices.
+
+**Key Changes:**
+
+1. **Fixed Unused Variable (src/utils/helper.ts)**
+   - ✅ Removed unused `year` variable from `formatMobileDate` function
+   - ✅ Function only needs month, day, hours, and minutes for compact mobile format
+
+2. **Extracted Reusable Constant (src/utils/helper.ts)**
+   - ✅ Created `MONTHS` constant array with month abbreviations
+   - ✅ Updated both `formatNativeDate` and `formatMobileDate` to use shared constant
+   - ✅ Eliminated code duplication and improved maintainability
+
+3. **Enhanced EditTodoDialog for Mobile (src/components/EditTodoDialog.tsx)**
+   - ✅ Added list selection dropdown with all available lists (except "All")
+   - ✅ Added `editListId` state to track selected list
+   - ✅ Updated interface to include `newListId` parameter in `onSave` callback
+   - ✅ Integrated with `useTodoStore` to get available lists
+
+4. **Updated Store Integration (src/store/todoStore.ts)**
+   - ✅ Enhanced `editTodo` function to handle `listId` updates
+   - ✅ Added `listId` to Supabase payload for database updates
+   - ✅ Updated sync operations to handle list changes in offline mode
+
+5. **Updated App.tsx Integration**
+   - ✅ Modified `handleSaveEditDialog` to accept and process `newListId` parameter
+   - ✅ Conditionally includes `listId` in updates when provided
+
+**Benefits:**
+
+- 📱 **Mobile Accessibility**: Users can now change todo list assignment on mobile devices
+- 🔄 **Cross-Platform Consistency**: Provides alternative to drag & drop for mobile users
+- 🧹 **Code Quality**: Eliminated unused variables and code duplication
+- ♻️ **Maintainability**: Shared constants reduce maintenance overhead
+- 🎯 **User Experience**: Seamless list selection with familiar dropdown interface
+
+**Files Modified:**
+
+- `src/utils/helper.ts`: Fixed unused variable, extracted MONTHS constant
+- `src/components/EditTodoDialog.tsx`: Added list selection dropdown
+- `src/store/todoStore.ts`: Enhanced editTodo to handle listId updates
+- `src/App.tsx`: Updated save handler to process list changes
+
+This enhancement provides mobile users with the ability to move todos between lists through the edit dialog, complementing the existing drag & drop functionality available on desktop screens.
+
+---

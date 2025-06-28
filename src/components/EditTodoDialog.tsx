@@ -1,6 +1,7 @@
 import { XMarkIcon, CheckIcon } from "@heroicons/react/24/outline";
 import { Todo } from "../types/todo";
 import { useState, useEffect } from "react";
+import { useTodoStore } from "../store/todoStore";
 
 interface EditTodoDialogProps {
   isOpen: boolean;
@@ -10,7 +11,8 @@ interface EditTodoDialogProps {
     newTitle: string,
     newNotes?: string,
     newPriority?: "low" | "medium" | "high",
-    newDueDate?: Date | undefined // Changed to Date
+    newDueDate?: Date | undefined,
+    newListId?: string
   ) => Promise<void>;
   onCancel: () => void;
 }
@@ -21,18 +23,21 @@ const EditTodoDialog = ({
   onSave,
   onCancel,
 }: EditTodoDialogProps) => {
+  const { lists } = useTodoStore();
   const [editText, setEditText] = useState("");
   const [editNotes, setEditNotes] = useState("");
   const [editPriority, setEditPriority] = useState<
     "low" | "medium" | "high" | undefined
   >("medium");
   const [editDueDate, setEditDueDate] = useState("");
+  const [editListId, setEditListId] = useState("");
 
   useEffect(() => {
     if (todoToEdit) {
       setEditText(todoToEdit.title);
       setEditNotes(todoToEdit.notes || "");
       setEditPriority(todoToEdit.priority || "medium");
+      setEditListId(todoToEdit.listId);
       // Format Date to YYYY-MM-DD string for input, or empty string
       setEditDueDate(
         todoToEdit.dueDate instanceof Date
@@ -43,6 +48,7 @@ const EditTodoDialog = ({
       setEditText("");
       setEditNotes("");
       setEditPriority("medium");
+      setEditListId("");
       setEditDueDate("");
     }
   }, [todoToEdit]);
@@ -59,7 +65,8 @@ const EditTodoDialog = ({
         editNotes.trim(),
         editPriority,
         // Parse string to Date or undefined
-        editDueDate.trim() ? new Date(editDueDate.trim()) : undefined
+        editDueDate.trim() ? new Date(editDueDate.trim()) : undefined,
+        editListId
       );
     }
   };
@@ -126,6 +133,29 @@ const EditTodoDialog = ({
             placeholder="Add notes..."
             rows={4}
           />
+        </div>
+
+        <div className="mt-4">
+          <label
+            htmlFor="todoList"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          >
+            List
+          </label>
+          <select
+            id="todoList"
+            value={editListId}
+            onChange={(e) => setEditListId(e.target.value)}
+            className="w-full px-3 py-3 sm:py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-base sm:text-sm focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
+          >
+            {lists
+              .filter((list) => list.name !== "All")
+              .map((list) => (
+                <option key={list.id} value={list.id}>
+                  {list.name}
+                </option>
+              ))}
+          </select>
         </div>
 
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">

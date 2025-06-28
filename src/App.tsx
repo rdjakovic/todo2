@@ -88,13 +88,15 @@ function App() {
     newTitle: string,
     newNotes?: string,
     newPriority?: "low" | "medium" | "high",
-    newDueDate?: Date
+    newDueDate?: Date,
+    newListId?: string
   ) => {
     await editTodoInList(id, {
       title: newTitle,
       notes: newNotes,
       priority: newPriority,
       dueDate: newDueDate,
+      ...(newListId && { listId: newListId }),
     });
     closeEditDialog();
   };

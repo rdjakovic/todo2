@@ -867,6 +867,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           priority: updates.priority,
         };
 
+        if (updates.listId !== undefined) {
+          payload.list_id = updates.listId;
+        }
         if (updates.dueDate !== undefined) {
           payload.due_date = updates.dueDate?.toISOString();
         }
@@ -1264,6 +1267,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
                 priority: operation.data.updates.priority,
               };
 
+              if (operation.data.updates.listId !== undefined) {
+                payload.list_id = operation.data.updates.listId;
+              }
               if (operation.data.updates.dueDate !== undefined) {
                 payload.due_date = operation.data.updates.dueDate?.toISOString();
               }
