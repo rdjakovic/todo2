@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { CheckIcon, PencilIcon, TrashIcon, ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
-import { isValidNativeDate, formatNativeDate } from "../utils/helper";
+import { isValidNativeDate, formatNativeDate, formatMobileDate } from "../utils/helper";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import clsx from "clsx";
@@ -41,7 +41,7 @@ const getPriorityBadgeColors = (priority?: "low" | "medium" | "high") => {
 const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
   ({ todo, onToggle, onDelete, onOpenEditDialog, isDragging }, ref) => {
     const [showNotes, setShowNotes] = useState(false);
-    
+
     const {
       attributes,
       listeners,
@@ -133,21 +133,23 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
                   )}
                 </span>
               </p>
-              
+
               {/* Notes section */}
               {todo.notes && todo.notes.trim() && showNotes && (
                 <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
                   {todo.notes}
                 </div>
               )}
-              
+
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-1">
                 {/* First row: Date created and priority */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {/* Ensure todo.dateCreated is a Date object before formatting */}
+                    {/* Format date more compactly on mobile */}
                     {isValidNativeDate(todo.dateCreated)
-                      ? formatNativeDate(todo.dateCreated)
+                      ? window.innerWidth < 640
+                        ? formatMobileDate(todo.dateCreated) // New compact format for mobile
+                        : formatNativeDate(todo.dateCreated)
                       : "Invalid creation date"}
                   </p>
                   {todo.priority && (
@@ -165,18 +167,20 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
                     </span>
                   )}
                 </div>
-                
+
                 {/* Completion date - shows on right side on desktop */}
                 {todo.completed && todo.dateOfCompletion && (
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 sm:mt-0">
                     Completed:{" "}
                     {isValidNativeDate(todo.dateOfCompletion)
-                      ? formatNativeDate(todo.dateOfCompletion)
+                      ? window.innerWidth < 640
+                        ? formatMobileDate(todo.dateOfCompletion) // New compact format for mobile
+                        : formatNativeDate(todo.dateOfCompletion)
                       : "Invalid completion date"}
                   </p>
                 )}
               </div>
-              
+
               {/* Due date - separate row on mobile only */}
               {todo.dueDate && (
                 <div className="sm:hidden mt-1">

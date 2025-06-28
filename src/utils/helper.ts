@@ -33,6 +33,23 @@ export const formatNativeDate = (date: Date): string => {
   return `${month} ${day}, ${year} - ${hours}:${minutes}`;
 };
 
+// Helper function for compact mobile date formatting
+export const formatMobileDate = (date: Date): string => {
+  const months = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ];
+  const month = months[date.getMonth()];
+  const day = date.getDate();
+
+  // Only show hours and minutes
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+
+  // Format: "Jun 21 - 23:51" (more compact)
+  return `${month} ${day} - ${hours}:${minutes}`;
+};
+
 // Custom collision detection that prioritizes sidebar lists over todo items
 export const customCollisionDetection: CollisionDetection = (args) => {
   // Use rectangle intersection - works better for both directions than corners
