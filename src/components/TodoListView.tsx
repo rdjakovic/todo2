@@ -10,7 +10,7 @@ import FilterDialog from "./FilterDialog";
 import { getListById } from "../utils/helper";
 import clsx from "clsx";
 import { useTodoStore, sortTodos, filterTodosBySearch } from "../store/todoStore";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Todo } from "../types/todo";
 
 interface FilterOptions {
@@ -54,12 +54,39 @@ const TodoListView: React.FC = () => {
     hasDueDate: false,
   });
 
+  // Track user's actual preference for showCompleted (separate from forced state for Completed list)
+  const [userShowCompletedPreference, setUserShowCompletedPreference] = useState(false);
+
   const canEditOrDelete = currentList &&
     currentList.name !== "All" &&
     currentList.name !== "Completed";
 
   const isCompletedList = currentList?.name.toLowerCase() === "completed";
   const isAllList = currentList?.name.toLowerCase() === "all";
+
+  // Handle showCompleted filter based on list type
+  useEffect(() => {
+    if (isCompletedList) {
+      // For Completed list: force showCompleted to true and expand section
+      if (!activeFilters.showCompleted) {
+        setActiveFilters(prev => ({
+          ...prev,
+          showCompleted: true
+        }));
+      }
+      if (!showCompletedSection) {
+        setShowCompletedSection(true);
+      }
+    } else {
+      // For other lists: restore user's actual preference
+      if (activeFilters.showCompleted !== userShowCompletedPreference) {
+        setActiveFilters(prev => ({
+          ...prev,
+          showCompleted: userShowCompletedPreference
+        }));
+      }
+    }
+  }, [isCompletedList, activeFilters.showCompleted, showCompletedSection, userShowCompletedPreference]);
 
   // Calculate statistics for "All" list
   const getStatistics = () => {
@@ -161,7 +188,18 @@ const TodoListView: React.FC = () => {
   };
 
   const handleApplyFilters = (filters: FilterOptions) => {
-    setActiveFilters(filters);
+    // Always track user's actual preference for showCompleted
+    setUserShowCompletedPreference(filters.showCompleted);
+
+    // Apply filters, but force showCompleted to true if on Completed list
+    if (isCompletedList) {
+      setActiveFilters({
+        ...filters,
+        showCompleted: true
+      });
+    } else {
+      setActiveFilters(filters);
+    }
   };
 
   // Check if any filters are active
@@ -373,7 +411,11 @@ const TodoListView: React.FC = () => {
         isOpen={isFilterDialogOpen}
         onClose={() => setIsFilterDialogOpen(false)}
         onApply={handleApplyFilters}
-        currentFilters={activeFilters}
+        currentFilters={isCompletedList ? {
+          ...activeFilters,
+          showCompleted: userShowCompletedPreference
+        } : activeFilters}
+        isCompletedList={isCompletedList}
       />
     </>
   );

@@ -17,16 +17,22 @@ interface FilterDialogProps {
   onClose: () => void;
   onApply: (filters: FilterOptions) => void;
   currentFilters: FilterOptions;
+  isCompletedList?: boolean;
 }
 
-const FilterDialog = ({ isOpen, onClose, onApply, currentFilters }: FilterDialogProps) => {
+const FilterDialog = ({ isOpen, onClose, onApply, currentFilters, isCompletedList = false }: FilterDialogProps) => {
   const [filters, setFilters] = useState<FilterOptions>(currentFilters);
 
   useEffect(() => {
     if (isOpen) {
-      setFilters(currentFilters);
+      // For completed list, always ensure showCompleted is true
+      if (isCompletedList) {
+        setFilters({ ...currentFilters, showCompleted: true });
+      } else {
+        setFilters(currentFilters);
+      }
     }
-  }, [isOpen, currentFilters]);
+  }, [isOpen, currentFilters, isCompletedList]);
 
   if (!isOpen) {
     return null;
@@ -39,7 +45,7 @@ const FilterDialog = ({ isOpen, onClose, onApply, currentFilters }: FilterDialog
 
   const handleReset = () => {
     const resetFilters: FilterOptions = {
-      showCompleted: false,
+      showCompleted: isCompletedList ? true : false, // Always true for completed list
       priorities: {
         low: false,
         medium: false,
@@ -78,30 +84,49 @@ const FilterDialog = ({ isOpen, onClose, onApply, currentFilters }: FilterDialog
         <div className="space-y-6">
           {/* Show completed tasks */}
           <div>
-            <label className="flex items-center gap-3 cursor-pointer">
+            <label className={clsx(
+              "flex items-center gap-3",
+              isCompletedList ? "cursor-not-allowed" : "cursor-pointer"
+            )}>
               <div className="relative">
                 <input
                   type="checkbox"
                   checked={filters.showCompleted}
-                  onChange={(e) => setFilters({ ...filters, showCompleted: e.target.checked })}
+                  onChange={(e) => !isCompletedList && setFilters({ ...filters, showCompleted: e.target.checked })}
                   onKeyDown={handleKeyDown}
+                  disabled={isCompletedList}
                   className="sr-only peer"
                 />
                 <div className={clsx(
                   "w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
                   filters.showCompleted
-                    ? "bg-gray-800 dark:bg-white border-gray-800 dark:border-white"
+                    ? isCompletedList
+                      ? "bg-gray-400 dark:bg-gray-500 border-gray-400 dark:border-gray-500"
+                      : "bg-gray-800 dark:bg-white border-gray-800 dark:border-white"
                     : "border-gray-300 dark:border-gray-600"
                 )}>
                   {filters.showCompleted && (
-                    <svg className="w-3 h-3 text-white dark:text-gray-800" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className={clsx(
+                      "w-3 h-3",
+                      isCompletedList ? "text-white dark:text-gray-300" : "text-white dark:text-gray-800"
+                    )} fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   )}
                 </div>
               </div>
-              <span className="text-gray-900 dark:text-white font-medium">
+              <span className={clsx(
+                "font-medium",
+                isCompletedList
+                  ? "text-gray-500 dark:text-gray-400"
+                  : "text-gray-900 dark:text-white"
+              )}>
                 Show completed tasks
+                {isCompletedList && (
+                  <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">
+                    (Always enabled for Completed list)
+                  </span>
+                )}
               </span>
             </label>
           </div>

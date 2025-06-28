@@ -961,3 +961,275 @@ Description: Enhanced mobile user experience by implementing vertical icon align
 This enhancement significantly improves the mobile user experience by providing intuitive touch interactions and a clean view/edit mode system for todo management.
 
 ---
+
+Date: 2025-06-28
+Description: Enhanced FilterDialog to always show "Show completed tasks" as checked and disabled when viewing the "Completed" list.
+
+**Problem:**
+When users were on the "Completed" list and opened the filter dialog, the "Show completed tasks" checkbox could be unchecked, which would hide all todos since the Completed list only contains completed todos. This created a confusing user experience.
+
+**Solution:**
+Modified the FilterDialog component to automatically handle the "Completed" list case by always keeping the "Show completed tasks" checkbox checked and disabled.
+
+**Key Changes:**
+
+1. **Enhanced FilterDialog Interface (src/components/FilterDialog.tsx)**
+   - ✅ Added `isCompletedList?: boolean` prop to identify when viewing the Completed list
+   - ✅ Updated component signature to accept the new prop with default value `false`
+
+2. **Smart State Management**
+   - ✅ Modified `useEffect` to automatically set `showCompleted: true` when `isCompletedList` is true
+   - ✅ Updated `handleReset` function to respect the completed list requirement
+   - ✅ Ensured the checkbox state is always correct for the Completed list context
+
+3. **Disabled Checkbox for Completed List**
+   - ✅ Made checkbox non-interactive when viewing the Completed list
+   - ✅ Added visual styling to indicate disabled state (grayed out appearance)
+   - ✅ Changed cursor to `cursor-not-allowed` for disabled state
+   - ✅ Prevented onChange events when disabled
+
+4. **Visual Feedback**
+   - ✅ Added explanatory text: "(Always enabled for Completed list)"
+   - ✅ Applied disabled styling with muted colors for text and checkbox
+   - ✅ Clear visual indication that the option is not interactive
+
+5. **Integration with TodoListView (src/components/TodoListView.tsx)**
+   - ✅ Passed `isCompletedList` prop to FilterDialog component
+   - ✅ Leveraged existing `isCompletedList` logic for seamless integration
+
+**Benefits:**
+
+- 🎯 **Logical Consistency**: Prevents users from hiding all todos in the Completed list
+- 🔒 **Prevents Confusion**: Eliminates the possibility of an empty Completed list due to filter settings
+- 👁️ **Clear Visual Feedback**: Users understand why the option is disabled
+- 🧠 **Intuitive UX**: Behavior matches user expectations for a "Completed" list
+- ⚡ **Automatic Handling**: No manual intervention required from users
+
+**Technical Implementation:**
+
+- **Conditional Logic**: Uses `isCompletedList` prop to determine behavior
+- **State Management**: Automatically manages filter state based on list context
+- **Visual Design**: Consistent disabled state styling across light/dark themes
+- **Event Handling**: Prevents interaction when checkbox should be disabled
+- **Reset Functionality**: Maintains correct state even when resetting filters
+
+**Files Modified:**
+
+- `src/components/FilterDialog.tsx`: Added completed list detection and disabled state handling
+- `src/components/TodoListView.tsx`: Passed `isCompletedList` prop to FilterDialog
+
+This enhancement ensures that the filter dialog behaves logically and intuitively when users are viewing the "Completed" list, preventing confusion and maintaining a consistent user experience.
+
+---
+
+Date: 2025-06-28
+Description: Fixed "Completed" list to automatically show completed todos by default instead of displaying "No todos yet. Add one above!"
+
+**Problem:**
+When users clicked on the "Completed" list in the sidebar, they would see "No todos yet. Add one above!" instead of the completed todos. This happened because the default filter state had `showCompleted: false`, which filtered out all completed todos even when viewing the Completed list.
+
+**Root Cause:**
+The `activeFilters` state in TodoListView had `showCompleted: false` by default, and the `applyFilters` function would filter out completed todos when this flag was false. This created a logical inconsistency where the "Completed" list would hide completed todos by default.
+
+**Solution:**
+Added automatic filter adjustment logic that sets `showCompleted: true` when the user switches to the "Completed" list, ensuring completed todos are visible by default.
+
+**Key Changes:**
+
+1. **Added useEffect Hook (src/components/TodoListView.tsx)**
+   - ✅ Imported `useEffect` from React
+   - ✅ Added useEffect to monitor `isCompletedList` and `activeFilters.showCompleted`
+   - ✅ Automatically sets `showCompleted: true` when viewing Completed list
+   - ✅ Only triggers when necessary to avoid unnecessary re-renders
+
+2. **Smart Filter State Management**
+   - ✅ Detects when user switches to "Completed" list
+   - ✅ Automatically adjusts filter state to show completed todos
+   - ✅ Preserves other filter settings (priority, due date, etc.)
+   - ✅ Non-intrusive - doesn't affect other list behaviors
+
+3. **Logical Flow Fix**
+   ```typescript
+   useEffect(() => {
+     if (isCompletedList && !activeFilters.showCompleted) {
+       setActiveFilters(prev => ({
+         ...prev,
+         showCompleted: true
+       }));
+     }
+   }, [isCompletedList, activeFilters.showCompleted]);
+   ```
+
+**Benefits:**
+
+- 🎯 **Intuitive Behavior**: Completed list now shows completed todos by default
+- 🔧 **Automatic Fix**: No manual user intervention required
+- 📋 **Logical Consistency**: List behavior matches user expectations
+- ⚡ **Performance**: Minimal overhead with targeted useEffect dependencies
+- 🔄 **Seamless Integration**: Works with existing filter dialog enhancements
+
+**Technical Details:**
+
+- **Dependency Array**: `[isCompletedList, activeFilters.showCompleted]` ensures effect only runs when necessary
+- **Conditional Logic**: Only updates filter when on Completed list AND showCompleted is false
+- **State Preservation**: Uses spread operator to maintain other filter settings
+- **No Side Effects**: Doesn't interfere with manual filter adjustments in other lists
+
+**User Experience Flow:**
+
+1. **Before**: Click "Completed" → See "No todos yet. Add one above!"
+2. **After**: Click "Completed" → See all completed todos immediately
+
+**Files Modified:**
+
+- `src/components/TodoListView.tsx`: Added useEffect for automatic filter adjustment
+
+This fix resolves the confusing user experience where the "Completed" list appeared empty by default, ensuring that completed todos are immediately visible when users navigate to the Completed list.
+
+---
+
+Date: 2025-06-28
+Description: Enhanced "Completed" list to automatically expand the completed section by default, showing all completed todos immediately.
+
+**Problem:**
+When users clicked on the "Completed" list, the completed section was collapsed by default, showing only "Completed (5)" with a collapsed arrow. Users had to manually click to expand the section to see their completed todos, which was an unnecessary extra step.
+
+**Solution:**
+Extended the existing useEffect to also automatically expand the completed section (`showCompletedSection: true`) when viewing the "Completed" list.
+
+**Key Changes:**
+
+1. **Enhanced useEffect Logic (src/components/TodoListView.tsx)**
+   - ✅ Extended existing useEffect to handle both filter state and section expansion
+   - ✅ Added `showCompletedSection` state management for Completed list
+   - ✅ Updated dependency array to include `showCompletedSection`
+   - ✅ Maintains separation of concerns with conditional checks
+
+2. **Improved Logic Flow**
+   ```typescript
+   useEffect(() => {
+     if (isCompletedList) {
+       if (!activeFilters.showCompleted) {
+         setActiveFilters(prev => ({
+           ...prev,
+           showCompleted: true
+         }));
+       }
+       if (!showCompletedSection) {
+         setShowCompletedSection(true);
+       }
+     }
+   }, [isCompletedList, activeFilters.showCompleted, showCompletedSection]);
+   ```
+
+3. **Automatic Section Expansion**
+   - ✅ Detects when user switches to "Completed" list
+   - ✅ Automatically expands completed section if collapsed
+   - ✅ Shows all completed todos immediately without manual interaction
+   - ✅ Preserves user's manual expand/collapse preferences for other lists
+
+**Benefits:**
+
+- 🎯 **Immediate Visibility**: Completed todos are visible immediately upon list selection
+- 👆 **Reduced Clicks**: Eliminates the need to manually expand the completed section
+- 🔄 **Seamless Experience**: Smooth transition from list selection to viewing todos
+- 📋 **Logical Behavior**: Section expansion matches user expectations for a "Completed" list
+- ⚡ **Performance**: Minimal overhead with targeted state updates
+
+**User Experience Flow:**
+
+1. **Before**: Click "Completed" → See collapsed "Completed (5)" → Click to expand → See todos
+2. **After**: Click "Completed" → See all completed todos immediately expanded
+
+**Technical Implementation:**
+
+- **State Management**: Uses existing `showCompletedSection` state
+- **Conditional Updates**: Only updates when necessary to avoid unnecessary re-renders
+- **Dependency Tracking**: Proper dependency array ensures optimal performance
+- **Non-Intrusive**: Doesn't affect behavior of other lists or manual user interactions
+
+**Files Modified:**
+
+- `src/components/TodoListView.tsx`: Enhanced useEffect to handle section expansion
+
+This enhancement completes the intuitive "Completed" list experience by ensuring users can immediately see all their completed todos without any additional clicks or interactions.
+
+---
+
+Date: 2025-06-28
+Description: Implemented smart "Show completed tasks" filter behavior that respects user preferences across different lists while forcing the setting for the "Completed" list.
+
+**Problem:**
+When users had "Show completed tasks" set to false and switched to the "Completed" list, the filter would correctly change to true. However, when they switched back to other lists, the filter would remain true instead of reverting to their original preference. This meant users lost their intended filter setting when navigating between lists.
+
+**Solution:**
+Implemented a dual-state system that tracks both the active filter state and the user's actual preference separately, allowing the system to force the filter for the "Completed" list while preserving user preferences for other lists.
+
+**Key Changes:**
+
+1. **Dual State Management (src/components/TodoListView.tsx)**
+   - ✅ Added `userShowCompletedPreference` state to track user's actual preference
+   - ✅ Separated forced state (for Completed list) from user preference (for other lists)
+   - ✅ Maintains both states independently for proper behavior
+
+2. **Enhanced useEffect Logic**
+   ```typescript
+   useEffect(() => {
+     if (isCompletedList) {
+       // For Completed list: force showCompleted to true and expand section
+       if (!activeFilters.showCompleted) {
+         setActiveFilters(prev => ({ ...prev, showCompleted: true }));
+       }
+       if (!showCompletedSection) {
+         setShowCompletedSection(true);
+       }
+     } else {
+       // For other lists: restore user's actual preference
+       if (activeFilters.showCompleted !== userShowCompletedPreference) {
+         setActiveFilters(prev => ({ ...prev, showCompleted: userShowCompletedPreference }));
+       }
+     }
+   }, [isCompletedList, activeFilters.showCompleted, showCompletedSection, userShowCompletedPreference]);
+   ```
+
+3. **Smart Filter Application**
+   - ✅ Updated `handleApplyFilters` to always track user's actual preference
+   - ✅ Forces `showCompleted: true` when applying filters on Completed list
+   - ✅ Applies user's actual preference when on other lists
+   - ✅ Maintains consistency between user intent and system behavior
+
+4. **FilterDialog Integration**
+   - ✅ Passes user's actual preference to FilterDialog when on Completed list
+   - ✅ Shows user's real preference in the dialog, not the forced state
+   - ✅ Allows users to see and modify their actual preference even from Completed list
+
+**Behavior Flow:**
+
+1. **User sets "Show completed tasks" to false** → Preference saved
+2. **User switches to "Completed" list** → Filter forced to true, todos visible
+3. **User switches to another list** → Filter reverts to false (user's preference)
+4. **User opens FilterDialog on Completed list** → Shows their actual preference (false)
+5. **User changes preference in FilterDialog** → New preference saved and applied appropriately
+
+**Benefits:**
+
+- 🎯 **Preserves User Intent**: User's filter preferences are maintained across list navigation
+- 🔄 **Smart Context Switching**: Automatic behavior based on list type
+- 🧠 **Intuitive Logic**: Completed list always shows completed tasks, other lists respect user choice
+- ⚙️ **Consistent Settings**: FilterDialog always shows user's actual preference
+- 🔒 **Predictable Behavior**: Users can rely on their settings being preserved
+
+**Technical Implementation:**
+
+- **State Separation**: `activeFilters.showCompleted` (current state) vs `userShowCompletedPreference` (user intent)
+- **Conditional Logic**: Different behavior based on `isCompletedList` flag
+- **Preference Tracking**: Always updates user preference when filters are applied
+- **Dialog Integration**: Passes appropriate state to FilterDialog based on context
+
+**Files Modified:**
+
+- `src/components/TodoListView.tsx`: Added dual-state management and smart filter behavior
+
+This enhancement ensures that the "Show completed tasks" filter behaves intelligently - always showing completed tasks in the "Completed" list while respecting and preserving user preferences for all other lists.
+
+---
