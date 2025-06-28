@@ -175,29 +175,47 @@ const TodoListView: React.FC = () => {
         <div className="max-w-4xl mx-auto px-2 sm:px-4">
           {/* Header with List Name, Search, and Toggle */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 sm:mb-8 gap-4">
-            {/* Left: List name and edit/delete buttons */}
-            <div className="flex items-center gap-3 min-w-0 flex-shrink-0">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 dark:text-white truncate">
-                {currentList?.name || "Todos"}
-              </h1>
-              {canEditOrDelete && (
-                <div className="flex gap-1 flex-shrink-0">
-                  <button
-                    onClick={() => setIsEditDialogOpen(true)}
-                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900"
-                    title="Edit list"
-                  >
-                    <PencilIcon className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => setIsDeleteDialogOpen(true)}
-                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
-                    title="Delete list"
-                  >
-                    <TrashIcon className="w-5 h-5" />
-                  </button>
-                </div>
-              )}
+            {/* Left: List name, edit/delete buttons, and filter icon for mobile */}
+            <div className="flex items-center justify-between min-w-0 flex-shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 dark:text-white truncate">
+                  {currentList?.name || "Todos"}
+                </h1>
+                {canEditOrDelete && (
+                  <div className="flex gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => setIsEditDialogOpen(true)}
+                      className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900"
+                      title="Edit list"
+                    >
+                      <PencilIcon className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                      className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
+                      title="Delete list"
+                    >
+                      <TrashIcon className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Filter icon - now in first row for mobile */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => setIsFilterDialogOpen(true)}
+                  className={clsx(
+                    "p-2 rounded-lg transition-colors",
+                    hasActiveFilters
+                      ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  )}
+                  title="Filter tasks"
+                >
+                  <FunnelIcon className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Middle: Search field */}
@@ -225,21 +243,7 @@ const TodoListView: React.FC = () => {
               </div>
             </div>
 
-            {/* Right: Filter icon */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={() => setIsFilterDialogOpen(true)}
-                className={clsx(
-                  "p-2 rounded-lg transition-colors",
-                  hasActiveFilters
-                    ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                )}
-                title="Filter tasks"
-              >
-                <FunnelIcon className="w-5 h-5" />
-              </button>
-            </div>
+            {/* Remove the original filter icon container that was here for desktop */}
           </div>
 
           {/* Statistics section - only show for "All" list */}
