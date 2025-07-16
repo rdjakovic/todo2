@@ -16,7 +16,10 @@
     "security:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
     "security:transmission": "tsx src/security/scripts/run-transmission-analysis.ts",
     "security:transmission:quick": "tsx src/security/scripts/run-transmission-analysis.ts --quick",
-    "security:transmission:report": "tsx src/security/scripts/run-transmission-analysis.ts --verbose --output data-transmission-security-report.md --format markdown"
+    "security:transmission:report": "tsx src/security/scripts/run-transmission-analysis.ts --verbose --output data-transmission-security-report.md --format markdown",
+    "security:csp": "tsx src/security/scripts/run-csp-analysis.ts",
+    "security:csp:verbose": "tsx src/security/scripts/run-csp-analysis.ts --verbose",
+    "security:csp:report": "tsx src/security/scripts/run-csp-analysis.ts --verbose --output csp-resource-security-report.md --format markdown"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
