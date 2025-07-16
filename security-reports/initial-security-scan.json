@@ -1,0 +1,82 @@
+{
+  "timestamp": "2025-07-16T09:41:00.000Z",
+  "scanType": "initial-setup",
+  "summary": {
+    "totalIssues": 87,
+    "critical": 0,
+    "high": 0,
+    "medium": 8,
+    "low": 79
+  },
+  "vulnerabilities": {
+    "dependencies": [
+      {
+        "package": "@babel/helpers",
+        "severity": "moderate",
+        "description": "Babel has inefficient RegExp complexity in generated code with .replace when transpiling named capturing groups",
+        "advisory": "GHSA-968p-4wvh-cqc8",
+        "fixAvailable": true
+      },
+      {
+        "package": "@babel/runtime",
+        "severity": "moderate", 
+        "description": "Babel has inefficient RegExp complexity in generated code with .replace when transpiling named capturing groups",
+        "advisory": "GHSA-968p-4wvh-cqc8",
+        "fixAvailable": true
+      },
+      {
+        "package": "brace-expansion",
+        "severity": "moderate",
+        "description": "brace-expansion Regular Expression Denial of Service vulnerability",
+        "advisory": "GHSA-v6h2-p8h4-qcjw",
+        "fixAvailable": true
+      },
+      {
+        "package": "esbuild",
+        "severity": "moderate",
+        "description": "esbuild enables any website to send any requests to the development server and read the response",
+        "advisory": "GHSA-67mh-4wv8-2f99",
+        "fixAvailable": true
+      }
+    ],
+    "codeIssues": [
+      {
+        "file": "src/components/FilterDialog.tsx",
+        "line": 145,
+        "severity": "medium",
+        "type": "Generic Object Injection Sink",
+        "rule": "security/detect-object-injection",
+        "description": "Potential object injection vulnerability detected"
+      },
+      {
+        "file": "src/components/FilterDialog.tsx", 
+        "line": 158,
+        "severity": "medium",
+        "type": "Generic Object Injection Sink",
+        "rule": "security/detect-object-injection",
+        "description": "Potential object injection vulnerability detected"
+      },
+      {
+        "file": "src/components/FilterDialog.tsx",
+        "line": 162,
+        "severity": "medium",
+        "type": "Generic Object Injection Sink", 
+        "rule": "security/detect-object-injection",
+        "description": "Potential object injection vulnerability detected"
+      }
+    ]
+  },
+  "recommendations": [
+    "Fix dependency vulnerabilities by running 'npm audit fix'",
+    "Review object injection vulnerabilities in FilterDialog.tsx",
+    "Address unused variables to improve code quality",
+    "Consider implementing input validation for user-controlled data",
+    "Review and fix TypeScript 'any' type usage for better type safety"
+  ],
+  "toolsConfigured": [
+    "ESLint with security plugin",
+    "npm audit for dependency scanning",
+    "TypeScript strict mode checking",
+    "Security analysis utility"
+  ]
+}
