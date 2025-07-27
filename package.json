@@ -27,7 +27,14 @@
     "security:privilege:setup": "tsx src/security/run-privilege-tests.ts",
     "security:build": "tsx src/security/scripts/run-build-deployment-analysis.ts",
     "security:build:verbose": "tsx src/security/scripts/run-build-deployment-analysis.ts --verbose",
-    "security:build:report": "tsx src/security/scripts/run-build-deployment-analysis.ts --verbose --output=security-reports/build-deployment-security-analysis.md --format=markdown"
+    "security:build:report": "tsx src/security/scripts/run-build-deployment-analysis.ts --verbose --output=security-reports/build-deployment-security-analysis.md --format=markdown",
+    "security:deps": "npm run security:audit && npm run security:rust-audit",
+    "security:deps:json": "npm run security:audit:json && npm run security:rust-audit:json",
+    "security:report": "node scripts/generate-security-report.js",
+    "security:rust-audit": "cd src-tauri && cargo audit",
+    "security:rust-audit:json": "cd src-tauri && cargo audit --json",
+    "security:full-scan": "npm run security:audit && npm run security:rust-audit && npm run security:report",
+    "security:update-check": "npm outdated && cd src-tauri && cargo outdated || echo 'Install cargo-outdated with: cargo install cargo-outdated'"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
