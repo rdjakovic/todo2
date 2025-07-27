@@ -19,7 +19,15 @@
     "security:transmission:report": "tsx src/security/scripts/run-transmission-analysis.ts --verbose --output data-transmission-security-report.md --format markdown",
     "security:csp": "tsx src/security/scripts/run-csp-analysis.ts",
     "security:csp:verbose": "tsx src/security/scripts/run-csp-analysis.ts --verbose",
-    "security:csp:report": "tsx src/security/scripts/run-csp-analysis.ts --verbose --output csp-resource-security-report.md --format markdown"
+    "security:csp:report": "tsx src/security/scripts/run-csp-analysis.ts --verbose --output csp-resource-security-report.md --format markdown",
+    "security:update": "tsx src/security/scripts/run-update-integrity-analysis.ts",
+    "security:update:verbose": "tsx src/security/scripts/run-update-integrity-analysis.ts --verbose",
+    "security:update:report": "tsx src/security/scripts/run-update-integrity-analysis.ts --verbose --output=update-integrity-security-report.md --format=markdown",
+    "security:privilege": "tsx src/security/run-privilege-tests.ts",
+    "security:privilege:setup": "tsx src/security/run-privilege-tests.ts",
+    "security:build": "tsx src/security/scripts/run-build-deployment-analysis.ts",
+    "security:build:verbose": "tsx src/security/scripts/run-build-deployment-analysis.ts --verbose",
+    "security:build:report": "tsx src/security/scripts/run-build-deployment-analysis.ts --verbose --output=security-reports/build-deployment-security-analysis.md --format=markdown"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
