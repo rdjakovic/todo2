@@ -591,5 +591,4 @@ export class SecurityStateManager {
 // Export a default instance for convenience
 export const securityStateManager = new SecurityStateManager();
 
-// Export types for external use
-export type { SecurityStateRecord, SecurityStateManagerConfig, StateValidationResult };
+// Types are already exported above with their interfaces

@@ -390,5 +390,4 @@ export class SecureStorage {
 // Export a default instance for convenience
 export const secureStorage = new SecureStorage();
 
-// Export types for external use
-export type { SecureStorageOptions, StorageRecord };
+// Types are already exported above with their interfaces
