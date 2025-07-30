@@ -24,44 +24,52 @@ export default function LoginForm() {
   // Check rate limit status on component mount and email change
   const checkRateLimit = useCallback(async () => {
     if (!email) return;
-    
+
     try {
       const status = await rateLimitManager.checkRateLimit(email);
       setRateLimitStatus(status);
-      
+
       if (status.isLocked && status.remainingTime) {
         setLockoutCountdown(Math.ceil(status.remainingTime / 1000));
-        
-        // Log lockout status check
-        securityLogger.logEvent(SecurityEventType.ACCOUNT_LOCKED, {
-          userAgent: navigator.userAgent,
-          timestamp: new Date(),
-          additionalContext: {
-            userIdentifier: securityLogger['hashIdentifier'](email),
-            component: 'LoginForm',
-            action: 'checkRateLimit',
-            remainingTime: status.remainingTime,
-            lockoutActive: true
-          }
-        });
-      } else {
-        setLockoutCountdown(0);
-        
-        // Log if lockout has expired
-        if (status.attemptsRemaining !== undefined && status.attemptsRemaining < 5) {
-          securityLogger.logEvent(SecurityEventType.LOCKOUT_EXPIRED, {
+
+        // Log lockout status check (with error handling)
+        try {
+          securityLogger.logEvent(SecurityEventType.ACCOUNT_LOCKED, {
             userAgent: navigator.userAgent,
             timestamp: new Date(),
             additionalContext: {
               userIdentifier: securityLogger['hashIdentifier'](email),
               component: 'LoginForm',
               action: 'checkRateLimit',
-              attemptsRemaining: status.attemptsRemaining
+              remainingTime: status.remainingTime,
+              lockoutActive: true
             }
           });
+        } catch (logError) {
+          console.warn('Security logging failed:', logError);
+        }
+      } else {
+        setLockoutCountdown(0);
+
+        // Log if lockout has expired (with error handling)
+        if (status.attemptsRemaining !== undefined && status.attemptsRemaining < 5) {
+          try {
+            securityLogger.logEvent(SecurityEventType.LOCKOUT_EXPIRED, {
+              userAgent: navigator.userAgent,
+              timestamp: new Date(),
+              additionalContext: {
+                userIdentifier: securityLogger['hashIdentifier'](email),
+                component: 'LoginForm',
+                action: 'checkRateLimit',
+                attemptsRemaining: status.attemptsRemaining
+              }
+            });
+          } catch (logError) {
+            console.warn('Security logging failed:', logError);
+          }
         }
       }
-      
+
       // Set progressive delay if available
       if (status.progressiveDelay) {
         setProgressiveDelay(status.progressiveDelay);
@@ -70,25 +78,30 @@ export default function LoginForm() {
       }
     } catch (error) {
       console.error('Error checking rate limit:', error);
-      
-      // Log the error
-      securityLogger.logSecurityError(
-        SecurityEventType.STORAGE_ERROR,
-        error instanceof Error ? error : new Error(String(error)),
-        {
-          component: 'LoginForm',
-          action: 'checkRateLimit',
-          userIdentifier: email ? securityLogger['hashIdentifier'](email) : undefined
-        }
-      );
-      
-      // Reset to safe defaults on error
+
+      // Log the error (with error handling)
+      try {
+        securityLogger.logSecurityError(
+          SecurityEventType.STORAGE_ERROR,
+          error instanceof Error ? error : new Error(String(error)),
+          {
+            component: 'LoginForm',
+            action: 'checkRateLimit',
+            userIdentifier: email ? securityLogger['hashIdentifier'](email) : undefined
+          }
+        );
+      } catch (logError) {
+        console.warn('Security logging failed:', logError);
+      }
+
+      // Reset to safe defaults on error - allow authentication to continue
       setRateLimitStatus({
         isLocked: false,
         canAttempt: true,
         attemptsRemaining: 5
       });
       setLockoutCountdown(0);
+      setProgressiveDelay(0);
     }
   }, [email]);
 
@@ -143,12 +156,12 @@ export default function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Prevent concurrent requests
     if (isSubmitting || loading) {
       return;
     }
-    
+
     // Check for progressive delay
     if (progressiveDelay > 0) {
       const errorContext: ErrorContext = {
@@ -162,7 +175,7 @@ export default function LoginForm() {
           remainingDelay: progressiveDelay
         }
       };
-      
+
       // Log progressive delay blocking
       securityLogger.logEvent(SecurityEventType.CONCURRENT_REQUEST_BLOCKED, {
         userAgent: navigator.userAgent,
@@ -175,7 +188,7 @@ export default function LoginForm() {
           delaySeconds: Math.ceil(progressiveDelay / 1000)
         }
       });
-      
+
       const secureResponse = securityErrorHandler.handleAuthError(
         new Error('Progressive delay active'),
         errorContext
@@ -183,7 +196,7 @@ export default function LoginForm() {
       setError(`Please wait ${Math.ceil(progressiveDelay / 1000)} seconds before trying again.`);
       return;
     }
-    
+
     // Check rate limit before attempting authentication
     const currentStatus = await rateLimitManager.checkRateLimit(email);
     if (currentStatus.isLocked || !currentStatus.canAttempt) {
@@ -199,13 +212,13 @@ export default function LoginForm() {
           remainingTime: currentStatus.remainingTime
         }
       };
-      
+
       // Log rate limit exceeded event
       securityLogger.logRateLimitExceeded(
         email,
         currentStatus.attemptsRemaining
       );
-      
+
       const secureResponse = securityErrorHandler.handleRateLimitError(errorContext, currentStatus.attemptsRemaining);
       setError(secureResponse.userMessage);
       toast.error(secureResponse.userMessage);
@@ -228,7 +241,7 @@ export default function LoginForm() {
           }
         }
       };
-      
+
       // Log validation error
       securityLogger.logEvent(SecurityEventType.VALIDATION_ERROR, {
         userAgent: navigator.userAgent,
@@ -242,7 +255,7 @@ export default function LoginForm() {
           missingPassword: !password.trim()
         }
       });
-      
+
       const secureResponse = securityErrorHandler.handleValidationError(
         new Error('Required fields missing'),
         errorContext
@@ -264,7 +277,7 @@ export default function LoginForm() {
           action: 'email_validation'
         }
       };
-      
+
       // Log email validation error
       securityLogger.logEvent(SecurityEventType.VALIDATION_ERROR, {
         userAgent: navigator.userAgent,
@@ -276,7 +289,7 @@ export default function LoginForm() {
           validationFailure: 'invalid_email_format'
         }
       });
-      
+
       const secureResponse = securityErrorHandler.handleValidationError(
         new Error('Invalid email format'),
         errorContext
@@ -310,40 +323,53 @@ export default function LoginForm() {
       });
 
       if (error) {
-        // Increment failed attempts on authentication error
-        await rateLimitManager.incrementFailedAttempts(email);
-        // Recheck rate limit status after failed attempt
-        const updatedStatus = await rateLimitManager.checkRateLimit(email);
-        setRateLimitStatus(updatedStatus);
-        
-        // Log failed authentication attempt
-        securityLogger.logFailedLogin(
-          email,
-          updatedStatus.attemptsRemaining !== undefined ? 
-            (5 - updatedStatus.attemptsRemaining) : undefined,
-          {
-            component: 'LoginForm',
-            action: 'authentication_failed',
-            sessionId,
-            supabaseError: error.message,
-            lockoutTriggered: updatedStatus.isLocked
+        // Try to increment failed attempts, but don't fail if it doesn't work
+        try {
+          await rateLimitManager.incrementFailedAttempts(email);
+          // Recheck rate limit status after failed attempt
+          const updatedStatus = await rateLimitManager.checkRateLimit(email);
+          setRateLimitStatus(updatedStatus);
+
+          // Log failed authentication attempt
+          try {
+            securityLogger.logFailedLogin(
+              email,
+              updatedStatus.attemptsRemaining !== undefined ?
+                (5 - updatedStatus.attemptsRemaining) : undefined,
+              {
+                component: 'LoginForm',
+                action: 'authentication_failed',
+                sessionId,
+                supabaseError: error.message,
+                lockoutTriggered: updatedStatus.isLocked
+              }
+            );
+          } catch (logError) {
+            console.warn('Security logging failed:', logError);
           }
-        );
-        
-        // Log account lockout if triggered
-        if (updatedStatus.isLocked && updatedStatus.remainingTime) {
-          securityLogger.logAccountLocked(
-            email,
-            updatedStatus.remainingTime,
-            5 // max attempts reached
-          );
+
+          // Log account lockout if triggered
+          if (updatedStatus.isLocked && updatedStatus.remainingTime) {
+            try {
+              securityLogger.logAccountLocked(
+                email,
+                updatedStatus.remainingTime,
+                5 // max attempts reached
+              );
+            } catch (logError) {
+              console.warn('Security logging failed:', logError);
+            }
+          }
+
+          // Set progressive delay if available
+          if (updatedStatus.progressiveDelay) {
+            setProgressiveDelay(updatedStatus.progressiveDelay);
+          }
+        } catch (securityError) {
+          console.error('Security component failed, continuing with authentication error:', securityError);
+          // Continue with the original authentication error even if security components fail
         }
-        
-        // Set progressive delay if available
-        if (updatedStatus.progressiveDelay) {
-          setProgressiveDelay(updatedStatus.progressiveDelay);
-        }
-        
+
         // Handle error securely
         const errorContext: ErrorContext = {
           userIdentifier: email,
@@ -355,40 +381,61 @@ export default function LoginForm() {
             action: 'authentication'
           }
         };
-        
-        const secureResponse = securityErrorHandler.handleAuthError(error, errorContext);
-        throw new Error(secureResponse.userMessage);
+
+        try {
+          const secureResponse = securityErrorHandler.handleAuthError(error, errorContext);
+          throw new Error(secureResponse.userMessage);
+        } catch (handlerError) {
+          // If error handler fails, use a generic message
+          throw new Error('Authentication failed. Please check your credentials and try again.');
+        }
       }
 
       console.log("## Sign in data:", data);
       if (data.user && navigator.onLine) {
         console.log("## User signed in:", data.user);
-        
+
         // Log successful authentication
-        securityLogger.logSuccessfulLogin(
-          email,
-          {
-            component: 'LoginForm',
-            action: 'authentication_success',
-            sessionId,
-            userId: data.user.id,
-            userEmail: data.user.email
-          }
-        );
-        
+        try {
+          securityLogger.logSuccessfulLogin(
+            email,
+            {
+              component: 'LoginForm',
+              action: 'authentication_success',
+              sessionId,
+              userId: data.user.id,
+              userEmail: data.user.email
+            }
+          );
+        } catch (logError) {
+          console.warn('Security logging failed:', logError);
+        }
+
         setUser(data.user);
         await forceDataLoad();
-        
+
         // Reset failed attempts on successful authentication
-        await rateLimitManager.resetFailedAttempts(email);
-        setRateLimitStatus({
-          isLocked: false,
-          canAttempt: true,
-          attemptsRemaining: 5
-        });
-        setLockoutCountdown(0);
-        setProgressiveDelay(0);
-        
+        try {
+          await rateLimitManager.resetFailedAttempts(email);
+          setRateLimitStatus({
+            isLocked: false,
+            canAttempt: true,
+            attemptsRemaining: 5
+          });
+          setLockoutCountdown(0);
+          setProgressiveDelay(0);
+        } catch (securityError) {
+          console.warn('Failed to reset security state, but authentication succeeded:', securityError);
+          // Reset UI state even if backend reset fails
+          setRateLimitStatus({
+            isLocked: false,
+            canAttempt: true,
+            attemptsRemaining: 5
+          });
+          setLockoutCountdown(0);
+          setProgressiveDelay(0);
+        }
+
         // Clear form data securely
         setPassword('');
         setError(null);
@@ -412,7 +459,7 @@ export default function LoginForm() {
           errorSource: 'catch_block'
         }
       };
-      
+
       // Log the error in catch block
       securityLogger.logSecurityError(
         SecurityEventType.FAILED_LOGIN,
@@ -424,7 +471,7 @@ export default function LoginForm() {
           userIdentifier: securityLogger['hashIdentifier'](email)
         }
       );
-      
+
       const secureResponse = securityErrorHandler.handleAuthError(err, errorContext);
       setError(secureResponse.userMessage);
       toast.error(secureResponse.userMessage);
