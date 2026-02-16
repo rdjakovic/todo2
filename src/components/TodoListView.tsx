@@ -40,9 +40,14 @@ const TodoListView: React.FC = () => {
     editList,
     deleteList,
     openEditDialog,
+    getEffectiveSortForList,
   } = useTodoStore();
 
   const currentList = getListById(lists, selectedListId);
+
+  // Get the effective sort for this list (per-list override or global default)
+  const effectiveSort = getEffectiveSortForList(selectedListId);
+
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [showCompletedSection, setShowCompletedSection] = useState(false);
@@ -377,7 +382,7 @@ const TodoListView: React.FC = () => {
           {incompleteTodos.length > 0 && (
             <AnimatePresence mode="popLayout">
               <TodoListItems
-                filteredTodos={sortTodos(incompleteTodos, sortBy)}
+                filteredTodos={sortTodos(incompleteTodos, effectiveSort)}
                 onToggle={toggleTodo}
                 onDelete={(id) => deleteTodo(id)}
                 onOpenEditDialog={openEditDialog}
@@ -405,7 +410,7 @@ const TodoListView: React.FC = () => {
               {showCompletedSection && (
                 <AnimatePresence mode="popLayout">
                   <TodoListItems
-                    filteredTodos={sortTodos(completedTodos, sortBy)}
+                    filteredTodos={sortTodos(completedTodos, effectiveSort)}
                     onToggle={toggleTodo}
                     onDelete={(id) => deleteTodo(id)}
                     onOpenEditDialog={openEditDialog}
@@ -455,8 +460,8 @@ const TodoListView: React.FC = () => {
           onClose={() => setIsListSortDialogOpen(false)}
           currentList={currentList}
           globalSort={sortBy}
-          onSetSort={(listId, sortPref) => {
-            editList(listId, currentList.name, currentList.icon, sortPref);
+          onSetSort={async (listId, sortPref) => {
+            await editList(listId, currentList.name, currentList.icon, sortPref);
           }}
         />
       )}

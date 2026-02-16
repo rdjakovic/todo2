@@ -1420,3 +1420,178 @@ Implemented a dual-state system that tracks both the active filter state and the
 This enhancement ensures that the "Show completed tasks" filter behaves intelligently - always showing completed tasks in the "Completed" list while respecting and preserving user preferences for all other lists.
 
 ---
+
+Date: 2026-02-16
+Description: Implemented per-list sorting settings with global default fallback.
+
+**Problem:**
+The application had only a global sorting preference that applied to all lists uniformly. Users couldn't customize sorting for individual lists (e.g., sort Work by priority, Personal by due date).
+
+**Solution:**
+Added optional per-list sorting preferences that override the global default, allowing each user-created list to have its own sort setting while maintaining the global setting as a fallback.
+
+**Key Changes:**
+
+1. **Database Schema (supabase/migrations/20260216214337_add_list_sort_preference.sql)**
+   - ✅ Added nullable `sort_preference` column to `lists` table
+   - ✅ Column constrained to valid SortOption values
+   - ✅ NULL value means use global default sort
+
+2. **Type Definitions (src/types/todo.ts)**
+   - ✅ Moved `SortOption` type from todoStore to types file for better organization
+   - ✅ Extended `TodoList` interface with optional `sortPreference?: SortOption` field
+   - ✅ Centralized type definitions for reusability
+
+3. **State Management (src/store/todoStore.ts)**
+   - ✅ Added `getEffectiveSortForList(listId)` helper function to resolve sort preference
+   - ✅ Special lists ("All", "Completed") always use global sort
+   - ✅ User-created lists use their specific preference or fall back to global sort
+   - ✅ Updated `fetchLists` to map `sort_preference` ↔ `sortPreference` during sync
+   - ✅ Updated `saveLists` to persist `sort_preference` to Supabase
+   - ✅ Extended `editList` signature to accept optional `sortPreference` parameter
+   - ✅ Updated `getFilteredTodos` to use effective sort instead of global sort
+   - ✅ Re-exported `SortOption` type for convenience
+
+4. **UI Components**
+   - **ListSortDialog.tsx (NEW)**: Per-list sort settings dialog
+     - ✅ Follows FilterDialog pattern for consistency
+     - ✅ Radio button group for all 7 sort options + "Use global default"
+     - ✅ Visual indicators showing current effective sort (global vs list-specific)
+     - ✅ Reset to Global button when list has custom sort
+     - ✅ Shows which global sort is active when using default
+
+   - **TodoListView.tsx**: Integration and visual indicators
+     - ✅ Added settings icon (⚙️) next to filter icon in list header
+     - ✅ Icon highlighted with purple background when list has custom sort
+     - ✅ Visual badge indicator on icon when list is customized
+     - ✅ Only shown for user-created lists (hidden for "All" and "Completed")
+     - ✅ Opens ListSortDialog on click
+
+   - **SettingsView.tsx**: Clarified global default
+     - ✅ Changed title from "Sorting Items" to "Default Sorting"
+     - ✅ Added description explaining global default and per-list override capability
+
+5. **Data Synchronization**
+   - ✅ Online: Supabase syncs `sort_preference` column bidirectionally
+   - ✅ Offline: IndexedDB caches per-list preferences
+   - ✅ Queue: Offline changes queued for background sync
+   - ✅ Migration: Existing lists have `sort_preference = NULL` (seamless upgrade)
+
+**Benefits:**
+
+- 🎯 **Flexibility**: Different sorting for different lists based on context
+- 🔧 **User Control**: Optional override with clear visual indicators
+- 📋 **Fallback Logic**: Global default ensures predictable behavior
+- 🔄 **Seamless Migration**: No data loss or behavior change for existing users
+- 💾 **Persistence**: Preferences sync across Supabase, IndexedDB, and devices
+- 🎨 **Visual Clarity**: Badge indicators show which lists are customized
+- 🛡️ **Protected Lists**: "All" and "Completed" always use global sort
+
+**Files Modified:**
+
+- `supabase/migrations/20260216214337_add_list_sort_preference.sql`: Database schema
+- `src/types/todo.ts`: Type definitions
+- `src/store/todoStore.ts`: State management and sync logic
+- `src/components/ListSortDialog.tsx`: New per-list sort dialog component
+- `src/components/TodoListView.tsx`: Settings icon and dialog integration
+- `src/components/SettingsView.tsx`: Updated global default description
+
+**Testing:**
+
+- ✅ TypeScript compilation successful
+- ✅ Build completed without errors
+- ✅ All imports resolved correctly
+- ✅ No breaking changes to existing functionality
+
+This feature provides users with fine-grained control over todo sorting while maintaining simplicity through intelligent defaults.
+
+---
+
+Date: 2026-02-16
+Description: Fixed per-list sorting to apply immediately when clicking Apply button.
+
+**Problem:**
+When users selected a new sort preference in the ListSortDialog and clicked Apply, the dialog would close immediately before the sort was actually applied. This happened because the `editList` async operation wasn't being awaited, causing the dialog to close before the state updated and todos re-sorted.
+
+**Solution:**
+Made the sort application asynchronous by updating the `onSetSort` callback to return a Promise and awaiting the `editList` operation before closing the dialog.
+
+**Key Changes:**
+
+1. **ListSortDialog.tsx**
+   - ✅ Changed `onSetSort` prop type from `void` to `Promise<void>`
+   - ✅ Made `handleApply` function async
+   - ✅ Added `await` to `onSetSort` calls before closing dialog
+
+2. **TodoListView.tsx**
+   - ✅ Made `onSetSort` callback async
+   - ✅ Added `await` to `editList` call to ensure sort is applied before dialog closes
+
+**Benefits:**
+
+- ✅ **Immediate Visual Feedback**: Users now see their todos re-sort before the dialog closes
+- ✅ **Better UX**: No confusion about whether the sort was applied
+- ✅ **Reliable State Updates**: Ensures state is fully updated before UI changes
+
+**Files Modified:**
+
+- `src/components/ListSortDialog.tsx`: Made handleApply async and updated interface
+- `src/components/TodoListView.tsx`: Made onSetSort callback await editList
+
+**Testing:**
+
+- ✅ TypeScript compilation successful
+- ✅ Build completed without errors
+- ✅ Sort now applies before dialog closes
+
+This fix ensures users see their sorting changes take effect immediately when clicking Apply.
+
+---
+
+Date: 2026-02-16
+Description: Fixed TodoListView to use effective sort (per-list or global) instead of always using global sort.
+
+**Problem:**
+Even after implementing per-list sorting and fixing the Apply button to wait for the sort to be applied, the todos weren't actually re-sorting. This was because TodoListView was calling `sortTodos(todos, sortBy)` using the global `sortBy` directly, completely bypassing the per-list `sortPreference` feature.
+
+**Root Cause:**
+The `sortTodos` calls in TodoListView (lines 380 and 408) were using the global `sortBy` from the store instead of using `getEffectiveSortForList(selectedListId)` to get the correct sort for the current list.
+
+**Solution:**
+Updated TodoListView to use `getEffectiveSortForList()` to determine which sort to apply - the per-list override if set, or the global default if not.
+
+**Key Changes:**
+
+1. **TodoListView.tsx**
+   - ✅ Added `getEffectiveSortForList` to store destructuring
+   - ✅ Calculate effective sort: `const effectiveSort = getEffectiveSortForList(selectedListId)`
+   - ✅ Replaced `sortTodos(incompleteTodos, sortBy)` with `sortTodos(incompleteTodos, effectiveSort)`
+   - ✅ Replaced `sortTodos(completedTodos, sortBy)` with `sortTodos(completedTodos, effectiveSort)`
+
+**How It Works:**
+
+1. When component renders, it calls `getEffectiveSortForList(selectedListId)`
+2. This returns the list's `sortPreference` if set, otherwise the global `sortBy`
+3. Todos are sorted using the effective sort
+4. When list's `sortPreference` changes (via Apply button), component re-renders with new effective sort
+
+**Benefits:**
+
+- ✅ **Correct Behavior**: Per-list sorting now actually works
+- ✅ **Dynamic Updates**: Changing sort via dialog immediately re-sorts todos
+- ✅ **Fallback Logic**: Lists without custom sort use global default
+- ✅ **Reactive**: Component re-renders when list preferences change
+
+**Files Modified:**
+
+- `src/components/TodoListView.tsx`: Use effective sort instead of global sort
+
+**Testing:**
+
+- ✅ TypeScript compilation successful
+- ✅ Build completed without errors
+- ✅ Per-list sorting now works correctly
+
+This fix makes the per-list sorting feature fully functional by ensuring the correct sort is applied to each list.
+
+---

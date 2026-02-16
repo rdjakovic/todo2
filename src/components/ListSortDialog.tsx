@@ -8,7 +8,7 @@ interface ListSortDialogProps {
   onClose: () => void;
   currentList: TodoList;
   globalSort: SortOption;
-  onSetSort: (listId: string, sortPreference: SortOption | null) => void;
+  onSetSort: (listId: string, sortPreference: SortOption | null) => Promise<void>;
 }
 
 const sortOptions: { value: SortOption | "global"; label: string; description: string }[] = [
@@ -75,11 +75,11 @@ const ListSortDialog = ({
     return null;
   }
 
-  const handleApply = () => {
+  const handleApply = async () => {
     if (selectedSort === "global") {
-      onSetSort(currentList.id, null);
+      await onSetSort(currentList.id, null);
     } else {
-      onSetSort(currentList.id, selectedSort);
+      await onSetSort(currentList.id, selectedSort);
     }
     onClose();
   };
