@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { User } from "@supabase/supabase-js";
 import { useAuthStore } from "./authStore";
 import { indexedDBManager, registerBackgroundSync, isOnline } from "../lib/indexedDB";
+import { extractTextFromContent } from "../lib/content";
 
 export type SortOption =
   | "dateCreated"
@@ -176,9 +177,7 @@ const filterTodosBySearch = (todos: Todo[], searchQuery: string): Todo[] => {
 
   const query = searchQuery.toLowerCase().trim();
   return todos.filter((todo) => {
-    const notesText = todo.notes
-      ? todo.notes.replace(/<[^>]*>/g, "").toLowerCase()
-      : "";
+    const notesText = extractTextFromContent(todo.notes).toLowerCase();
     return (
       todo.title.toLowerCase().includes(query) ||
       notesText.includes(query)

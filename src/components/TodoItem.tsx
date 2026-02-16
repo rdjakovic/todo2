@@ -6,6 +6,8 @@ import { CSS } from "@dnd-kit/utilities";
 import clsx from "clsx";
 import { forwardRef, useState } from "react";
 import { Todo } from "../types/todo";
+import TiptapRenderer from "./TiptapRenderer";
+import { hasVisibleContent } from "../lib/content";
 
 interface TodoItemProps {
   todo: Todo;
@@ -14,12 +16,6 @@ interface TodoItemProps {
   onOpenEditDialog: (todo: Todo, viewMode?: boolean) => void;
   isDragging?: boolean;
 }
-
-/** Returns true if notes have visible text content (handles both plain text and HTML) */
-const hasNotesContent = (notes?: string): boolean => {
-  if (!notes) return false;
-  return notes.replace(/<[^>]*>/g, "").trim().length > 0;
-};
 
 const MotionDiv = motion.div;
 
@@ -129,7 +125,7 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
               >
                 <span className="inline">
                   {todo.title}
-                  {hasNotesContent(todo.notes) && (
+                  {hasVisibleContent(todo.notes) && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -149,11 +145,10 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
               </p>
 
               {/* Notes section */}
-              {hasNotesContent(todo.notes) && showNotes && (
-                <div
-                  className="mt-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-xs text-gray-600 dark:text-gray-300 rendered-notes"
-                  dangerouslySetInnerHTML={{ __html: todo.notes! }}
-                />
+              {hasVisibleContent(todo.notes) && showNotes && (
+                <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-xs text-gray-600 dark:text-gray-300">
+                  <TiptapRenderer content={todo.notes} className="rendered-notes" />
+                </div>
               )}
 
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-1">

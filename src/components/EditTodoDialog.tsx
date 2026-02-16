@@ -3,13 +3,8 @@ import { Todo } from "../types/todo";
 import { useState, useEffect } from "react";
 import { useTodoStore } from "../store/todoStore";
 import RichTextEditor from "./RichTextEditor";
-
-/** Returns true if the HTML string has no visible text content */
-const isEmptyHtml = (html: string): boolean => {
-  if (!html) return true;
-  const stripped = html.replace(/<[^>]*>/g, "").trim();
-  return stripped.length === 0;
-};
+import TiptapRenderer from "./TiptapRenderer";
+import { hasVisibleContent } from "../lib/content";
 
 interface EditTodoDialogProps {
   isOpen: boolean;
@@ -77,7 +72,7 @@ const EditTodoDialog = ({
       onSave(
         todoToEdit.id,
         editText.trim(),
-        isEmptyHtml(editNotes) ? "" : editNotes,
+        !hasVisibleContent(editNotes) ? "" : editNotes,
         editPriority,
         // Parse string to Date or undefined
         editDueDate.trim() ? new Date(editDueDate.trim()) : undefined,
@@ -162,17 +157,17 @@ const EditTodoDialog = ({
           </label>
           {isViewMode ? (
             <div className="w-full px-3 py-3 sm:py-2 rounded border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white text-base sm:text-sm min-h-[6rem]">
-              {isEmptyHtml(editNotes) ? (
+              {!hasVisibleContent(editNotes) ? (
                 <span className="text-gray-400 dark:text-gray-500 italic">No notes</span>
               ) : (
-                <div className="rendered-notes" dangerouslySetInnerHTML={{ __html: editNotes }} />
+                <TiptapRenderer content={editNotes} className="rendered-notes" />
               )}
             </div>
           ) : (
             <RichTextEditor
               key={`editor-${todoToEdit?.id}`}
-              content={todoToEdit?.notes || ""}
-              onChange={setEditNotes}
+              initialContent={todoToEdit?.notes || ""}
+              onUpdate={(json) => setEditNotes(JSON.stringify(json))}
               placeholder="Add notes..."
             />
           )}

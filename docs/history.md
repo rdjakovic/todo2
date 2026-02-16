@@ -1,5 +1,28 @@
 ---
 Date: 2026-02-16
+Description: Refactored RichTextEditor into separate Editor + Renderer components, switched to JSON output
+Summary:
+Refactored the rich text editing architecture to separate concerns between editing and viewing, following a cleaner pattern with better maintainability and security.
+
+**Key Changes:**
+- Created `src/lib/content.ts` — utility functions for parsing, format detection, and text extraction supporting both legacy HTML and new TipTap JSON formats
+- Created `src/components/TiptapRenderer.tsx` — safe React-based renderer that converts TipTap JSON to React elements, eliminating all `dangerouslySetInnerHTML` usage (XSS risk)
+- Created `src/components/EditorToolbar.tsx` — extracted toolbar component with `ToolbarButton` and `ToolbarDivider` subcomponents
+- Simplified `src/components/RichTextEditor.tsx` — removed complex sync logic (`isInternalUpdate`, `contentRef`, `onCreate` workaround, both `useEffect` hooks), removed `editable` prop; now outputs JSON via `editor.getJSON()` instead of HTML
+- Updated `src/components/EditTodoDialog.tsx` — uses `TiptapRenderer` for view mode, updated editor API (`initialContent`, `onUpdate` with JSON)
+- Updated `src/components/TodoItem.tsx` — uses `TiptapRenderer` instead of `dangerouslySetInnerHTML` for notes preview
+- Updated `src/store/todoStore.ts` — search uses `extractTextFromContent()` for both formats
+
+**Storage Strategy:** Dual-format with no migration required. New notes saved as JSON, existing HTML notes handled transparently via `parseContent()`. Old notes convert to JSON naturally when edited.
+
+**Dependencies Added:** `@tiptap/html` (for `generateJSON` to convert legacy HTML to JSON at render time)
+
+**Tests Added:**
+- `src/lib/__tests__/content.test.ts` — 25 tests for content utilities
+- `src/components/__tests__/TiptapRenderer.test.tsx` — 12 tests for renderer
+
+---
+Date: 2026-02-16
 Description: Fixed task list checkbox alignment
 Summary:
 Fixed CSS styling for task list checkboxes to align text next to the checkbox on the right side (similar to bullet lists), instead of below the checkbox.
