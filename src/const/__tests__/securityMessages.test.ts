@@ -99,7 +99,7 @@ describe('Security Messages', () => {
     });
 
     it('should have appropriate retry delays for retryable errors', () => {
-      Object.entries(SECURITY_ERROR_MESSAGES).forEach(([errorType, config]) => {
+      Object.entries(SECURITY_ERROR_MESSAGES).forEach(([_errorType, config]) => {
         if (config.shouldRetry && config.retryDelay) {
           expect(config.retryDelay).toBeGreaterThan(0);
           

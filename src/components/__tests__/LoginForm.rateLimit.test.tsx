@@ -9,7 +9,7 @@ import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import LoginForm from '../LoginForm';
 import { rateLimitManager } from '../../utils/rateLimitManager';
 import { supabase } from '../../lib/supabase';
-import toast from 'react-hot-toast';
+
 
 // Mock dependencies
 vi.mock('../../lib/supabase', () => ({
@@ -174,8 +174,6 @@ describe('LoginForm Rate Limiting Integration', () => {
       expect(screen.getByText(/account temporarily locked/i)).toBeInTheDocument();
     });
 
-    const submitButton = screen.getByRole('button');
-
     await act(async () => {
       fireEvent.submit(screen.getByRole('form'));
     });
@@ -188,9 +186,8 @@ describe('LoginForm Rate Limiting Integration', () => {
   });
 
   it('should increment failed attempts on authentication failure', async () => {
-    const authError = new Error('Invalid credentials');
     (supabase.auth.signInWithPassword as any).mockResolvedValue({
-      error: authError,
+      error: new Error('Invalid credentials'),
       data: null
     });
 

@@ -5,24 +5,21 @@
  * XSS prevention, security event logging, and edge case handling.
  */
 
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { 
   SecurityErrorHandler, 
-  ErrorContext, 
-  SecureErrorResponse,
-  AuthSecurityError
+  ErrorContext
 } from '../securityErrorHandler';
 import { 
   AuthSecurityErrorType, 
-  ErrorSeverity,
   getErrorConfig,
   shouldLogSecurityEvent
 } from '../../const/securityMessages';
-import { SecurityLogger, SecurityEventType } from '../securityLogger';
+import { SecurityEventType } from '../securityLogger';
 
 // Mock security logger
 vi.mock('../securityLogger', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal() as any;
   return {
     ...actual,
     SecurityLogger: vi.fn().mockImplementation(() => ({
@@ -477,7 +474,7 @@ describe('Security Error Handler Tests', () => {
         
         // Check if browser info was extracted
         const addEventCalls = mockBatch.addEvent.mock.calls;
-        const browserInfoCall = addEventCalls.find(call => 
+        const browserInfoCall = addEventCalls.find((call: any) => 
           call[1]?.additionalContext?.action === 'user_agent_analysis'
         );
         
@@ -510,8 +507,8 @@ describe('Security Error Handler Tests', () => {
       );
       
       expect(timingCall).toBeDefined();
-      expect(timingCall[1].additionalContext.isBusinessHours).toBe(true);
-      expect(timingCall[1].additionalContext.timeOfDay).toBe(14);
+      expect(timingCall![1].additionalContext.isBusinessHours).toBe(true);
+      expect(timingCall![1].additionalContext.timeOfDay).toBe(14);
     });
 
     it('should handle logging errors gracefully', () => {

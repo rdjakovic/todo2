@@ -311,7 +311,7 @@ export const SECURITY_LEVEL_PRESETS: Record<SecurityLevel, SecurityLevelPreset> 
         storageKey: 'auth_security_state'
       },
       errorHandling: {
-        enableGenericMessages: false,
+        enableGenericMessages: false, // Reverted to original value, assuming typo was the log message
         enableDetailedLogging: true,
         sanitizeErrorMessages: true,
         logLevel: 'warn',
@@ -497,10 +497,15 @@ export class SecurityConfigManager {
     for (const key in override) {
       const overrideValue = override[key as keyof SecurityConfig];
       if (overrideValue && typeof overrideValue === 'object' && !Array.isArray(overrideValue)) {
-        merged[key as keyof SecurityConfig] = {
-          ...merged[key as keyof SecurityConfig],
-          ...overrideValue
-        } as any;
+        const baseValue = merged[key as keyof SecurityConfig];
+        if (baseValue && typeof baseValue === 'object' && !Array.isArray(baseValue)) {
+          merged[key as keyof SecurityConfig] = {
+            ...baseValue,
+            ...overrideValue
+          } as any;
+        } else {
+          merged[key as keyof SecurityConfig] = overrideValue as any;
+        }
       } else if (overrideValue !== undefined) {
         (merged as any)[key] = overrideValue;
       }
@@ -699,26 +704,31 @@ export class SecurityConfigManager {
   }
 
   enableFeature(feature: keyof FeatureToggles): void {
+    const features = this.getFeatureToggles();
     this.updateConfig({
       features: {
+        ...features,
         [feature]: true
       }
     });
   }
 
   disableFeature(feature: keyof FeatureToggles): void {
+    const features = this.getFeatureToggles();
     this.updateConfig({
       features: {
+        ...features,
         [feature]: false
       }
     });
   }
 
   toggleFeature(feature: keyof FeatureToggles): void {
-    const currentState = this.isFeatureEnabled(feature);
+    const features = this.getFeatureToggles();
     this.updateConfig({
       features: {
-        [feature]: !currentState
+        ...features,
+        [feature]: !features[feature]
       }
     });
   }
@@ -727,16 +737,22 @@ export class SecurityConfigManager {
    * Message customization methods
    */
   updateMessage(messageType: keyof CustomizableMessages, message: string): void {
+    const messages = this.getCustomizableMessages();
     this.updateConfig({
       messages: {
+        ...messages,
         [messageType]: message
       }
     });
   }
 
   updateMessages(messages: Partial<CustomizableMessages>): void {
+    const currentMessages = this.getCustomizableMessages();
     this.updateConfig({
-      messages: messages
+      messages: {
+        ...currentMessages,
+        ...messages
+      } as CustomizableMessages
     });
   }
 
@@ -749,16 +765,22 @@ export class SecurityConfigManager {
    * Timing parameter methods
    */
   updateTimingParameter(parameter: keyof TimingParameters, value: number): void {
+    const timing = this.getTimingParameters();
     this.updateConfig({
       timing: {
+        ...timing,
         [parameter]: value
       }
     });
   }
 
   updateTimingParameters(parameters: Partial<TimingParameters>): void {
+    const timing = this.getTimingParameters();
     this.updateConfig({
-      timing: parameters
+      timing: {
+        ...timing,
+        ...parameters
+      } as TimingParameters
     });
   }
 
@@ -790,16 +812,3 @@ export class SecurityConfigManager {
 
 // Export singleton instance
 export const securityConfig = SecurityConfigManager.getInstance();
-
-// Export types and constants
-export type {
-  SecurityConfig,
-  RateLimitConfig,
-  ErrorHandlingConfig,
-  SecurityMonitoringConfig,
-  StorageConfig,
-  FeatureToggles,
-  CustomizableMessages,
-  TimingParameters,
-  SecurityLevelPreset
-};

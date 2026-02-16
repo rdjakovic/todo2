@@ -145,7 +145,7 @@ async function runClientStorageSecurityAnalysis(): Promise<void> {
     console.log(assessment.summary);
     console.log('');
 
-    if (assessment.recommendations.length > 0) {
+    if (assessment.recommendations && assessment.recommendations.length > 0) {
       console.log('🎯 Key Recommendations:');
       assessment.recommendations.slice(0, 5).forEach(rec => {
         console.log(`   • ${rec}`);

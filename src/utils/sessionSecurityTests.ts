@@ -42,7 +42,7 @@ export class SessionSecurityTester {
     
     try {
       // Check if session persistence is enabled
-      const { data: { session } } = await supabase.auth.getSession();
+      await supabase.auth.getSession();
       
       // Test if session data is stored in localStorage
       const hasLocalStorage = typeof window !== 'undefined' && window.localStorage;
@@ -142,7 +142,7 @@ export class SessionSecurityTester {
     
     try {
       const findings: string[] = [];
-      const recommendations: string[] = [];
+
 
       // Test session cleanup on sign out
       const authStore = useAuthStore.getState();

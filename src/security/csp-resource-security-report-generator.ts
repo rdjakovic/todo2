@@ -11,11 +11,15 @@ export class CSPResourceSecurityReportGenerator {
    * Generate a detailed HTML report from the CSP analysis results
    */
   static generateHTMLReport(report: CSPResourceSecurityReport): string {
-    const riskColorClass = {
+    const riskColors: Record<string, string> = {
+      'critical': 'text-red-700 font-bold',
       'high': 'text-red-600',
       'medium': 'text-orange-500',
-      'low': 'text-green-600'
-    }[report.riskLevel] || 'text-gray-600';
+      'low': 'text-green-600',
+      'info': 'text-blue-600'
+    };
+    
+    const riskColorClass = riskColors[report.riskLevel] || 'text-gray-600';
     
     let html = `
       <!DOCTYPE html>
@@ -42,7 +46,7 @@ export class CSPResourceSecurityReportGenerator {
             padding: 12px 24px;
             margin-bottom: 24px;
           }
-          .risk-high {
+          .risk-high, .risk-critical {
             color: #e53e3e;
           }
           .risk-medium {
@@ -50,6 +54,9 @@ export class CSPResourceSecurityReportGenerator {
           }
           .risk-low {
             color: #38a169;
+          }
+          .risk-info {
+            color: #3182ce;
           }
           table {
             width: 100%;
@@ -99,7 +106,7 @@ export class CSPResourceSecurityReportGenerator {
         <div class="summary">
           <h2>Summary</h2>
           <p>${report.summary}</p>
-          <p>Risk Level: <span class="risk-${report.riskLevel}">${report.riskLevel.toUpperCase()}</span></p>
+          <p>Risk Level: <span class="risk-${report.riskLevel} ${riskColorClass}">${report.riskLevel.toUpperCase()}</span></p>
         </div>
         
         <h2>CSP Implementation</h2>
@@ -221,11 +228,15 @@ export class CSPResourceSecurityReportGenerator {
    * Generate a markdown report from the CSP analysis results
    */
   static generateMarkdownReport(report: CSPResourceSecurityReport): string {
-    const riskEmoji = {
+    const riskEmojis: Record<string, string> = {
+      'critical': '💀',
       'high': '🔴',
       'medium': '🟠',
-      'low': '🟢'
-    }[report.riskLevel] || '⚪';
+      'low': '🟢',
+      'info': '🔵'
+    };
+    
+    const riskEmoji = riskEmojis[report.riskLevel] || '⚪';
     
     let markdown = `# Content Security Policy and Resource Security Analysis\n\n`;
     markdown += `**Date:** ${new Date().toLocaleDateString()}\n`;

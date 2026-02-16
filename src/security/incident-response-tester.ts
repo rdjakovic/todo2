@@ -538,7 +538,6 @@ export class IncidentResponseTester {
    */
   private async validateResponse(expectation: ResponseExpectation, timeoutMinutes: number): Promise<TestResult> {
     const startTime = Date.now();
-    const timeoutMs = expectation.expectedTimeMinutes * 60 * 1000;
     const maxTimeoutMs = timeoutMinutes * 60 * 1000;
 
     // Simulate response validation
@@ -865,7 +864,7 @@ ${this.generateConclusion(results)}
   /**
    * Get short-term recommendations
    */
-  private getShortTermRecommendations(results: TestResults[]): string[] {
+  private getShortTermRecommendations(_results: TestResults[]): string[] {
     return [
       'Develop automated incident response workflows',
       'Implement comprehensive security monitoring dashboard',
@@ -877,7 +876,7 @@ ${this.generateConclusion(results)}
   /**
    * Get long-term recommendations
    */
-  private getLongTermRecommendations(results: TestResults[]): string[] {
+  private getLongTermRecommendations(_results: TestResults[]): string[] {
     return [
       'Build advanced threat detection and response capabilities',
       'Implement AI-powered security incident analysis',

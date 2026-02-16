@@ -249,7 +249,7 @@ export class SecurityMonitor {
         {
           component: 'SecurityMonitor',
           action: 'validateStateIntegrity',
-          identifier: securityLogger['hashIdentifier'](identifier)
+          identifier: securityLogger.hashIdentifier(identifier)
         }
       );
       return false;
@@ -316,7 +316,7 @@ export class SecurityMonitor {
     corruptionType: string, 
     stateData: any
   ): Promise<void> {
-    const hashedIdentifier = securityLogger['hashIdentifier'](identifier);
+    const hashedIdentifier = securityLogger.hashIdentifier(identifier);
     
     // Increment corruption count
     const currentCount = this.corruptionCount.get(hashedIdentifier) || 0;
@@ -721,6 +721,3 @@ export class SecurityMonitor {
 
 // Export a default instance for convenience
 export const securityMonitor = new SecurityMonitor();
-
-// Export types for external use
-export type { SecurityMonitorConfig, SecurityStateHealth, CorruptionReport };

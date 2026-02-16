@@ -6,6 +6,7 @@
  * - localStorage/sessionStorage security
  * - Data lifecycle and cleanup processes
  * - Browser storage security configurations
+ * - Browser storage security reports
  */
 
 import { indexedDBManager } from '../lib/indexedDB';
@@ -137,12 +138,15 @@ export class ClientStorageSecurityAnalyzer {
             description: 'Sensitive user data is stored in IndexedDB without encryption, potentially exposing it to malicious scripts or local access.',
             severity: 'HIGH',
             category: 'DATA_PROTECTION',
-            location: 'src/lib/indexedDB.ts',
+            location: { file: 'src/lib/indexedDB.ts' },
             evidence: [
               `Found ${sensitiveDataTypes.length} types of sensitive data`,
               `Sensitive data types: ${sensitiveDataTypes.join(', ')}`,
               'Data is stored in plain text format',
               'No client-side encryption detected'
+            ],
+            recommendations: [
+              'Implement client-side encryption for sensitive data before storing in IndexedDB'
             ],
             remediation: {
               description: 'Implement client-side encryption for sensitive data before storing in IndexedDB',
@@ -170,11 +174,14 @@ export class ClientStorageSecurityAnalyzer {
         description: 'Failed to analyze IndexedDB security due to access or configuration issues.',
         severity: 'MEDIUM',
         category: 'CONFIGURATION',
-        location: 'src/lib/indexedDB.ts',
+        location: { file: 'src/lib/indexedDB.ts' },
         evidence: [
           `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
           'IndexedDB may not be properly initialized',
           'Security analysis incomplete'
+        ],
+        recommendations: [
+          'Investigate IndexedDB configuration and access issues'
         ],
         remediation: {
           description: 'Investigate IndexedDB configuration and access issues',
@@ -208,12 +215,15 @@ export class ClientStorageSecurityAnalyzer {
           description: 'Potentially sensitive data is stored in localStorage without encryption.',
           severity: 'MEDIUM',
           category: 'DATA_PROTECTION',
-          location: 'Browser localStorage',
+          location: { component: 'Browser localStorage' },
           evidence: [
             `Found ${sensitiveKeys.length} potentially sensitive keys`,
             `Sensitive keys: ${sensitiveKeys.join(', ')}`,
             'Data persists across browser sessions',
             'Accessible to all scripts on the domain'
+          ],
+          recommendations: [
+            'Review and secure localStorage usage'
           ],
           remediation: {
             description: 'Review and secure localStorage usage',
@@ -237,9 +247,12 @@ export class ClientStorageSecurityAnalyzer {
         description: 'Failed to analyze localStorage security.',
         severity: 'LOW',
         category: 'CONFIGURATION',
-        location: 'Browser localStorage',
+        location: { component: 'Browser localStorage' },
         evidence: [
           `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        ],
+        recommendations: [
+          'Investigate localStorage access issues'
         ],
         remediation: {
           description: 'Investigate localStorage access issues',
@@ -271,12 +284,15 @@ export class ClientStorageSecurityAnalyzer {
           description: 'Potentially sensitive data is stored in sessionStorage.',
           severity: 'LOW',
           category: 'DATA_PROTECTION',
-          location: 'Browser sessionStorage',
+          location: { component: 'Browser sessionStorage' },
           evidence: [
             `Found ${sensitiveKeys.length} potentially sensitive keys`,
             `Sensitive keys: ${sensitiveKeys.join(', ')}`,
             'Data cleared on tab close',
             'Still accessible to scripts during session'
+          ],
+          recommendations: [
+            'Review sessionStorage usage for sensitive data'
           ],
           remediation: {
             description: 'Review sessionStorage usage for sensitive data',
@@ -296,9 +312,12 @@ export class ClientStorageSecurityAnalyzer {
         description: 'Failed to analyze sessionStorage security.',
         severity: 'LOW',
         category: 'CONFIGURATION',
-        location: 'Browser sessionStorage',
+        location: { component: 'Browser sessionStorage' },
         evidence: [
           `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        ],
+        recommendations: [
+          'Investigate sessionStorage access issues'
         ],
         remediation: {
           description: 'Investigate sessionStorage access issues',
@@ -324,11 +343,14 @@ export class ClientStorageSecurityAnalyzer {
         description: 'Application may not properly clean up client-side data when users log out.',
         severity: 'MEDIUM',
         category: 'DATA_PROTECTION',
-        location: 'Authentication flow',
+        location: { component: 'Authentication flow' },
         evidence: [
           'No comprehensive cleanup mechanism detected',
           'Data may persist after logout',
           'Potential data leakage between sessions'
+        ],
+        recommendations: [
+          'Implement comprehensive data cleanup on logout'
         ],
         remediation: {
           description: 'Implement comprehensive data cleanup on logout',
@@ -363,11 +385,14 @@ export class ClientStorageSecurityAnalyzer {
             description: 'Client-side storage usage is approaching quota limits.',
             severity: 'LOW',
             category: 'CONFIGURATION',
-            location: 'Browser storage',
+            location: { component: 'Browser storage' },
             evidence: [
               `Storage usage: ${usagePercentage.toFixed(2)}%`,
               `Used: ${estimate.usage} bytes`,
               `Quota: ${estimate.quota} bytes`
+            ],
+            recommendations: [
+              'Implement storage management and cleanup'
             ],
             remediation: {
               description: 'Implement storage management and cleanup',
@@ -651,11 +676,14 @@ export class ClientStorageSecurityAnalyzer {
         description: 'User identifiers are stored in IndexedDB, potentially enabling user enumeration.',
         severity: 'LOW',
         category: 'DATA_PROTECTION',
-        location: 'src/lib/indexedDB.ts',
+        location: { file: 'src/lib/indexedDB.ts' },
         evidence: [
           'User IDs found in stored data',
           'Potential for user enumeration',
           'Data correlation possible'
+        ],
+        recommendations: [
+          'Consider data minimization for user identifiers'
         ],
         remediation: {
           description: 'Consider data minimization for user identifiers',
@@ -678,11 +706,14 @@ export class ClientStorageSecurityAnalyzer {
       description: 'IndexedDB has proper cleanup mechanisms implemented.',
       severity: 'INFO',
       category: 'DATA_PROTECTION',
-      location: 'src/lib/indexedDB.ts',
+      location: { file: 'src/lib/indexedDB.ts' },
       evidence: [
         'clearAllData method available',
         'Individual store cleanup methods present',
         'Proper transaction handling'
+      ],
+      recommendations: [
+        'Ensure cleanup mechanisms are properly triggered'
       ],
       remediation: {
         description: 'Ensure cleanup mechanisms are properly triggered',
@@ -708,11 +739,14 @@ export class ClientStorageSecurityAnalyzer {
         description: 'localStorage data may not have proper cleanup mechanisms.',
         severity: 'LOW',
         category: 'DATA_PROTECTION',
-        location: 'Browser localStorage',
+        location: { component: 'Browser localStorage' },
         evidence: [
           `${Object.keys(data).length} localStorage items found`,
           'No obvious cleanup mechanisms detected',
           'Data may persist indefinitely'
+        ],
+        recommendations: [
+          'Implement localStorage cleanup policies'
         ],
         remediation: {
           description: 'Implement localStorage cleanup policies',
@@ -739,11 +773,14 @@ export class ClientStorageSecurityAnalyzer {
       description: 'Client-side data retention policies should be clearly defined and implemented.',
       severity: 'INFO',
       category: 'DATA_PROTECTION',
-      location: 'Application-wide',
+      location: { component: 'Application-wide' },
       evidence: [
         'No explicit data retention policies detected',
         'Data lifecycle management needed',
         'Compliance considerations required'
+      ],
+      recommendations: [
+        'Implement clear data retention policies'
       ],
       remediation: {
         description: 'Implement clear data retention policies',

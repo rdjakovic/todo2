@@ -14,7 +14,7 @@ import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 import { rateLimitManager } from '../../utils/rateLimitManager';
 import { securityErrorHandler } from '../../utils/securityErrorHandler';
-import { securityLogger, SecurityEventType } from '../../utils/securityLogger';
+import { securityLogger } from '../../utils/securityLogger';
 import { securityStateManager } from '../../utils/securityStateManager';
 import { securityConfig } from '../../config/securityConfig';
 
@@ -150,7 +150,7 @@ describe('LoginForm E2E Integration Tests', () => {
       // Spy on all security components
       const logSuccessfulLoginSpy = vi.spyOn(securityLogger, 'logSuccessfulLogin');
       const resetFailedAttemptsSpy = vi.spyOn(rateLimitManager, 'resetFailedAttempts');
-      const checkRateLimitSpy = vi.spyOn(rateLimitManager, 'checkRateLimit');
+      // checkRateLimitSpy removed as it was unused
 
       render(<LoginForm />);
 
@@ -480,9 +480,7 @@ describe('LoginForm E2E Integration Tests', () => {
 
       render(<LoginForm />);
 
-      const emailInput = screen.getByLabelText(/email/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      // Variables removed as they were unused
 
       // Perform failed attempts up to custom limit
       for (let attempt = 1; attempt <= 3; attempt++) {

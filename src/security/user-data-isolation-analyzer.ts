@@ -71,7 +71,6 @@ export interface UserDataIsolationReport {
 }
 
 export class UserDataIsolationAnalyzer {
-  private findings: SecurityFinding[] = [];
   private findingCounter = 0;
 
   /**
@@ -541,7 +540,7 @@ export class UserDataIsolationAnalyzer {
     }
   }
 
-  private detectSharingFeature(featureName: string, codeFiles: { path: string; content: string }[]): boolean {
+  private detectSharingFeature(_featureName: string, codeFiles: { path: string; content: string }[]): boolean {
     const sharingKeywords = ['share', 'export', 'public', 'collaborate'];
     
     for (const file of codeFiles) {
@@ -554,7 +553,7 @@ export class UserDataIsolationAnalyzer {
     return false;
   }
 
-  private extractAccessControls(featureName: string, codeFiles: { path: string; content: string }[]): string[] {
+  private extractAccessControls(_featureName: string, codeFiles: { path: string; content: string }[]): string[] {
     const controls: string[] = [];
     
     // Look for common access control patterns
@@ -577,7 +576,7 @@ export class UserDataIsolationAnalyzer {
     return [...new Set(controls)]; // Remove duplicates
   }
 
-  private determinePermissionModel(featureName: string, codeFiles: { path: string; content: string }[]): 'NONE' | 'BASIC' | 'ROLE_BASED' | 'ATTRIBUTE_BASED' {
+  private determinePermissionModel(_featureName: string, codeFiles: { path: string; content: string }[]): 'NONE' | 'BASIC' | 'ROLE_BASED' | 'ATTRIBUTE_BASED' {
     const hasRoles = codeFiles.some(f => f.content.includes('role') || f.content.includes('Role'));
     const hasAttributes = codeFiles.some(f => f.content.includes('attribute') || f.content.includes('permission'));
     const hasBasicAuth = codeFiles.some(f => f.content.includes('auth') || f.content.includes('user'));
@@ -588,7 +587,7 @@ export class UserDataIsolationAnalyzer {
     return 'NONE';
   }
 
-  private assessPrivacyCompliance(featureName: string, hasSharing: boolean): boolean {
+  private assessPrivacyCompliance(_featureName: string, hasSharing: boolean): boolean {
     // For now, assume sharing features need explicit privacy controls
     return !hasSharing; // If no sharing, it's compliant by default
   }

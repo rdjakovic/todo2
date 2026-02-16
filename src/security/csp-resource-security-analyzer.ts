@@ -11,9 +11,13 @@
 
 import fs from 'fs';
 import path from 'path';
-import { SecurityAnalyzer, SecurityReport, SecurityRisk, SecurityRecommendation } from './types';
+import { SecurityAnalyzer, SecurityReport } from './types';
 
 export interface CSPResourceSecurityReport extends SecurityReport {
+  timestamp: string;
+  name: string;
+  riskLevel: 'low' | 'medium' | 'high' | 'critical' | 'info';
+  summary: string;
   cspImplementation: {
     enabled: boolean;
     policy: string | null;
@@ -36,13 +40,11 @@ export interface CSPResourceSecurityReport extends SecurityReport {
 }
 
 export class CSPResourceSecurityAnalyzer implements SecurityAnalyzer<CSPResourceSecurityReport> {
-  private workspaceRoot: string;
   private tauriConfigPath: string;
   private htmlFilePath: string;
   private report: CSPResourceSecurityReport;
 
   constructor(workspaceRoot: string) {
-    this.workspaceRoot = workspaceRoot;
     this.tauriConfigPath = path.join(workspaceRoot, 'src-tauri', 'tauri.conf.json');
     this.htmlFilePath = path.join(workspaceRoot, 'index.html');
     
@@ -233,16 +235,15 @@ export class CSPResourceSecurityAnalyzer implements SecurityAnalyzer<CSPResource
 
   private isRiskyDomain(domain: string): boolean {
     // List of domains that might be considered risky
-    // This is a simplified check - in a real implementation, you might use a more comprehensive list
     const riskyDomainPatterns = [
-      'cdn.jsdelivr.net', // Not inherently risky, but worth noting for review
-      'unpkg.com',        // Not inherently risky, but worth noting for review
-      'cdnjs.cloudflare.com', // Not inherently risky, but worth noting for review
-      'stats.',           // Analytics domains
-      'tracker.',         // Tracking domains
-      'analytics.',       // Analytics domains
-      'ads.',             // Ad domains
-      'ad.',              // Ad domains
+      'cdn.jsdelivr.net',
+      'unpkg.com',
+      'cdnjs.cloudflare.com',
+      'stats.',
+      'tracker.',
+      'analytics.',
+      'ads.',
+      'ad.',
     ];
     
     return riskyDomainPatterns.some(pattern => domain.includes(pattern));

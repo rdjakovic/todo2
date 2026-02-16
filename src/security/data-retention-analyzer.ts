@@ -252,12 +252,7 @@ export class DataRetentionAnalyzer {
       f.content.includes('cleanup')
     );
 
-    // Check for deletion functionality
-    const hasDeletion = codeFiles.some(f => 
-      f.content.includes('delete') || 
-      f.content.includes('remove') || 
-      f.content.includes('clear')
-    );
+
 
     // Check for user-controlled deletion
     const hasUserDeletion = codeFiles.some(f => 

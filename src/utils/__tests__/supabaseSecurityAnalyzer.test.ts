@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock environment variables
-const originalEnv = import.meta.env;
+
 
 vi.mock('../../lib/supabase', () => ({
   supabase: {
@@ -15,7 +15,7 @@ vi.mock('../../lib/supabase', () => ({
       signOut: vi.fn(),
       refreshSession: vi.fn(),
       onAuthStateChange: vi.fn()
-    }
+    } as any
   }
 }));
 
@@ -33,15 +33,12 @@ describe('SupabaseSecurityAnalyzer', () => {
     vi.clearAllMocks();
     
     // Reset environment variables
-    import.meta.env = {
-      ...originalEnv,
-      VITE_SUPABASE_URL: 'https://test.supabase.co',
-      VITE_SUPABASE_ANON_KEY: 'test-anon-key'
-    };
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://test.supabase.co');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'test-anon-key');
   });
 
   afterEach(() => {
-    import.meta.env = originalEnv;
+    vi.unstubAllEnvs();
   });
 
   describe('Configuration Analysis', () => {
@@ -89,7 +86,7 @@ describe('SupabaseSecurityAnalyzer', () => {
 
   describe('Token Analysis', () => {
     it('should handle no active session', async () => {
-      mockSupabase.auth.getSession.mockResolvedValue({
+      (mockSupabase.auth.getSession as any).mockResolvedValue({
         data: { session: null },
         error: null
       });
@@ -116,7 +113,7 @@ describe('SupabaseSecurityAnalyzer', () => {
         'signature' // signature
       ].join('.');
 
-      mockSupabase.auth.getSession.mockResolvedValue({
+      (mockSupabase.auth.getSession as any).mockResolvedValue({
         data: {
           session: {
             access_token: mockToken,
@@ -148,7 +145,7 @@ describe('SupabaseSecurityAnalyzer', () => {
         'signature'
       ].join('.');
 
-      mockSupabase.auth.getSession.mockResolvedValue({
+      (mockSupabase.auth.getSession as any).mockResolvedValue({
         data: {
           session: {
             access_token: expiredToken,
@@ -178,7 +175,7 @@ describe('SupabaseSecurityAnalyzer', () => {
         'signature'
       ].join('.');
 
-      mockSupabase.auth.getSession.mockResolvedValue({
+      (mockSupabase.auth.getSession as any).mockResolvedValue({
         data: {
           session: {
             access_token: nearExpiryToken,
@@ -209,7 +206,7 @@ describe('SupabaseSecurityAnalyzer', () => {
         'signature'
       ].join('.');
 
-      mockSupabase.auth.getSession.mockResolvedValue({
+      (mockSupabase.auth.getSession as any).mockResolvedValue({
         data: {
           session: {
             access_token: sensitiveToken,
@@ -229,7 +226,7 @@ describe('SupabaseSecurityAnalyzer', () => {
     it('should detect invalid JWT structure', async () => {
       const invalidToken = 'invalid.jwt'; // Only 2 parts instead of 3
 
-      mockSupabase.auth.getSession.mockResolvedValue({
+      (mockSupabase.auth.getSession as any).mockResolvedValue({
         data: {
           session: {
             access_token: invalidToken,
@@ -253,7 +250,7 @@ describe('SupabaseSecurityAnalyzer', () => {
         'signature'
       ].join('.');
 
-      mockSupabase.auth.getSession.mockResolvedValue({
+      (mockSupabase.auth.getSession as any).mockResolvedValue({
         data: {
           session: {
             access_token: mockToken,
@@ -273,12 +270,12 @@ describe('SupabaseSecurityAnalyzer', () => {
 
   describe('Authentication Flow Testing', () => {
     it('should detect sign out errors', async () => {
-      mockSupabase.auth.getSession.mockResolvedValue({
+      (mockSupabase.auth.getSession as any).mockResolvedValue({
         data: { session: null },
         error: null
       });
       
-      mockSupabase.auth.signOut.mockResolvedValue({
+      (mockSupabase.auth.signOut as any).mockResolvedValue({
         error: { message: 'Sign out failed' }
       });
 
@@ -296,7 +293,7 @@ describe('SupabaseSecurityAnalyzer', () => {
         'signature'
       ].join('.');
 
-      mockSupabase.auth.getSession.mockResolvedValue({
+      (mockSupabase.auth.getSession as any).mockResolvedValue({
         data: {
           session: {
             access_token: mockToken,
@@ -306,8 +303,8 @@ describe('SupabaseSecurityAnalyzer', () => {
         error: null
       });
 
-      mockSupabase.auth.signOut.mockResolvedValue({ error: null });
-      mockSupabase.auth.refreshSession.mockResolvedValue({
+      (mockSupabase.auth.signOut as any).mockResolvedValue({ error: null });
+      (mockSupabase.auth.refreshSession as any).mockResolvedValue({
         error: { message: 'Refresh failed' }
       });
 
@@ -331,11 +328,11 @@ describe('SupabaseSecurityAnalyzer', () => {
     });
 
     it('should calculate low risk for minimal findings', async () => {
-      mockSupabase.auth.getSession.mockResolvedValue({
+      (mockSupabase.auth.getSession as any).mockResolvedValue({
         data: { session: null },
         error: null
       });
-      mockSupabase.auth.signOut.mockResolvedValue({ error: null });
+      (mockSupabase.auth.signOut as any).mockResolvedValue({ error: null });
 
       const analysis = await analyzer.analyze();
       
@@ -359,7 +356,7 @@ describe('SupabaseSecurityAnalyzer', () => {
     });
 
     it('should include finding details in report', async () => {
-      import.meta.env.VITE_SUPABASE_URL = '';
+      vi.stubEnv('VITE_SUPABASE_URL', '');
       
       const analysis = await analyzer.analyze();
       const report = analyzer.generateReport(analysis);
@@ -371,7 +368,7 @@ describe('SupabaseSecurityAnalyzer', () => {
 
   describe('Convenience Functions', () => {
     it('should export analyzeSupabaseAuthSecurity function', async () => {
-      mockSupabase.auth.getSession.mockResolvedValue({
+      (mockSupabase.auth.getSession as any).mockResolvedValue({
         data: { session: null },
         error: null
       });
@@ -397,7 +394,7 @@ describe('Error Handling', () => {
   });
 
   it('should handle session retrieval errors gracefully', async () => {
-    mockSupabase.auth.getSession.mockResolvedValue({
+    (mockSupabase.auth.getSession as any).mockResolvedValue({
       data: { session: null },
       error: { message: 'Session retrieval failed' }
     });
@@ -412,7 +409,7 @@ describe('Error Handling', () => {
   it('should handle JWT parsing errors', async () => {
     const malformedToken = 'not.a.valid.jwt.token';
 
-    mockSupabase.auth.getSession.mockResolvedValue({
+    (mockSupabase.auth.getSession as any).mockResolvedValue({
       data: {
         session: {
           access_token: malformedToken,
@@ -429,7 +426,7 @@ describe('Error Handling', () => {
   });
 
   it('should handle authentication flow test errors', async () => {
-    mockSupabase.auth.getSession.mockRejectedValue(new Error('Network error'));
+    (mockSupabase.auth.getSession as any).mockRejectedValue(new Error('Network error'));
 
     const analysis = await analyzer.analyze();
     

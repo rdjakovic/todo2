@@ -143,7 +143,7 @@ export default function LoginForm() {
   useEffect(() => {
     if (!email) return;
 
-    const handleStateChange = (state: any) => {
+    const handleStateChange = (_state: any) => {
       checkRateLimit();
     };
 
@@ -189,7 +189,7 @@ export default function LoginForm() {
         }
       });
 
-      const secureResponse = securityErrorHandler.handleAuthError(
+      securityErrorHandler.handleAuthError(
         new Error('Progressive delay active'),
         errorContext
       );
@@ -383,8 +383,8 @@ export default function LoginForm() {
         };
 
         try {
-          const secureResponse = securityErrorHandler.handleAuthError(error, errorContext);
-          throw new Error(secureResponse.userMessage);
+          securityErrorHandler.handleAuthError(error, errorContext);
+          throw new Error('Authentication failed. Please check your credentials and try again.');
         } catch (handlerError) {
           // If error handler fails, use a generic message
           throw new Error('Authentication failed. Please check your credentials and try again.');
@@ -472,9 +472,9 @@ export default function LoginForm() {
         }
       );
 
-      const secureResponse = securityErrorHandler.handleAuthError(err, errorContext);
-      setError(secureResponse.userMessage);
-      toast.error(secureResponse.userMessage);
+      securityErrorHandler.handleAuthError(err, errorContext);
+      setError('Authentication failed. Please check your credentials and try again.');
+      toast.error('Authentication failed. Please check your credentials and try again.');
     } finally {
       setLoading(false);
       setIsSubmitting(false);
