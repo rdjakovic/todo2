@@ -12,7 +12,7 @@ import LoginForm from '../LoginForm';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
-import { rateLimitManager, RateLimitStatus } from '../../utils/rateLimitManager';
+import { rateLimitManager } from '../../utils/rateLimitManager';
 import { securityErrorHandler } from '../../utils/securityErrorHandler';
 import { securityLogger, SecurityEventType } from '../../utils/securityLogger';
 import { securityStateManager } from '../../utils/securityStateManager';
@@ -70,7 +70,7 @@ describe('LoginForm E2E Security Tests', () => {
     mockSetUser = vi.fn();
     mockForceDataLoad = vi.fn().mockResolvedValue(undefined);
     
-    (useAuthStore as Mock).mockReturnValue({
+    (useAuthStore as unknown as Mock).mockReturnValue({
       setUser: mockSetUser,
       forceDataLoad: mockForceDataLoad
     });
@@ -114,7 +114,6 @@ describe('LoginForm E2E Security Tests', () => {
       });
 
       // Spy on security logger
-      const logEventSpy = vi.spyOn(securityLogger, 'logEvent');
       const logSuccessfulLoginSpy = vi.spyOn(securityLogger, 'logSuccessfulLogin');
 
       render(<LoginForm />);
@@ -273,7 +272,7 @@ describe('LoginForm E2E Security Tests', () => {
       });
 
       // Verify submit button is disabled
-      expect(submitButton).toBeDisabled();
+      expect((submitButton as HTMLButtonElement).disabled).toBe(true);
     });
 
     it('should persist security state across component remounts', async () => {
@@ -368,7 +367,7 @@ describe('LoginForm E2E Security Tests', () => {
       });
 
       // Verify submit button is disabled during delay
-      expect(submitButton).toBeDisabled();
+      expect((submitButton as HTMLButtonElement).disabled).toBe(true);
     });
 
     it('should prevent concurrent authentication requests', async () => {
@@ -378,8 +377,6 @@ describe('LoginForm E2E Security Tests', () => {
           setTimeout(() => resolve({ data: { user: null }, error: new Error('Invalid') }), 1000)
         )
       );
-
-      const logEventSpy = vi.spyOn(securityLogger, 'logEvent');
 
       render(<LoginForm />);
 
@@ -398,7 +395,7 @@ describe('LoginForm E2E Security Tests', () => {
       });
 
       // Verify button is disabled and shows loading state
-      expect(submitButton).toBeDisabled();
+      expect((submitButton as HTMLButtonElement).disabled).toBe(true);
       expect(screen.getByText(/signing in/i)).toBeInTheDocument();
 
       // Try to submit again (should be prevented)
@@ -415,7 +412,7 @@ describe('LoginForm E2E Security Tests', () => {
     it('should handle network errors gracefully', async () => {
       // Setup network error
       const networkError = new Error('Network request failed');
-      networkError.name = 'NetworkError';
+      (networkError as any).name = 'NetworkError';
       mockSupabaseSignIn.mockRejectedValue(networkError);
 
       const handleAuthErrorSpy = vi.spyOn(securityErrorHandler, 'handleAuthError');
@@ -473,7 +470,8 @@ describe('LoginForm E2E Security Tests', () => {
             action: 'input_validation',
             validationFailure: 'missing_required_fields'
           })
-        })
+        }),
+        expect.any(String)
       );
 
       // Verify no authentication attempt was made
@@ -496,7 +494,8 @@ describe('LoginForm E2E Security Tests', () => {
           additionalContext: expect.objectContaining({
             validationFailure: 'invalid_email_format'
           })
-        })
+        }),
+        expect.any(String)
       );
 
       // Verify still no authentication attempt
@@ -537,7 +536,7 @@ describe('LoginForm E2E Security Tests', () => {
 
     it('should handle lockout expiration correctly', async () => {
       // Create a lockout state that expires quickly for testing
-      const shortLockoutManager = new (rateLimitManager.constructor as any)({
+      const shortLockoutManager = new (rateLimitManager as any).constructor({
         maxAttempts: 2,
         lockoutDuration: 100, // 100ms for quick testing
         progressiveDelay: false
@@ -572,12 +571,7 @@ describe('LoginForm E2E Security Tests', () => {
       const status = await rateLimitManager.checkRateLimit('test@example.com');
       expect(status.attemptsRemaining).toBe(4);
 
-      // Simulate state change listener
-      let receivedState: any = null;
-      const callback = (state: any) => {
-        receivedState = state;
-      };
-
+      const callback = vi.fn();
       rateLimitManager.addStateChangeListener('test@example.com', callback);
 
       // Trigger state change
@@ -602,11 +596,7 @@ describe('LoginForm E2E Security Tests', () => {
       };
 
       // Try to set corrupted state
-      try {
-        await securityStateManager.setSecurityState('test@example.com', corruptedState as any);
-      } catch (error) {
-        // Expected to fail validation
-      }
+      await securityStateManager.setSecurityState('test@example.com', corruptedState as any);
 
       // Verify system falls back to safe defaults
       const status = await rateLimitManager.checkRateLimit('test@example.com');
@@ -733,16 +723,16 @@ describe('LoginForm E2E Security Tests', () => {
         {
           name: 'offline',
           setup: () => {
-            Object.defineProperty(navigator, 'onLine', { value: false, writable: true });
+            Object.defineProperty(navigator, 'onLine', { value: false, writable: true, configurable: true });
             mockSupabaseSignIn.mockRejectedValue(new Error('Network request failed'));
           }
         },
         {
           name: 'slow connection',
           setup: () => {
-            Object.defineProperty(navigator, 'onLine', { value: true, writable: true });
+            Object.defineProperty(navigator, 'onLine', { value: true, writable: true, configurable: true });
             mockSupabaseSignIn.mockImplementation(() => 
-              new Promise((resolve, reject) => 
+              new Promise((_resolve, reject) => 
                 setTimeout(() => reject(new Error('Request timeout')), 100)
               )
             );
@@ -751,7 +741,7 @@ describe('LoginForm E2E Security Tests', () => {
         {
           name: 'intermittent connection',
           setup: () => {
-            Object.defineProperty(navigator, 'onLine', { value: true, writable: true });
+            Object.defineProperty(navigator, 'onLine', { value: true, writable: true, configurable: true });
             let callCount = 0;
             mockSupabaseSignIn.mockImplementation(() => {
               callCount++;

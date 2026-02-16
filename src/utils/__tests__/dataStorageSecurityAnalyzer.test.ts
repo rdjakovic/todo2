@@ -319,7 +319,6 @@ describe('DataStorageSecurityAnalyzer', () => {
       const assessment = await analyzer.analyzeDataStorageSecurity();
       
       const highSeverityFindings = assessment.findings.filter(f => f.severity === 'HIGH');
-      const lowSeverityFindings = assessment.findings.filter(f => f.severity === 'LOW');
       
       // If we have high severity findings, risk score should be significant
       if (highSeverityFindings.length > 0) {

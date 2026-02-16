@@ -468,13 +468,7 @@ describe('SecurityStateManager', () => {
   describe('state change listeners', () => {
     it('should add and notify state change listeners', async () => {
       const listener = vi.fn();
-      const mockState: SecurityStateRecord = {
-        identifier: testIdentifier,
-        failedAttempts: 1,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        version: 1
-      };
+
 
       securityStateManager.addStateChangeListener(testIdentifier, listener);
       

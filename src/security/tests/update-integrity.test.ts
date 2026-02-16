@@ -1,6 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { promises as fs } from 'fs';
-import { join } from 'path';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { UpdateIntegrityAnalyzer } from '../scripts/run-update-integrity-analysis';
 
 describe('Update Integrity Security Tests', () => {

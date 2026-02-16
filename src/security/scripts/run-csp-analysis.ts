@@ -110,11 +110,13 @@ async function runAnalysis() {
 }
 
 function generateMarkdownReport(report: any) {
-  const riskEmoji = {
+  const riskEmoji = ({
+    'critical': '🔴',
     'high': '🔴',
     'medium': '🟠',
-    'low': '🟢'
-  }[report.riskLevel] || '⚪';
+    'low': '🟢',
+    'info': '🔵'
+  } as Record<string, string>)[report.riskLevel as string] || '⚪';
   
   let markdown = `# Content Security Policy and Resource Security Analysis\n\n`;
   markdown += `**Date:** ${new Date().toLocaleDateString()}\n`;

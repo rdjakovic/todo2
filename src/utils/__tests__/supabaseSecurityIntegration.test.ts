@@ -100,14 +100,14 @@ describe('Supabase Security Integration Tests', () => {
   it('should test authentication flow security', async () => {
     try {
       // Test session retrieval (should not throw)
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const { error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
         console.log('Session error (expected in test environment):', sessionError.message);
       }
       
       // Test user retrieval (should not throw)
-      const { data: userData, error: userError } = await supabase.auth.getUser();
+      const { error: userError } = await supabase.auth.getUser();
       
       if (userError) {
         console.log('User error (expected in test environment):', userError.message);

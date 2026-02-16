@@ -94,7 +94,7 @@ export async function testSupabaseSecurityAnalyzer(): Promise<void> {
     // Display all findings summary
     if (analysis.findings.length > 0) {
       console.log('📝 All Findings Summary:');
-      analysis.findings.forEach((finding, index) => {
+      analysis.findings.forEach((finding) => {
         const severityIcon = {
           critical: '🚨',
           high: '⚠️',

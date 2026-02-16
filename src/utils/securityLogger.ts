@@ -350,7 +350,7 @@ export class SecurityLogger {
   /**
    * Hash user identifier for privacy
    */
-  private hashIdentifier(identifier: string): string {
+  public hashIdentifier(identifier: string): string {
     try {
       // Use a simple hash function for synchronous operation
       let hash = 0;

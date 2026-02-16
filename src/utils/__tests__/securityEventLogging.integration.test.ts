@@ -7,7 +7,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi, Mock } from 'vitest';
 import { SecurityLogger, SecurityEventType, SecuritySeverity } from '../securityLogger';
 import { SecurityErrorHandler } from '../securityErrorHandler';
-import { RateLimitManager } from '../rateLimitManager';
+
 import { AuthSecurityErrorType } from '../../const/securityMessages';
 
 // Mock dependencies
@@ -17,7 +17,6 @@ vi.mock('../securityStateManager');
 describe('Security Event Logging Integration', () => {
   let securityLogger: SecurityLogger;
   let securityErrorHandler: SecurityErrorHandler;
-  let rateLimitManager: RateLimitManager;
   let consoleSpy: Mock;
 
   beforeEach(() => {
@@ -33,7 +32,7 @@ describe('Security Event Logging Integration', () => {
       logger: securityLogger
     });
     
-    rateLimitManager = new RateLimitManager();
+
     
     // Mock console methods
     consoleSpy = vi.fn();

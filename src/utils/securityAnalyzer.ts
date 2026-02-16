@@ -17,9 +17,13 @@ export interface SecurityFinding {
   };
   evidence: string[];
   recommendations: string[];
+  remediation?: {
+    description: string;
+    steps: string[];
+  };
   cweId?: string;
-  exploitability: 'HIGH' | 'MEDIUM' | 'LOW';
-  impact: 'HIGH' | 'MEDIUM' | 'LOW';
+  exploitability?: 'HIGH' | 'MEDIUM' | 'LOW';
+  impact?: 'HIGH' | 'MEDIUM' | 'LOW';
 }
 
 export interface SecurityAssessment {
@@ -29,6 +33,9 @@ export interface SecurityAssessment {
   riskScore: number;
   lastAssessed: Date;
   summary: string;
+  status?: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  severity?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFO';
+  recommendations?: string[];
 }
 
 export class SecurityAnalyzer {

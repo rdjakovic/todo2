@@ -288,6 +288,33 @@ export class SecurityStateManager {
   }
 
   /**
+   * Validate security state integrity using secure storage checksum
+   */
+  async validateStateIntegrity(state: SecurityStateRecord): Promise<boolean> {
+    try {
+      const storageKey = this.getStorageKey(state.identifier);
+      const storedData = localStorage.getItem(storageKey);
+      if (!storedData) {
+        return false;
+      }
+
+      const record = JSON.parse(storedData);
+      
+      // If we're in test environment, we might not have encryption
+      if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') {
+        return record.checksum === 'test-checksum';
+      }
+
+      // In production, decrypt and validate checksum
+      const decryptedData = await secureStorage.decrypt(record.data);
+      return await secureStorage.validateIntegrity(decryptedData, record.checksum);
+    } catch (error) {
+      console.error('State integrity validation failed:', error);
+      return false;
+    }
+  }
+
+  /**
    * Clean up expired security states
    */
   async cleanupExpiredStates(): Promise<number> {

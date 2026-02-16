@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi, Mock } from 'vitest';
-import { SecurityMonitor, SecurityMonitorConfig, SecurityStateHealth } from '../securityMonitor';
+import { SecurityMonitor, SecurityMonitorConfig } from '../securityMonitor';
 import { SecurityLogger, SecurityEventType } from '../securityLogger';
 import { securityStateManager } from '../securityStateManager';
 

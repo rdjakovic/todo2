@@ -4,7 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import fs from 'fs';
-import path from 'path';
+
 import { CSPResourceSecurityAnalyzer } from '../csp-resource-security-analyzer';
 
 // Mock fs module

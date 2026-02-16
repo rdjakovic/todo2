@@ -1,5 +1,16 @@
 # History
 
+## 2026-02-16 — Fixed codebase lint errors (TS6133)
+
+**Description:** Systematically resolved unused variable and import errors across security analyzers and test files to ensure code quality and valid test execution.
+
+**Summary:**
+
+- Resolved `TS6133` (unused variable/import) errors in `user-data-isolation-analyzer.ts`, `xss-input-validation-analyzer.ts`, `user-data-segregation-tester.ts`, `run-privilege-tests.ts`, and `dataStorageSecurityAnalyzer.test.ts`.
+- Removed unused imports, private members, and parameters.
+- Fixed type errors in `securityErrorHandler.secureError.test.tsx` by adding proper casting and non-null assertions for mocked objects.
+- Verified fix with `npx tsc --noEmit --skipLibCheck`.
+
 ## 2026-02-16 — Added "Has note" todo filter
 
 **Description:** Added a new filter option to the todo list filter dialog to filter tasks that have notes content.

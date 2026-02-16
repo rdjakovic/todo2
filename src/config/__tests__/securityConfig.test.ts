@@ -10,11 +10,7 @@ import {
   securityConfig,
   SecurityLevel,
   SECURITY_LEVEL_PRESETS,
-  type SecurityConfig,
-  type RateLimitConfig,
-  type ErrorHandlingConfig,
-  type SecurityMonitoringConfig,
-  type StorageConfig
+  type SecurityConfig
 } from '../securityConfig';
 
 describe('SecurityConfigManager', () => {
@@ -56,7 +52,6 @@ describe('SecurityConfigManager', () => {
     it('should detect development environment', () => {
       // Mock development environment by clearing test indicators
       const originalNodeEnv = process.env.NODE_ENV;
-      const originalGlobalThis = globalThis;
       
       // Remove test environment indicators
       delete (globalThis as any).vi;
@@ -85,20 +80,31 @@ describe('SecurityConfigManager', () => {
       // Test that production config values are defined in the system
       // Since we're in test environment, we can't easily test production detection
       // but we can verify the production config structure exists
-      const testConfig = configManager.getConfig();
       
       // Apply a mock production-like config to test the structure
       configManager.updateConfig({
         environment: 'production',
         rateLimit: {
           maxAttempts: 5,
-          lockoutDuration: 15 * 60 * 1000
+          lockoutDuration: 15 * 60 * 1000,
+          progressiveDelay: true,
+          baseDelay: 1000,
+          maxDelay: 30000,
+          storageKey: 'test-rate-limit'
         },
         errorHandling: {
-          enableGenericMessages: true
+          enableGenericMessages: true,
+          enableDetailedLogging: false,
+          sanitizeErrorMessages: true,
+          logLevel: 'info',
+          maxErrorMessageLength: 500
         },
         storage: {
-          enableEncryption: true
+          enableEncryption: true,
+          enableIntegrityValidation: true,
+          storagePrefix: 'test-',
+          encryptionKeyDerivation: 'pbkdf2',
+          compressionEnabled: false
         }
       });
       
@@ -187,7 +193,12 @@ describe('SecurityConfigManager', () => {
       
       configManager.updateConfig({
         rateLimit: {
-          maxAttempts: 10
+          maxAttempts: 10,
+          lockoutDuration: 900000,
+          progressiveDelay: true,
+          baseDelay: 1000,
+          maxDelay: 30000,
+          storageKey: 'test-rate-limit'
         }
       });
       
@@ -203,10 +214,19 @@ describe('SecurityConfigManager', () => {
     it('should merge nested configuration objects', () => {
       configManager.updateConfig({
         rateLimit: {
-          maxAttempts: 8
+          maxAttempts: 8,
+          lockoutDuration: 900000,
+          progressiveDelay: true,
+          baseDelay: 1000,
+          maxDelay: 30000,
+          storageKey: 'test-rate-limit'
         },
         errorHandling: {
-          logLevel: 'debug'
+          logLevel: 'debug',
+          enableGenericMessages: true,
+          enableDetailedLogging: false,
+          sanitizeErrorMessages: true,
+          maxErrorMessageLength: 500
         }
       });
       
@@ -221,11 +241,24 @@ describe('SecurityConfigManager', () => {
 
     it('should preserve custom overrides across multiple updates', () => {
       configManager.updateConfig({
-        rateLimit: { maxAttempts: 7 }
+        rateLimit: { 
+          maxAttempts: 7,
+          lockoutDuration: 900000,
+          progressiveDelay: true,
+          baseDelay: 1000,
+          maxDelay: 30000,
+          storageKey: 'test-rate-limit'
+        }
       });
       
       configManager.updateConfig({
-        errorHandling: { logLevel: 'warn' }
+        errorHandling: { 
+          logLevel: 'warn',
+          enableGenericMessages: true,
+          enableDetailedLogging: false,
+          sanitizeErrorMessages: true,
+          maxErrorMessageLength: 500
+        }
       });
       
       const config = configManager.getConfig();
@@ -289,7 +322,14 @@ describe('SecurityConfigManager', () => {
     it('should reset to default configuration', () => {
       // Apply some changes
       configManager.updateConfig({
-        rateLimit: { maxAttempts: 20 }
+        rateLimit: { 
+          maxAttempts: 20,
+          lockoutDuration: 900000,
+          progressiveDelay: true,
+          baseDelay: 1000,
+          maxDelay: 30000,
+          storageKey: 'test-rate-limit'
+        }
       });
       configManager.applySecurityLevel(SecurityLevel.STRICT);
       
@@ -374,7 +414,7 @@ describe('SecurityConfigManager', () => {
           maxDelay: 0,
           progressiveDelay: true,
           storageKey: 'test'
-        },
+        } as any,
         errorHandling: {
           maxErrorMessageLength: 5000, // Invalid: too high
           logLevel: 'info',
@@ -424,7 +464,14 @@ describe('SecurityConfigManager', () => {
       
       // Apply custom overrides
       configManager.updateConfig({
-        rateLimit: { maxAttempts: 15 }
+        rateLimit: { 
+          maxAttempts: 15,
+          lockoutDuration: 900000,
+          progressiveDelay: true,
+          baseDelay: 1000,
+          maxDelay: 30000,
+          storageKey: 'test-rate-limit'
+        }
       });
       
       summary = configManager.getConfigSummary();
@@ -449,8 +496,12 @@ describe('SecurityConfigManager', () => {
       // This should not cause TypeScript errors and should work at runtime
       configManager.updateConfig({
         rateLimit: {
-          maxAttempts: 7
-          // Other properties should remain unchanged
+          maxAttempts: 7,
+          lockoutDuration: 900000,
+          progressiveDelay: true,
+          baseDelay: 1000,
+          maxDelay: 30000,
+          storageKey: 'test-rate-limit'
         }
       });
       

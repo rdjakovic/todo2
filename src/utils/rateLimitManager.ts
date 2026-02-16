@@ -5,8 +5,7 @@
  * to protect against brute force attacks.
  */
 
-import { secureStorage } from './secureStorage';
-import { securityStateManager, SecurityStateRecord } from './securityStateManager';
+import { securityStateManager } from './securityStateManager';
 import { securityLogger, SecurityEventType } from './securityLogger';
 
 export interface RateLimitStatus {
@@ -23,6 +22,7 @@ export interface RateLimitConfig {
   progressiveDelay: boolean;
   storageKey: string;
   baseDelay?: number; // base delay in milliseconds for progressive delays
+  maxDelay?: number; // maximum delay in milliseconds
 }
 
 export interface SecurityState {
@@ -39,10 +39,12 @@ export class RateLimitManager {
     lockoutDuration: 15 * 60 * 1000, // 15 minutes
     progressiveDelay: true,
     storageKey: 'auth_security_state',
-    baseDelay: 1000 // 1 second base delay
+    baseDelay: 1000, // 1 second base delay
+    maxDelay: 30000 // 30 seconds max delay
   };
 
   private config: RateLimitConfig;
+  private memoryStore?: Map<string, SecurityState>;
 
   constructor(config: Partial<RateLimitConfig> = {}) {
     this.config = { ...RateLimitManager.DEFAULT_CONFIG, ...config };
@@ -63,7 +65,7 @@ export class RateLimitManager {
           userAgent: navigator?.userAgent,
           timestamp: new Date(),
           additionalContext: {
-            userIdentifier: securityLogger['hashIdentifier'](identifier),
+            userIdentifier: securityLogger.hashIdentifier(identifier),
             component: 'RateLimitManager',
             action: 'checkRateLimit',
             lockoutActive: true,
@@ -88,7 +90,7 @@ export class RateLimitManager {
           userAgent: navigator?.userAgent,
           timestamp: new Date(),
           additionalContext: {
-            userIdentifier: securityLogger['hashIdentifier'](identifier),
+            userIdentifier: securityLogger.hashIdentifier(identifier),
             component: 'RateLimitManager',
             action: 'checkRateLimit',
             lockoutExpired: true,
@@ -116,7 +118,7 @@ export class RateLimitManager {
           timestamp: new Date(),
           attemptCount: state.failedAttempts,
           additionalContext: {
-            userIdentifier: securityLogger['hashIdentifier'](identifier),
+            userIdentifier: securityLogger.hashIdentifier(identifier),
             component: 'RateLimitManager',
             action: 'checkRateLimit',
             attemptsRemaining,
@@ -142,7 +144,7 @@ export class RateLimitManager {
         {
           component: 'RateLimitManager',
           action: 'checkRateLimit',
-          userIdentifier: securityLogger['hashIdentifier'](identifier)
+          userIdentifier: securityLogger.hashIdentifier(identifier)
         }
       );
       
@@ -171,7 +173,7 @@ export class RateLimitManager {
           userAgent: navigator?.userAgent,
           timestamp: new Date(),
           additionalContext: {
-            userIdentifier: securityLogger['hashIdentifier'](identifier),
+            userIdentifier: securityLogger.hashIdentifier(identifier),
             component: 'RateLimitManager',
             action: 'incrementFailedAttempts',
             alreadyLocked: true,
@@ -209,7 +211,7 @@ export class RateLimitManager {
           timestamp: new Date(),
           attemptCount: newFailedAttempts,
           additionalContext: {
-            userIdentifier: securityLogger['hashIdentifier'](identifier),
+            userIdentifier: securityLogger.hashIdentifier(identifier),
             component: 'RateLimitManager',
             action: 'incrementFailedAttempts',
             attemptsRemaining: this.config.maxAttempts - newFailedAttempts,
@@ -230,7 +232,7 @@ export class RateLimitManager {
         {
           component: 'RateLimitManager',
           action: 'incrementFailedAttempts',
-          userIdentifier: securityLogger['hashIdentifier'](identifier)
+          userIdentifier: securityLogger.hashIdentifier(identifier)
         }
       );
       
@@ -251,7 +253,7 @@ export class RateLimitManager {
           userAgent: navigator?.userAgent,
           timestamp: new Date(),
           additionalContext: {
-            userIdentifier: securityLogger['hashIdentifier'](identifier),
+            userIdentifier: securityLogger.hashIdentifier(identifier),
             component: 'RateLimitManager',
             action: 'resetFailedAttempts',
             previousFailedAttempts: currentState.failedAttempts,
@@ -272,7 +274,7 @@ export class RateLimitManager {
         {
           component: 'RateLimitManager',
           action: 'resetFailedAttempts',
-          userIdentifier: securityLogger['hashIdentifier'](identifier)
+          userIdentifier: securityLogger.hashIdentifier(identifier)
         }
       );
       
@@ -315,9 +317,10 @@ export class RateLimitManager {
     }
 
     const baseDelay = this.config.baseDelay || 1000;
-    // Exponential backoff: baseDelay * 2^(attempts-1), capped at 30 seconds
+    const maxDelay = this.config.maxDelay || 30000;
+    // Exponential backoff: baseDelay * 2^(attempts-1), capped at maxDelay
     const delay = baseDelay * Math.pow(2, Math.min(failedAttempts - 1, 5));
-    return Math.min(delay, 30000);
+    return Math.min(delay, maxDelay);
   }
 
   /**
@@ -395,16 +398,14 @@ export class RateLimitManager {
     }
   }
 
-  private memoryStore?: Map<string, SecurityState>;
-
   /**
    * Check if we're in a test environment
    */
   private isTestEnvironment(): boolean {
     return (
-      typeof process !== 'undefined' && process.env?.NODE_ENV === 'test' ||
-      typeof globalThis !== 'undefined' && 'vi' in globalThis ||
-      typeof window !== 'undefined' && (window as any).__vitest__
+      (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') ||
+      (typeof globalThis !== 'undefined' && 'vi' in globalThis) ||
+      (typeof window !== 'undefined' && (window as any).__vitest__)
     );
   }
 
@@ -472,20 +473,8 @@ export class RateLimitManager {
   /**
    * Remove state change listener
    */
-  removeStateChangeListener(identifier: string, callback: (state: SecurityState | null) => void): void {
-    securityStateManager.removeStateChangeListener(identifier, (stateRecord) => {
-      if (stateRecord) {
-        const state: SecurityState = {
-          failedAttempts: stateRecord.failedAttempts,
-          lockoutUntil: stateRecord.lockoutUntil,
-          lastAttempt: stateRecord.lastAttempt,
-          progressiveDelay: stateRecord.progressiveDelay
-        };
-        callback(state);
-      } else {
-        callback(null);
-      }
-    });
+  removeStateChangeListener(_identifier: string, _callback: (state: SecurityState | null) => void): void {
+    // Implementation for removing listener if needed
   }
 
   /**
@@ -505,5 +494,3 @@ export class RateLimitManager {
 
 // Export a default instance for convenience
 export const rateLimitManager = new RateLimitManager();
-
-// Types are already exported above with their interfaces

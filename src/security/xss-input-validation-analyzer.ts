@@ -120,7 +120,7 @@ export class XSSInputValidationAnalyzer {
       this.analyzeDangerouslySetInnerHTML(filePath, content, lines);
       this.analyzeURLHandling(filePath, content, lines);
       this.analyzeEventHandlers(filePath, content, lines);
-      this.analyzeClientSideValidation(filePath, content, lines);
+      this.analyzeClientSideValidation(filePath, content);
       
     } catch (error) {
       console.warn(`Could not analyze component ${filePath}:`, error);
@@ -130,7 +130,7 @@ export class XSSInputValidationAnalyzer {
   /**
    * Check for direct HTML injection vulnerabilities
    */
-  private analyzeDirectHTMLInjection(filePath: string, content: string, lines: string[]): void {
+  private analyzeDirectHTMLInjection(filePath: string, content: string, _lines: string[]): void {
     // Look for potential innerHTML usage or similar patterns
     const htmlInjectionPatterns = [
       /innerHTML\s*=\s*[^;]+/g,
@@ -164,7 +164,7 @@ export class XSSInputValidationAnalyzer {
   /**
    * Analyze input fields for validation issues
    */
-  private analyzeInputFields(filePath: string, content: string, lines: string[]): void {
+  private analyzeInputFields(filePath: string, content: string, _lines: string[]): void {
     // Find input elements and form controls
     const inputPatterns = [
       /<input[^>]*>/g,
@@ -224,7 +224,7 @@ export class XSSInputValidationAnalyzer {
   /**
    * Analyze input for XSS vulnerabilities
    */
-  private analyzeInputXSSVulnerabilities(filePath: string, content: string, inputElement: string, lineNumber: number): void {
+  private analyzeInputXSSVulnerabilities(filePath: string, _content: string, inputElement: string, lineNumber: number): void {
     // Look for direct value binding without sanitization
     const valueBindingPattern = /value=\{([^}]+)\}/;
     const match = inputElement.match(valueBindingPattern);
@@ -271,7 +271,7 @@ export class XSSInputValidationAnalyzer {
   /**
    * Analyze output encoding practices
    */
-  private analyzeOutputEncoding(filePath: string, content: string, lines: string[]): void {
+  private analyzeOutputEncoding(filePath: string, content: string, _lines: string[]): void {
     // Look for direct text rendering that might be vulnerable
     const textRenderingPatterns = [
       /\{[^}]*\}/g // JSX expressions
@@ -357,7 +357,7 @@ export class XSSInputValidationAnalyzer {
   /**
    * Check for dangerouslySetInnerHTML usage
    */
-  private analyzeDangerouslySetInnerHTML(filePath: string, content: string, lines: string[]): void {
+  private analyzeDangerouslySetInnerHTML(filePath: string, content: string, _lines: string[]): void {
     const dangerousHTMLPattern = /dangerouslySetInnerHTML\s*=\s*\{\s*\{[^}]+\}\s*\}/g;
     
     const matches = content.matchAll(dangerousHTMLPattern);
@@ -382,7 +382,7 @@ export class XSSInputValidationAnalyzer {
   /**
    * Analyze URL handling for XSS vulnerabilities
    */
-  private analyzeURLHandling(filePath: string, content: string, lines: string[]): void {
+  private analyzeURLHandling(filePath: string, content: string, _lines: string[]): void {
     const urlPatterns = [
       /href\s*=\s*\{[^}]+\}/g,
       /src\s*=\s*\{[^}]+\}/g,
@@ -435,7 +435,7 @@ export class XSSInputValidationAnalyzer {
   /**
    * Analyze event handlers for XSS vulnerabilities
    */
-  private analyzeEventHandlers(filePath: string, content: string, lines: string[]): void {
+  private analyzeEventHandlers(filePath: string, content: string, _lines: string[]): void {
     const eventHandlerPatterns = [
       /on\w+\s*=\s*\{[^}]+\}/g
     ];
@@ -483,7 +483,7 @@ export class XSSInputValidationAnalyzer {
   /**
    * Analyze client-side validation patterns
    */
-  private analyzeClientSideValidation(filePath: string, content: string, lines: string[]): void {
+  private analyzeClientSideValidation(filePath: string, content: string): void {
     // Look for validation patterns that might be bypassed
     const validationPatterns = [
       /if\s*\([^)]*\.length\s*[<>]\s*\d+\)/g,

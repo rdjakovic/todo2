@@ -8,7 +8,7 @@
 import { 
   AuthSecurityErrorType, 
   ErrorSeverity,
-  SECURITY_ERROR_MESSAGES,
+
   FALLBACK_ERROR_MESSAGE,
   getErrorConfig,
   shouldLogSecurityEvent,
@@ -410,7 +410,7 @@ export class SecurityErrorHandler {
    * Log additional contextual information for comprehensive monitoring
    */
   private logContextualInformation(
-    errorType: AuthSecurityErrorType,
+    _errorType: AuthSecurityErrorType,
     context: ErrorContext,
     primaryEvent: SecurityEvent
   ): void {

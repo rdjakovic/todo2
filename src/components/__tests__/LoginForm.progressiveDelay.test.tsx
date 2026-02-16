@@ -11,7 +11,7 @@ import LoginForm from '../LoginForm';
 import { rateLimitManager } from '../../utils/rateLimitManager';
 import { securityErrorHandler } from '../../utils/securityErrorHandler';
 import { supabase } from '../../lib/supabase';
-import toast from 'react-hot-toast';
+
 
 // Mock dependencies
 vi.mock('../../lib/supabase', () => ({

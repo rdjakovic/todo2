@@ -7,20 +7,13 @@
  * It provides a safe way to execute security tests and generate reports.
  */
 
-import { spawn } from 'child_process';
+
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
-interface TestResult {
-    testName: string;
-    status: 'passed' | 'failed' | 'skipped';
-    vulnerabilities: number;
-    details: string;
-    timestamp: string;
-}
+
 
 class PrivilegeEscalationTestRunner {
-    private results: TestResult[] = [];
     private projectRoot: string;
 
     constructor() {
@@ -41,54 +34,7 @@ class PrivilegeEscalationTestRunner {
         this.provideManualInstructions();
     }
 
-    private async checkApplicationStatus(): Promise<boolean> {
-        try {
-            // Try to connect to the development server
-            const response = await fetch('http://localhost:1420');
-            return response.ok;
-        } catch {
-            return false;
-        }
-    }
 
-    private async startApplication(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            console.log('🚀 Starting Tauri application...');
-            
-            const tauriProcess = spawn('npm', ['run', 'tauri', 'dev'], {
-                cwd: this.projectRoot,
-                stdio: 'pipe'
-            });
-
-            let startupTimeout: NodeJS.Timeout;
-
-            tauriProcess.stdout?.on('data', (data) => {
-                const output = data.toString();
-                console.log('Tauri:', output.trim());
-                
-                // Look for successful startup indicators
-                if (output.includes('localhost:1420') || output.includes('App listening')) {
-                    clearTimeout(startupTimeout);
-                    setTimeout(resolve, 2000); // Give it a moment to fully start
-                }
-            });
-
-            tauriProcess.stderr?.on('data', (data) => {
-                console.error('Tauri Error:', data.toString().trim());
-            });
-
-            tauriProcess.on('error', (error) => {
-                clearTimeout(startupTimeout);
-                reject(new Error(`Failed to start Tauri application: ${error.message}`));
-            });
-
-            // Timeout after 30 seconds
-            startupTimeout = setTimeout(() => {
-                tauriProcess.kill();
-                reject(new Error('Tauri application startup timeout'));
-            }, 30000);
-        });
-    }
 
     private async executeSecurityTests(): Promise<void> {
         console.log('\n🧪 Executing security tests...');

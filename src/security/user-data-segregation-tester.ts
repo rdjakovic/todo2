@@ -131,7 +131,7 @@ export class UserDataSegregationTester {
       for (const table of tables) {
         try {
           // Attempt to query without authentication (should fail)
-          const { data, error } = await supabase
+          const { error } = await supabase
             .from(table)
             .select('*')
             .limit(1);
@@ -177,7 +177,7 @@ export class UserDataSegregationTester {
       // Simulate authenticated requests from different users
       for (let i = 0; i < this.testUsers.length; i++) {
         const currentUser = this.testUsers[i];
-        const otherUsers = this.testUsers.filter((_, index) => index !== i);
+
 
         // Test that user can only access their own lists
         try {

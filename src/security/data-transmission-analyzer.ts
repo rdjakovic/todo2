@@ -65,7 +65,6 @@ export interface DataTransmissionSecurityReport {
 }
 
 export class DataTransmissionSecurityAnalyzer {
-  private findings: SecurityFinding[] = [];
   private findingCounter = 0;
 
   /**
