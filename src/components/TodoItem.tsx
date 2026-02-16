@@ -6,6 +6,8 @@ import { CSS } from "@dnd-kit/utilities";
 import clsx from "clsx";
 import { forwardRef, useState } from "react";
 import { Todo } from "../types/todo";
+import TiptapRenderer from "./TiptapRenderer";
+import { hasVisibleContent } from "../lib/content";
 
 interface TodoItemProps {
   todo: Todo;
@@ -123,7 +125,7 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
               >
                 <span className="inline">
                   {todo.title}
-                  {todo.notes && todo.notes.trim() && (
+                  {hasVisibleContent(todo.notes) && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -143,9 +145,9 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
               </p>
 
               {/* Notes section */}
-              {todo.notes && todo.notes.trim() && showNotes && (
-                <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
-                  {todo.notes}
+              {hasVisibleContent(todo.notes) && showNotes && (
+                <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-xs text-gray-600 dark:text-gray-300">
+                  <TiptapRenderer content={todo.notes} className="rendered-notes" />
                 </div>
               )}
 

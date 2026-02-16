@@ -2,6 +2,9 @@ import { XMarkIcon, CheckIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { Todo } from "../types/todo";
 import { useState, useEffect } from "react";
 import { useTodoStore } from "../store/todoStore";
+import RichTextEditor from "./RichTextEditor";
+import TiptapRenderer from "./TiptapRenderer";
+import { hasVisibleContent } from "../lib/content";
 
 interface EditTodoDialogProps {
   isOpen: boolean;
@@ -37,7 +40,6 @@ const EditTodoDialog = ({
 
   useEffect(() => {
     if (todoToEdit) {
-      setIsViewMode(viewMode);
       setEditText(todoToEdit.title);
       setEditNotes(todoToEdit.notes || "");
       setEditPriority(todoToEdit.priority || "medium");
@@ -49,14 +51,17 @@ const EditTodoDialog = ({
           : ""
       );
     } else {
-      setIsViewMode(false);
       setEditText("");
       setEditNotes("");
       setEditPriority("medium");
       setEditListId("");
       setEditDueDate("");
     }
-  }, [todoToEdit, viewMode]);
+  }, [todoToEdit]);
+
+  useEffect(() => {
+    setIsViewMode(viewMode);
+  }, [viewMode]);
 
   if (!isOpen || !todoToEdit) {
     return null;
@@ -67,7 +72,7 @@ const EditTodoDialog = ({
       onSave(
         todoToEdit.id,
         editText.trim(),
-        editNotes.trim(),
+        !hasVisibleContent(editNotes) ? "" : editNotes,
         editPriority,
         // Parse string to Date or undefined
         editDueDate.trim() ? new Date(editDueDate.trim()) : undefined,
@@ -151,18 +156,19 @@ const EditTodoDialog = ({
             Notes
           </label>
           {isViewMode ? (
-            <div className="w-full px-3 py-3 sm:py-2 rounded border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white text-base sm:text-sm whitespace-pre-wrap min-h-[6rem]">
-              {editNotes || <span className="text-gray-400 dark:text-gray-500 italic">No notes</span>}
+            <div className="w-full px-3 py-3 sm:py-2 rounded border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-gray-900 dark:text-white text-base sm:text-sm min-h-[6rem]">
+              {!hasVisibleContent(editNotes) ? (
+                <span className="text-gray-400 dark:text-gray-500 italic">No notes</span>
+              ) : (
+                <TiptapRenderer content={editNotes} className="rendered-notes" />
+              )}
             </div>
           ) : (
-            <textarea
-              id="todoNotes"
-              value={editNotes}
-              onChange={(e) => setEditNotes(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="w-full px-3 py-3 sm:py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-base sm:text-sm resize-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400"
+            <RichTextEditor
+              key={`editor-${todoToEdit?.id}`}
+              initialContent={todoToEdit?.notes || ""}
+              onUpdate={(json) => setEditNotes(JSON.stringify(json))}
               placeholder="Add notes..."
-              rows={4}
             />
           )}
         </div>
