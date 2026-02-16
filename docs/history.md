@@ -1,10 +1,25 @@
+# History
+
+## 2026-02-16 — Added "Has note" todo filter
+
+**Description:** Added a new filter option to the todo list filter dialog to filter tasks that have notes content.
+
+**Summary:**
+
+- Updated `FilterOptions` interface in `FilterDialog.tsx` and `TodoListView.tsx` to include `hasNote`.
+- Added "Has note" checkbox to `FilterDialog.tsx` UI.
+- Integrated `hasVisibleContent` logic in `TodoListView.tsx` to accurately filter todos with notes (supporting both legacy HTML and new TipTap JSON formats).
+- Updated filter active status indicator to account for the new filter.
+
 ---
+
 Date: 2026-02-16
 Description: Refactored RichTextEditor into separate Editor + Renderer components, switched to JSON output
 Summary:
 Refactored the rich text editing architecture to separate concerns between editing and viewing, following a cleaner pattern with better maintainability and security.
 
 **Key Changes:**
+
 - Created `src/lib/content.ts` — utility functions for parsing, format detection, and text extraction supporting both legacy HTML and new TipTap JSON formats
 - Created `src/components/TiptapRenderer.tsx` — safe React-based renderer that converts TipTap JSON to React elements, eliminating all `dangerouslySetInnerHTML` usage (XSS risk)
 - Created `src/components/EditorToolbar.tsx` — extracted toolbar component with `ToolbarButton` and `ToolbarDivider` subcomponents
@@ -18,10 +33,12 @@ Refactored the rich text editing architecture to separate concerns between editi
 **Dependencies Added:** `@tiptap/html` (for `generateJSON` to convert legacy HTML to JSON at render time)
 
 **Tests Added:**
+
 - `src/lib/__tests__/content.test.ts` — 25 tests for content utilities
 - `src/components/__tests__/TiptapRenderer.test.tsx` — 12 tests for renderer
 
 ---
+
 Date: 2026-02-16
 Description: Fixed task list checkbox alignment
 Summary:
@@ -31,16 +48,18 @@ Fixed CSS styling for task list checkboxes to align text next to the checkbox on
 The CSS selectors were incorrect. TipTap generates task list items with `data-checked` attribute on `<li>` elements, not `data-type="taskItem"`. The original CSS selectors `li[data-type="taskItem"]` were not matching the actual HTML structure, so the flexbox layout was never applied.
 
 TipTap's actual HTML structure:
+
 ```html
 <ul data-type="taskList">
   <li data-checked="true">
-    <label><input type="checkbox"><span></span></label>
+    <label><input type="checkbox" /><span></span></label>
     <div><p>Task text</p></div>
   </li>
 </ul>
 ```
 
 **Changes:**
+
 - Updated `src/App.css`:
   - Changed all selectors from `li[data-type="taskItem"]` to `ul[data-type="taskList"] > li`
   - This correctly targets the actual `<li>` elements inside task lists
@@ -48,6 +67,7 @@ TipTap's actual HTML structure:
   - Kept the `display: inline` and `margin: 0` on paragraph elements
 
 **Result:**
+
 - ✅ Checkboxes now appear on the left with text aligned to the right on the same line
 - ✅ Multiple task items display correctly in a vertical list
 - ✅ Text wraps properly when it exceeds the available width
@@ -62,6 +82,7 @@ Summary:
 Extended the TipTap rich text editor to support task lists with interactive checkboxes, allowing users to create todo-style checklists within their notes.
 
 **Changes:**
+
 - Installed TipTap extensions: `@tiptap/extension-task-list` and `@tiptap/extension-task-item`
 - Updated `src/components/RichTextEditor.tsx`:
   - Added TaskList and TaskItem imports
@@ -74,6 +95,7 @@ Extended the TipTap rich text editor to support task lists with interactive chec
   - Checkboxes are interactive and can be checked/unchecked
 
 **Features:**
+
 - Users can click the "☑ Tasks" button to convert text to a task list
 - Each task item has a clickable checkbox
 - Task lists support nesting
@@ -81,6 +103,7 @@ Extended the TipTap rich text editor to support task lists with interactive chec
 - Proper styling in both light and dark modes
 
 **Dependencies Added:**
+
 - @tiptap/extension-task-list
 - @tiptap/extension-task-item
 
@@ -98,6 +121,7 @@ When EditTodoDialog opened, the local state `editNotes` was initialized as an em
 Changed EditTodoDialog.tsx to pass `todoToEdit?.notes` directly to the RichTextEditor component instead of using the intermediate `editNotes` state for the content prop. The `setEditNotes` callback is still used to capture user changes, but the initial content now comes directly from the source, bypassing the timing issue.
 
 **Changes:**
+
 - Modified `src/components/EditTodoDialog.tsx` line 174: Changed `content={editNotes}` to `content={todoToEdit?.notes || ""}`
 - Updated the component key to `key={`editor-${todoToEdit?.id}`}` to ensure the editor remounts when editing different todos
 - Removed unnecessary `isOpen` from the key since direct prop passing resolves the timing issue
@@ -105,12 +129,14 @@ Changed EditTodoDialog.tsx to pass `todoToEdit?.notes` directly to the RichTextE
 This ensures the editor always receives the correct content immediately upon mounting, regardless of React's rendering lifecycle timing.
 
 ---
+
 Date: 2026-02-16
 Description: Added TipTap rich text editor for todo notes
 Summary:
 Integrated TipTap (@tiptap/react, @tiptap/starter-kit) as a rich text editor for the notes field in EditTodoDialog, replacing the plain textarea. This allows users to format their notes with headings, bold, italic, code blocks, lists, and more.
 
 **Changes:**
+
 - Created new `src/components/RichTextEditor.tsx` component using TipTap with StarterKit extensions
 - Configured editor with: Bold, Italic, Headings (H1-H3), Paragraph, Inline Code, Code Blocks, Bullet Lists, and Horizontal Rules
 - Implemented custom toolbar with MenuButton components showing active states
@@ -122,12 +148,15 @@ Integrated TipTap (@tiptap/react, @tiptap/starter-kit) as a rich text editor for
 - Added `isEmptyHtml` helper function to detect empty HTML content for proper placeholder display
 
 **Dependencies Added:**
+
 - @tiptap/react
 - @tiptap/starter-kit
 
 ---
+
 Date: 2024-05-10
 Description: Implemented a new feature to allow users to set a custom storage path for their todos and lists. This involved adding a new settings option in the UI, updating the Tauri backend to handle the custom path, and ensuring that data is correctly loaded from and saved to the specified location.
+
 ---
 
 Date: 2024-05-11
@@ -361,18 +390,15 @@ Implemented a complete refactoring to separate lists and todos into independent 
 **Key Changes:**
 
 1. **Modified Types (src/types/todo.ts)**
-
    - ✅ Removed `todos: Todo[]` field from `TodoList` interface
    - ✅ Maintained `Todo` interface with `listId` for relationship preservation
 
 2. **Updated TodoStore State Structure (src/store/todoStore.ts)**
-
    - ✅ Added `todos: Todo[]` as separate state property
    - ✅ Added `setTodos` action for managing todos array
    - ✅ Added new functions: `fetchTodos`, `saveTodos`, `loadFromLocalStorage`
 
 3. **Refactored Core Store Functions**
-
    - ✅ `fetchLists`: Now fetches only list metadata, calls `fetchTodos` separately
    - ✅ `fetchTodos`: New function to fetch todos separately from Supabase
    - ✅ `saveLists`: Now saves only list metadata (no todos)
@@ -380,13 +406,11 @@ Implemented a complete refactoring to separate lists and todos into independent 
    - ✅ `loadFromLocalStorage`: New function with migration support for old format
 
 4. **Updated localStorage Handling**
-
    - ✅ Two separate keys: `"todo-lists"` for list metadata and `"todos"` for todo items
    - ✅ Migration logic: Automatically detects and converts old format to new format
    - ✅ Dual storage strategy: Maintains both Supabase and localStorage for fallback
 
 5. **Updated All CRUD Operations**
-
    - ✅ `addTodo`: Works with separate `todos` array instead of `list.todos`
    - ✅ `toggleTodo`: Updated to find todos in the separate array
    - ✅ `deleteTodo`: Updated to filter from the separate todos array
@@ -394,12 +418,10 @@ Implemented a complete refactoring to separate lists and todos into independent 
    - ✅ `deleteList`: Now also deletes associated todos when a list is deleted
 
 6. **Updated Helper Functions**
-
    - ✅ `getFilteredTodos`: Now filters todos by `listId` from the separate array
    - ✅ `getTodoCountByList`: Now counts todos from separate array grouped by `listId`
 
 7. **Updated App.tsx**
-
    - ✅ Drag and Drop: Updated to work with the separate todos array
    - ✅ Import changes: Added `todos` and `saveTodos` from the store
    - ✅ Logic updates: All drag and drop operations now work with separate data structure
@@ -442,6 +464,7 @@ Description: Fixed window size saving functionality in Tauri v2 application to p
 The window size saving functionality was implemented but not working correctly. The config.json file was missing the `window_size` field, and window dimensions were not being saved when the user resized the window.
 
 **Root Cause Analysis:**
+
 1. **Backend Implementation**: The Rust backend had the `save_window_size` command and window resize event detection, but was emitting events to the frontend instead of saving directly
 2. **Frontend Missing**: No frontend event listener was properly set up to receive the `save_window_size` events and call the Tauri command
 3. **Event System Complexity**: The original approach relied on a complex event system between Rust and JavaScript that wasn't working reliably
@@ -452,6 +475,7 @@ Implemented a **backend-only solution** that handles window size saving entirely
 **Key Changes:**
 
 1. **Default Window Size (src-tauri/src/main.rs)**
+
    ```rust
    // Set window size from config if available, otherwise use default
    let window_size = config.window_size.unwrap_or(WindowSize {
@@ -461,6 +485,7 @@ Implemented a **backend-only solution** that handles window size saving entirely
    ```
 
 2. **Direct Window Size Saving (src-tauri/src/main.rs)**
+
    ```rust
    // Listen for resize events and save directly
    window.on_window_event(move |event| {
@@ -578,6 +603,7 @@ Created a custom React hook `useDragAndDrop` following React best practices to e
 **Technical Implementation:**
 
 The custom hook follows React's custom hook patterns by:
+
 - Using the "use" prefix for proper naming convention
 - Calling other hooks (useTodoStore) at the top level
 - Returning an object with handler functions for external use
@@ -654,6 +680,7 @@ Implemented an adaptive collision detection strategy that uses different algorit
 **Key Changes:**
 
 1. **Adaptive Collision Detection (src/App.tsx)**
+
    ```typescript
    // Custom collision detection that's more forgiving on smaller screens
    const customCollisionDetection: CollisionDetection = (args) => {
@@ -720,6 +747,7 @@ Added a new "Custom Sort (Drag & Drop)" option to the Settings and implemented c
 **Key Changes:**
 
 1. **Extended SortOption Type (src/store/todoStore.ts)**
+
    ```typescript
    export type SortOption =
      | "dateCreated"
@@ -728,7 +756,7 @@ Added a new "Custom Sort (Drag & Drop)" option to the Settings and implemented c
      | "completedFirst"
      | "completedLast"
      | "dueDate"
-     | "custom";  // New option
+     | "custom"; // New option
    ```
 
 2. **Updated Sort Logic**
@@ -742,10 +770,14 @@ Added a new "Custom Sort (Drag & Drop)" option to the Settings and implemented c
    - ✅ Integrated seamlessly with existing radio button interface
 
 4. **Conditional Drag & Drop Logic (src/hooks/useDragAndDrop.ts)**
+
    ```typescript
    // Only allow reordering if custom sort is enabled
-   if (sortBy !== 'custom') {
-     console.log('❌ Reordering blocked - Custom sort not enabled. Current sort:', sortBy);
+   if (sortBy !== "custom") {
+     console.log(
+       "❌ Reordering blocked - Custom sort not enabled. Current sort:",
+       sortBy,
+     );
      return;
    }
    ```
@@ -802,6 +834,7 @@ Implemented animated horizontal drop indicators that appear between todo items d
 **Key Changes:**
 
 1. **DropZone Component (src/components/TodoListItems.tsx)**
+
    ```typescript
    const DropZone = ({ dropId }: { dropId: string }) => {
      const { setNodeRef, isOver } = useDroppable({
@@ -834,16 +867,17 @@ Implemented animated horizontal drop indicators that appear between todo items d
    - ✅ Maintains proper spacing and layout
 
 3. **Advanced Drop Zone Logic (src/hooks/useDragAndDrop.ts)**
+
    ```typescript
    // Check if dropping on a drop zone
-   if (typeof over.id === 'string' && over.id.startsWith('drop-')) {
+   if (typeof over.id === "string" && over.id.startsWith("drop-")) {
      const dropZoneId = over.id as string;
 
-     if (dropZoneId.startsWith('drop-before-')) {
-       const targetTodoId = dropZoneId.replace('drop-before-', '');
+     if (dropZoneId.startsWith("drop-before-")) {
+       const targetTodoId = dropZoneId.replace("drop-before-", "");
        newIndexGlobal = todos.findIndex((t) => t.id === targetTodoId);
-     } else if (dropZoneId.startsWith('drop-after-')) {
-       const targetTodoId = dropZoneId.replace('drop-after-', '');
+     } else if (dropZoneId.startsWith("drop-after-")) {
+       const targetTodoId = dropZoneId.replace("drop-after-", "");
        const targetIndex = todos.findIndex((t) => t.id === targetTodoId);
        newIndexGlobal = targetIndex + 1;
      }
@@ -911,14 +945,19 @@ Extracted the DropIndicator into its own reusable component file and removed all
 **Key Changes:**
 
 1. **Created Separate DropIndicator Component (src/components/DropIndicator.tsx)**
+
    ```typescript
    interface DropIndicatorProps {
      todoId: string;
-     position: 'before' | 'after';
+     position: "before" | "after";
      allTodos: Todo[];
    }
 
-   const DropIndicator = ({ todoId, position, allTodos }: DropIndicatorProps) => {
+   const DropIndicator = ({
+     todoId,
+     position,
+     allTodos,
+   }: DropIndicatorProps) => {
      // Clean implementation without console logs
      // Visual purple horizontal line with pulsing animation
    };
@@ -1179,9 +1218,9 @@ Added automatic filter adjustment logic that sets `showCompleted: true` when the
    ```typescript
    useEffect(() => {
      if (isCompletedList && !activeFilters.showCompleted) {
-       setActiveFilters(prev => ({
+       setActiveFilters((prev) => ({
          ...prev,
-         showCompleted: true
+         showCompleted: true,
        }));
      }
    }, [isCompletedList, activeFilters.showCompleted]);
@@ -1233,13 +1272,14 @@ Extended the existing useEffect to also automatically expand the completed secti
    - ✅ Maintains separation of concerns with conditional checks
 
 2. **Improved Logic Flow**
+
    ```typescript
    useEffect(() => {
      if (isCompletedList) {
        if (!activeFilters.showCompleted) {
-         setActiveFilters(prev => ({
+         setActiveFilters((prev) => ({
            ...prev,
-           showCompleted: true
+           showCompleted: true,
          }));
        }
        if (!showCompletedSection) {
@@ -1300,12 +1340,13 @@ Implemented a dual-state system that tracks both the active filter state and the
    - ✅ Maintains both states independently for proper behavior
 
 2. **Enhanced useEffect Logic**
+
    ```typescript
    useEffect(() => {
      if (isCompletedList) {
        // For Completed list: force showCompleted to true and expand section
        if (!activeFilters.showCompleted) {
-         setActiveFilters(prev => ({ ...prev, showCompleted: true }));
+         setActiveFilters((prev) => ({ ...prev, showCompleted: true }));
        }
        if (!showCompletedSection) {
          setShowCompletedSection(true);
@@ -1313,10 +1354,18 @@ Implemented a dual-state system that tracks both the active filter state and the
      } else {
        // For other lists: restore user's actual preference
        if (activeFilters.showCompleted !== userShowCompletedPreference) {
-         setActiveFilters(prev => ({ ...prev, showCompleted: userShowCompletedPreference }));
+         setActiveFilters((prev) => ({
+           ...prev,
+           showCompleted: userShowCompletedPreference,
+         }));
        }
      }
-   }, [isCompletedList, activeFilters.showCompleted, showCompletedSection, userShowCompletedPreference]);
+   }, [
+     isCompletedList,
+     activeFilters.showCompleted,
+     showCompletedSection,
+     userShowCompletedPreference,
+   ]);
    ```
 
 3. **Smart Filter Application**

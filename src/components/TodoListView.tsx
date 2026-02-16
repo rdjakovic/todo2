@@ -12,6 +12,7 @@ import clsx from "clsx";
 import { useTodoStore, sortTodos, filterTodosBySearch } from "../store/todoStore";
 import { useState, useEffect } from "react";
 import { Todo } from "../types/todo";
+import { hasVisibleContent } from "../lib/content";
 
 interface FilterOptions {
   showCompleted: boolean;
@@ -21,6 +22,7 @@ interface FilterOptions {
     high: boolean;
   };
   hasDueDate: boolean;
+  hasNote: boolean;
 }
 
 const TodoListView: React.FC = () => {
@@ -52,6 +54,7 @@ const TodoListView: React.FC = () => {
       high: false,
     },
     hasDueDate: false,
+    hasNote: false,
   });
 
   // Track user's actual preference for showCompleted (separate from forced state for Completed list)
@@ -123,6 +126,11 @@ const TodoListView: React.FC = () => {
 
       // Filter by due date
       if (filters.hasDueDate && !todo.dueDate) {
+        return false;
+      }
+
+      // Filter by note
+      if (filters.hasNote && !hasVisibleContent(todo.notes)) {
         return false;
       }
 
@@ -205,7 +213,8 @@ const TodoListView: React.FC = () => {
   // Check if any filters are active
   const hasActiveFilters = activeFilters.showCompleted ||
     Object.values(activeFilters.priorities).some(Boolean) ||
-    activeFilters.hasDueDate;
+    activeFilters.hasDueDate ||
+    activeFilters.hasNote;
 
   return (
     <>
