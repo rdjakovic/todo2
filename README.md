@@ -99,3 +99,28 @@ For tauri app
 ```bash
 cargo check
 ```
+
+Todo2 Project Summary
+Todo2 is a cross-platform task management application built with modern web and native technologies.
+
+Tech Stack
+Frontend: React 18 + TypeScript + Tailwind CSS
+Desktop: Tauri 2.x (Rust backend)
+Backend: Supabase (PostgreSQL, Auth, Real-time sync)
+Build Tool: Vite
+Key Features
+✅ Multi-list organization with drag & drop
+✅ Task management (add, edit, delete, complete)
+✅ Priority levels and due dates
+✅ Dark/Light mode with responsive design
+✅ Offline-first architecture with IndexedDB
+✅ Real-time sync when online
+✅ PWA support for mobile installation
+✅ Native desktop apps (Windows, macOS, Linux)
+Architecture
+State Management: Zustand (AuthStore + TodoStore)
+Storage: Local files + IndexedDB + Supabase sync
+Security: Row-level security, authentication, comprehensive auditing
+Testing: Vitest + Testing Library
+Current Status
+The app provides a complete task management solution with seamless online/offline functionality, combining the convenience of web technologies with native desktop performance.

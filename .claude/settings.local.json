@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"\nconst fs = require\\(''fs''\\);\nconst path = ''C:/Users/drank/.claude.json'';\nconst data = JSON.parse\\(fs.readFileSync\\(path, ''utf8''\\)\\);\nconst proj = data.projects[''C:/playground/AI/TAURI/todo2''];\nif \\(proj && proj.mcpServers && proj.mcpServers.context7\\) {\n  delete proj.mcpServers.context7;\n  fs.writeFileSync\\(path, JSON.stringify\\(data, null, 2\\)\\);\n  console.log\\(''Removed context7 MCP server successfully''\\);\n} else {\n  console.log\\(''context7 MCP server not found''\\);\n}\n\")",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "Bash(npm install:*)"
+    ]
+  }
+}
