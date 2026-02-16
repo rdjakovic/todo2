@@ -1,4 +1,108 @@
 ---
+Date: 2026-02-16
+Description: Fixed task list checkbox alignment
+Summary:
+Fixed CSS styling for task list checkboxes to align text next to the checkbox on the right side (similar to bullet lists), instead of below the checkbox.
+
+**Root Cause:**
+The CSS selectors were incorrect. TipTap generates task list items with `data-checked` attribute on `<li>` elements, not `data-type="taskItem"`. The original CSS selectors `li[data-type="taskItem"]` were not matching the actual HTML structure, so the flexbox layout was never applied.
+
+TipTap's actual HTML structure:
+```html
+<ul data-type="taskList">
+  <li data-checked="true">
+    <label><input type="checkbox"><span></span></label>
+    <div><p>Task text</p></div>
+  </li>
+</ul>
+```
+
+**Changes:**
+- Updated `src/App.css`:
+  - Changed all selectors from `li[data-type="taskItem"]` to `ul[data-type="taskList"] > li`
+  - This correctly targets the actual `<li>` elements inside task lists
+  - Updated both `.tiptap-editor-content` (edit mode) and `.rendered-notes` (view mode) selectors
+  - Kept the `display: inline` and `margin: 0` on paragraph elements
+
+**Result:**
+- ✅ Checkboxes now appear on the left with text aligned to the right on the same line
+- ✅ Multiple task items display correctly in a vertical list
+- ✅ Text wraps properly when it exceeds the available width
+- ✅ Layout matches bullet list style
+- ✅ Works in both edit and view modes
+
+---
+
+Date: 2026-02-16
+Description: Added task list (checkbox) support to RichTextEditor
+Summary:
+Extended the TipTap rich text editor to support task lists with interactive checkboxes, allowing users to create todo-style checklists within their notes.
+
+**Changes:**
+- Installed TipTap extensions: `@tiptap/extension-task-list` and `@tiptap/extension-task-item`
+- Updated `src/components/RichTextEditor.tsx`:
+  - Added TaskList and TaskItem imports
+  - Configured TaskItem with nested support (`nested: true`)
+  - Added "☑ Tasks" button to the toolbar to toggle task lists
+- Updated `src/App.css`:
+  - Added CSS styling for task list items (`ul[data-type="taskList"]`)
+  - Styled checkboxes with flexbox layout and accent color
+  - Added styles for both editor mode (`.tiptap-editor-content`) and view mode (`.rendered-notes`)
+  - Checkboxes are interactive and can be checked/unchecked
+
+**Features:**
+- Users can click the "☑ Tasks" button to convert text to a task list
+- Each task item has a clickable checkbox
+- Task lists support nesting
+- Checkboxes maintain their checked state when saved
+- Proper styling in both light and dark modes
+
+**Dependencies Added:**
+- @tiptap/extension-task-list
+- @tiptap/extension-task-item
+
+---
+
+Date: 2026-02-16
+Description: Fixed RichTextEditor not displaying content in edit mode
+Summary:
+The RichTextEditor component was not showing existing notes content when opening the EditTodoDialog in edit mode. The issue was caused by a timing problem where the RichTextEditor component mounted before the parent component's useEffect could update the editNotes state.
+
+**Root Cause:**
+When EditTodoDialog opened, the local state `editNotes` was initialized as an empty string. The RichTextEditor would mount and create the TipTap editor instance with this empty content before the useEffect (which sets editNotes from todoToEdit.notes) had a chance to run.
+
+**Solution:**
+Changed EditTodoDialog.tsx to pass `todoToEdit?.notes` directly to the RichTextEditor component instead of using the intermediate `editNotes` state for the content prop. The `setEditNotes` callback is still used to capture user changes, but the initial content now comes directly from the source, bypassing the timing issue.
+
+**Changes:**
+- Modified `src/components/EditTodoDialog.tsx` line 174: Changed `content={editNotes}` to `content={todoToEdit?.notes || ""}`
+- Updated the component key to `key={`editor-${todoToEdit?.id}`}` to ensure the editor remounts when editing different todos
+- Removed unnecessary `isOpen` from the key since direct prop passing resolves the timing issue
+
+This ensures the editor always receives the correct content immediately upon mounting, regardless of React's rendering lifecycle timing.
+
+---
+Date: 2026-02-16
+Description: Added TipTap rich text editor for todo notes
+Summary:
+Integrated TipTap (@tiptap/react, @tiptap/starter-kit) as a rich text editor for the notes field in EditTodoDialog, replacing the plain textarea. This allows users to format their notes with headings, bold, italic, code blocks, lists, and more.
+
+**Changes:**
+- Created new `src/components/RichTextEditor.tsx` component using TipTap with StarterKit extensions
+- Configured editor with: Bold, Italic, Headings (H1-H3), Paragraph, Inline Code, Code Blocks, Bullet Lists, and Horizontal Rules
+- Implemented custom toolbar with MenuButton components showing active states
+- Added dark mode support with Tailwind CSS styling
+- Integrated smart content synchronization using refs to prevent infinite loops between parent state and editor state
+- Added `editable` prop support for view/edit mode toggling
+- Replaced textarea in `src/components/EditTodoDialog.tsx` with RichTextEditor component
+- Notes are stored as HTML strings in the database
+- Added `isEmptyHtml` helper function to detect empty HTML content for proper placeholder display
+
+**Dependencies Added:**
+- @tiptap/react
+- @tiptap/starter-kit
+
+---
 Date: 2024-05-10
 Description: Implemented a new feature to allow users to set a custom storage path for their todos and lists. This involved adding a new settings option in the UI, updating the Tauri backend to handle the custom path, and ensuring that data is correctly loaded from and saved to the specified location.
 ---

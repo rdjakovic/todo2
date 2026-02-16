@@ -88,3 +88,6 @@ VITE_SUPABASE_ANON_KEY=<supabase-anon-key>
 The `src/security/` directory contains analysis tools (data transmission, CSP, build/deployment analyzers) with dedicated npm scripts (`security:transmission`, `security:csp`, `security:build`, etc.). These run via `tsx` and can output markdown reports with `--verbose --output <file> --format markdown`.
 
 CI/CD: `.github/workflows/dependency-security.yml` runs daily npm + cargo audits. Dependabot configured for weekly npm and cargo updates.
+
+After each change that is accepted by me, write a summary in docs/history.md, with date, short description and summary.
+After each added feature, create tests, or if tests exist, modify them to be inline with the changes.

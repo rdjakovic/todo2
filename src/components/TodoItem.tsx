@@ -15,6 +15,12 @@ interface TodoItemProps {
   isDragging?: boolean;
 }
 
+/** Returns true if notes have visible text content (handles both plain text and HTML) */
+const hasNotesContent = (notes?: string): boolean => {
+  if (!notes) return false;
+  return notes.replace(/<[^>]*>/g, "").trim().length > 0;
+};
+
 const MotionDiv = motion.div;
 
 // Helper function to get priority colors
@@ -123,7 +129,7 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
               >
                 <span className="inline">
                   {todo.title}
-                  {todo.notes && todo.notes.trim() && (
+                  {hasNotesContent(todo.notes) && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -143,10 +149,11 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
               </p>
 
               {/* Notes section */}
-              {todo.notes && todo.notes.trim() && showNotes && (
-                <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
-                  {todo.notes}
-                </div>
+              {hasNotesContent(todo.notes) && showNotes && (
+                <div
+                  className="mt-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-xs text-gray-600 dark:text-gray-300 rendered-notes"
+                  dangerouslySetInnerHTML={{ __html: todo.notes! }}
+                />
               )}
 
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-1">

@@ -176,9 +176,12 @@ const filterTodosBySearch = (todos: Todo[], searchQuery: string): Todo[] => {
 
   const query = searchQuery.toLowerCase().trim();
   return todos.filter((todo) => {
+    const notesText = todo.notes
+      ? todo.notes.replace(/<[^>]*>/g, "").toLowerCase()
+      : "";
     return (
       todo.title.toLowerCase().includes(query) ||
-      (todo.notes && todo.notes.toLowerCase().includes(query))
+      notesText.includes(query)
     );
   });
 };
