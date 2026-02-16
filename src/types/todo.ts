@@ -1,9 +1,19 @@
+export type SortOption =
+  | "dateCreated"
+  | "priority"
+  | "dateCompleted"
+  | "completedFirst"
+  | "completedLast"
+  | "dueDate"
+  | "custom";
+
 export interface TodoList {
   id: string;
   name: string;
   icon: string;
   showCompleted: boolean;
   userId: string;
+  sortPreference?: SortOption;
 }
 
 export interface Todo {

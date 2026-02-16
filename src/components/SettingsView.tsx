@@ -1,6 +1,7 @@
 import React from "react";
 import clsx from "clsx";
-import { useTodoStore, SortOption } from "../store/todoStore";
+import { useTodoStore } from "../store/todoStore";
+import { SortOption } from "../types/todo";
 
 interface SettingsViewProps {
   theme: string;
@@ -90,10 +91,10 @@ const SettingsView: React.FC<SettingsViewProps> = ({ theme, toggleTheme }) => {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm">
             <div className="mb-4">
               <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                Sorting Items
+                Default Sorting
               </h2>
               <p className="text-gray-500 dark:text-gray-400">
-                Choose how to sort your todo items
+                This is the default sort used by all lists. You can override this for individual lists using the settings icon next to each list.
               </p>
             </div>
 

@@ -1,12 +1,13 @@
 import React from "react";
 import { AnimatePresence } from "framer-motion";
-import { PencilIcon, TrashIcon, MagnifyingGlassIcon, XMarkIcon, ChevronDownIcon, ChevronUpIcon, FunnelIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, TrashIcon, MagnifyingGlassIcon, XMarkIcon, ChevronDownIcon, ChevronUpIcon, FunnelIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
 
 import TodoForm from "./TodoForm";
 import TodoListItems from "./TodoListItems";
 import ListEditDialog from "./ListEditDialog";
 import DeleteListDialog from "./DeleteListDialog";
 import FilterDialog from "./FilterDialog";
+import ListSortDialog from "./ListSortDialog";
 import { getListById } from "../utils/helper";
 import clsx from "clsx";
 import { useTodoStore, sortTodos, filterTodosBySearch } from "../store/todoStore";
@@ -46,6 +47,7 @@ const TodoListView: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [showCompletedSection, setShowCompletedSection] = useState(false);
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+  const [isListSortDialogOpen, setIsListSortDialogOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterOptions>({
     showCompleted: false,
     priorities: {
@@ -248,7 +250,7 @@ const TodoListView: React.FC = () => {
                 )}
               </div>
 
-              {/* Filter icon - now in first row for mobile */}
+              {/* Filter icon and Sort Settings - now in first row for mobile */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={() => setIsFilterDialogOpen(true)}
@@ -262,6 +264,26 @@ const TodoListView: React.FC = () => {
                 >
                   <FunnelIcon className="w-5 h-5" />
                 </button>
+
+                {/* Sort settings icon - only show for user-created lists */}
+                {canEditOrDelete && (
+                  <button
+                    onClick={() => setIsListSortDialogOpen(true)}
+                    className={clsx(
+                      "p-2 rounded-lg transition-colors relative",
+                      currentList?.sortPreference
+                        ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
+                        : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    )}
+                    title={currentList?.sortPreference ? "Sort settings (customized)" : "Sort settings for this list"}
+                  >
+                    <Cog6ToothIcon className="w-5 h-5" />
+                    {/* Visual indicator badge when list has custom sort */}
+                    {currentList?.sortPreference && (
+                      <span className="absolute top-1 right-1 w-2 h-2 bg-purple-600 rounded-full" />
+                    )}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -426,6 +448,18 @@ const TodoListView: React.FC = () => {
         } : activeFilters}
         isCompletedList={isCompletedList}
       />
+
+      {currentList && canEditOrDelete && (
+        <ListSortDialog
+          isOpen={isListSortDialogOpen}
+          onClose={() => setIsListSortDialogOpen(false)}
+          currentList={currentList}
+          globalSort={sortBy}
+          onSetSort={(listId, sortPref) => {
+            editList(listId, currentList.name, currentList.icon, sortPref);
+          }}
+        />
+      )}
     </>
   );
 };

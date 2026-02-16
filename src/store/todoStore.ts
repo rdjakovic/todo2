@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { TodoList, Todo } from "../types/todo";
+import { TodoList, Todo, SortOption } from "../types/todo";
 import { supabase } from "../lib/supabase";
 import { initialLists } from "../const/initialLists";
 import toast from "react-hot-toast";
@@ -7,15 +7,6 @@ import { User } from "@supabase/supabase-js";
 import { useAuthStore } from "./authStore";
 import { indexedDBManager, registerBackgroundSync, isOnline } from "../lib/indexedDB";
 import { extractTextFromContent } from "../lib/content";
-
-export type SortOption =
-  | "dateCreated"
-  | "priority"
-  | "dateCompleted"
-  | "completedFirst"
-  | "completedLast"
-  | "dueDate"
-  | "custom";
 
 interface TodoState {
   lists: TodoList[];
@@ -82,12 +73,13 @@ interface TodoState {
   getCurrentList: () => TodoList | undefined;
   getFilteredTodos: () => Todo[];
   getTodoCountByList: () => Record<string, number>;
+  getEffectiveSortForList: (listId: string) => SortOption;
   openEditDialog: (todo: Todo, viewMode?: boolean) => void;
   closeEditDialog: () => void;
   addTodoFromForm: (e: React.FormEvent) => Promise<void>;
   createList: (name: string, icon?: string) => Promise<void>;
   deleteList: (id: string) => Promise<void>;
-  editList: (id: string, name: string, icon?: string) => Promise<void>;
+  editList: (id: string, name: string, icon?: string, sortPreference?: SortOption | null) => Promise<void>;
   toggleSidebar: () => void;
 
   // Offline sync functions
@@ -308,6 +300,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           ...list,
           showCompleted: list.show_completed,
           userId: list.user_id,
+          sortPreference: list.sort_preference as SortOption | undefined,
         }));
 
         // Create the "All" list as a client-side only list
@@ -391,6 +384,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           showCompleted: list.show_completed,
           id: list.id,
           userId: list.user_id,
+          sortPreference: list.sort_preference as SortOption | undefined,
         }));
 
         const allList: TodoList = {
@@ -617,11 +611,12 @@ export const useTodoStore = create<TodoState>((set, get) => ({
 
       if (isOnline()) {
         const { error: listsError } = await supabase.from("lists").upsert(
-          dbListsToSave.map(({ showCompleted, ...list }) => ({
+          dbListsToSave.map(({ showCompleted, sortPreference, ...list }) => ({
             id: list.id,
             name: list.name,
             icon: list.icon,
             show_completed: showCompleted,
+            sort_preference: sortPreference || null,
             user_id: currentUser.id,
           })),
           { onConflict: "id" }
@@ -927,8 +922,21 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     return lists.find((list) => list.id === selectedListId);
   },
 
+  getEffectiveSortForList: (listId: string) => {
+    const { lists, sortBy } = get();
+    const list = lists.find((l) => l.id === listId);
+
+    // Special lists ("All", "Completed") always use global sort
+    if (list && (list.name.toLowerCase() === "all" || list.name.toLowerCase() === "completed")) {
+      return sortBy;
+    }
+
+    // If list has a sort preference, use it; otherwise use global sort
+    return list?.sortPreference || sortBy;
+  },
+
   getFilteredTodos: () => {
-    const { todos, lists, selectedListId, sortBy, searchQuery } = get();
+    const { todos, lists, selectedListId, searchQuery } = get();
     const currentList = lists.find((list) => list.id === selectedListId);
     if (!currentList) return [];
 
@@ -955,8 +963,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     // Apply search filter
     const searchFilteredTodos = filterTodosBySearch(filteredTodos, searchQuery);
 
-    // Apply sorting
-    return sortTodos(searchFilteredTodos, sortBy);
+    // Apply sorting using effective sort for this list
+    const effectiveSort = get().getEffectiveSortForList(selectedListId);
+    return sortTodos(searchFilteredTodos, effectiveSort);
   },
 
   getTodoCountByList: () => {
@@ -1164,7 +1173,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     }
   },
 
-  editList: async (id: string, name: string, icon?: string) => {
+  editList: async (id: string, name: string, icon?: string, sortPreference?: SortOption | null) => {
     const { lists } = get();
 
     // Prevent editing of "All" list
@@ -1175,7 +1184,16 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     }
 
     const updatedLists = lists.map((l) =>
-      l.id === id ? { ...l, name, ...(icon && { icon }) } : l
+      l.id === id
+        ? {
+            ...l,
+            name,
+            ...(icon !== undefined && { icon }),
+            ...(sortPreference !== undefined && {
+              sortPreference: sortPreference || undefined,
+            }),
+          }
+        : l
     );
 
     // Update local state immediately
@@ -1192,7 +1210,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         // Queue for sync when online
         await indexedDBManager.addToSyncQueue({
           type: 'editList',
-          data: { listId: id, name, icon },
+          data: { listId: id, name, icon, sortPreference },
         });
         await registerBackgroundSync();
         set({ isOffline: true });
@@ -1205,7 +1223,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       try {
         await indexedDBManager.addToSyncQueue({
           type: 'editList',
-          data: { listId: id, name, icon },
+          data: { listId: id, name, icon, sortPreference },
         });
         await registerBackgroundSync();
         toast.error("List updated offline - will retry sync when online");
@@ -1388,3 +1406,6 @@ if (typeof window !== "undefined") {
     toast.error("You're offline - changes will sync when reconnected");
   });
 }
+
+// Re-export types for convenience
+export type { SortOption };
