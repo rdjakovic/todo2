@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Mutex;
-use tauri::State;
+use tauri::{Manager, State};
 
 // Add a struct to hold the storage path
 struct StoragePathState(Mutex<String>);
@@ -14,6 +14,13 @@ struct StoragePathState(Mutex<String>);
 struct AppConfig {
     storage_path: String,
     theme: Option<String>,
+    window_size: Option<WindowSize>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct WindowSize {
+    width: f64,
+    height: f64,
 }
 
 fn get_app_dir() -> Result<PathBuf, String> {
@@ -35,6 +42,7 @@ fn load_or_create_config() -> Result<AppConfig, String> {
         let config = AppConfig {
             storage_path: String::new(),
             theme: None,
+            window_size: None,
         };
         let config_str = serde_json::to_string(&config).map_err(|e| e.to_string())?;
         fs::write(&config_path, config_str).map_err(|e| e.to_string())?;
@@ -167,10 +175,13 @@ async fn has_todos_in_list(list_id: String, state: State<'_, StoragePathState>) 
     }))
 }
 
+
+
 fn main() {
     let config = load_or_create_config().unwrap_or_else(|_| AppConfig {
         storage_path: String::new(),
         theme: None,
+        window_size: None,
     });
     let storage_path_state = StoragePathState(Mutex::new(config.storage_path));
 
@@ -188,6 +199,48 @@ fn main() {
             get_theme,
             has_todos_in_list
         ])
+        .setup(|app| {
+            let window = app.get_webview_window("main").unwrap();
+            let window_clone = window.clone();
+
+            // Set window size from config if available, otherwise use default
+            let window_size = config.window_size.unwrap_or(WindowSize {
+                width: 1200.0,
+                height: 800.0,
+            });
+            window.set_size(tauri::Size::Physical(tauri::PhysicalSize {
+                width: window_size.width as u32,
+                height: window_size.height as u32,
+            }))?;
+
+            // Listen for resize events and save directly
+            window.on_window_event(move |event| {
+                if let tauri::WindowEvent::Resized(_) = event {
+                    let size = window_clone.inner_size().unwrap();
+                    println!("Window resized to: {}x{}", size.width, size.height);
+
+                    // Save window size directly
+                    let window_size = WindowSize {
+                        width: size.width as f64,
+                        height: size.height as f64,
+                    };
+
+                    // Load current config, update window size, and save
+                    match load_or_create_config() {
+                        Ok(mut config) => {
+                            config.window_size = Some(window_size);
+                            match save_config(&config) {
+                                Ok(_) => println!("Window size saved successfully: {}x{}", size.width, size.height),
+                                Err(e) => println!("Failed to save window size: {}", e),
+                            }
+                        }
+                        Err(e) => println!("Failed to load config: {}", e),
+                    }
+                }
+            });
+
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Privilege Escalation Security Tests</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .test-controls {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .test-controls button {
+            background: #00ff00;
+            color: #1a1a1a;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .test-controls button:hover {
+            background: #00cc00;
+        }
+        .test-controls button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .results {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            min-height: 400px;
+            white-space: pre-wrap;
+            font-size: 12px;
+            overflow-y: auto;
+            max-height: 600px;
+        }
+        .warning {
+            background: #ff4444;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .status.vulnerable { background: #ff4444; color: white; }
+        .status.blocked { background: #00ff00; color: #1a1a1a; }
+        .status.error { background: #ffaa00; color: #1a1a1a; }
+        .status.tested { background: #0088ff; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔒 Privilege Escalation Security Tests</h1>
+            <p>Todo2 Desktop Application Security Assessment</p>
+        </div>
+
+        <div class="warning">
+            ⚠️ WARNING: This tool tests for security vulnerabilities. Only run in a controlled testing environment!
+        </div>
+
+        <div class="test-controls">
+            <h3>Test Controls</h3>
+            <button onclick="runAllTests()" id="runAllBtn">🚀 Run All Tests</button>
+            <button onclick="runTest('directoryTraversal')">📁 Directory Traversal</button>
+            <button onclick="runTest('arbitraryFileAccess')">🗂️ File Access</button>
+            <button onclick="runTest('configurationTampering')">⚙️ Config Tampering</button>
+            <button onclick="runTest('stateManipulation')">🔄 State Manipulation</button>
+            <button onclick="runTest('pathTraversal')">🛤️ Path Traversal</button>
+            <button onclick="runTest('symbolicLinkAttack')">🔗 Symlink Attack</button>
+            <button onclick="runTest('resourceExhaustion')">💾 Resource Exhaustion</button>
+            <button onclick="clearResults()">🗑️ Clear Results</button>
+            <button onclick="exportResults()">📊 Export Results</button>
+        </div>
+
+        <div class="results" id="results">
+            Ready to run security tests...\n
+            Click "Run All Tests" to begin comprehensive security assessment.
+        </div>
+    </div>
+
+    <script>
+        // Redirect console.log to our results div
+        const resultsDiv = document.getElementById('results');
+        const originalLog = console.log;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const message = args.join(' ') + '\n';
+            resultsDiv.textContent += message;
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        };
+
+        function clearResults() {
+            resultsDiv.textContent = 'Results cleared. Ready for new tests...\n';
+        }
+
+        function runTest(testName) {
+            const testFunctions = {
+                directoryTraversal: testDirectoryTraversal,
+                arbitraryFileAccess: testArbitraryFileAccess,
+                configurationTampering: testConfigurationTampering,
+                stateManipulation: testStateManipulation,
+                pathTraversal: testPathTraversal,
+                symbolicLinkAttack: testSymbolicLinkAttack,
+                resourceExhaustion: testResourceExhaustion
+            };
+
+            if (testFunctions[testName]) {
+                console.log(`\n🧪 Running ${testName} test...`);
+                testFunctions[testName]().then(() => {
+                    console.log(`✅ ${testName} test completed\n`);
+                }).catch(error => {
+                    console.log(`❌ ${testName} test failed: ${error}\n`);
+                });
+            }
+        }
+
+        function exportResults() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                platform: navigator.platform,
+                userAgent: navigator.userAgent,
+                testResults: window.testResults || {},
+                rawOutput: resultsDiv.textContent
+            };
+
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `privilege-escalation-test-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            console.log('📊 Test results exported to JSON file');
+        }
+
+        // Load the privilege escalation test script
+        console.log('🔒 Loading privilege escalation test script...');
+    </script>
+
+    <!-- Include the test script -->
+    <script src="../security-reports/privilege-escalation-test-script.js"></script>
+</body>
+</html>

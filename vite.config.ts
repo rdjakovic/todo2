@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import viteCompression from "vite-plugin-compression";
-import { visualizer } from "rollup-plugin-visualizer";
 
 const host = process.env.TAURI_DEV_HOST;
 
@@ -22,12 +21,6 @@ export default defineConfig(async () => ({
       threshold: 10240,
       algorithm: "brotliCompress",
       ext: ".br",
-    }),
-    visualizer({
-      filename: "./dist/stats.html", // Output file for the report
-      open: true, // Automatically open the report in the browser after build
-      gzipSize: true, // Show Gzip size
-      brotliSize: true, // Show Brotli size
     }),
   ],
 
@@ -53,4 +46,7 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
+  
+  // Copy PWA files to dist during build
+  publicDir: 'public',
 }));

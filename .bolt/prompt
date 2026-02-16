@@ -1,0 +1,2 @@
+After each feature or change that you add in code, append to the end of file changes.md: date and time of the change, summary what you have changed.
+If this file doesn't exist, create a new. Don't delete this file if it exists, and don't delete the existing content, just append text to the end of the file.

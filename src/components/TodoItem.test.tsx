@@ -6,18 +6,15 @@ import { Todo } from "../types/todo";
 
 describe("TodoItem", () => {
   const mockTodo: Todo = {
-    id: 1,
+    id: "1", // Changed from number to string
     title: "Test Todo",
     completed: false,
     dateCreated: new Date(),
+    listId: "test-list-id", // Added required listId property
   };
 
   const mockOnToggle = vi.fn();
   const mockOnDelete = vi.fn();
-  const mockOnEdit = vi.fn(); // This prop is still passed to TodoItem, for App.tsx to use with the dialog
-  // const mockOnEditStart = vi.fn(); // Removed
-  // const mockOnEditCancel = vi.fn(); // Removed
-  // const mockOnEditChange = vi.fn(); // Removed
   const mockOnOpenEditDialog = vi.fn(); // Added
 
   beforeEach(() => {
@@ -27,9 +24,7 @@ describe("TodoItem", () => {
         todo={mockTodo}
         onToggle={mockOnToggle}
         onDelete={mockOnDelete}
-        onEdit={mockOnEdit}
         onOpenEditDialog={mockOnOpenEditDialog} // Added
-        // onEditStart, onEditCancel, onEditChange removed
       />
     );
   });

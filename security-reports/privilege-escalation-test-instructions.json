@@ -1,0 +1,48 @@
+{
+  "timestamp": "2025-07-27T05:17:17.693Z",
+  "instructions": "\nTo run the privilege escalation tests:\n\n1. The Tauri application should now be running\n2. Open the application window\n3. Press F12 to open Developer Tools\n4. Go to the Console tab\n5. Copy and paste the following commands:\n\n// Load the test script\nfetch('/security-reports/privilege-escalation-test-script.js')\n  .then(response => response.text())\n  .then(script => {\n    eval(script);\n    console.log('Security test script loaded');\n  });\n\n// Run all tests\nsecurityTests.runAll();\n\n// Or run individual tests:\nsecurityTests.directoryTraversal();\nsecurityTests.arbitraryFileAccess();\nsecurityTests.configurationTampering();\nsecurityTests.stateManipulation();\nsecurityTests.pathTraversal();\nsecurityTests.symbolicLinkAttack();\nsecurityTests.resourceExhaustion();\n\n// View results\nsecurityTests.results;\n\n// Export results\nsecurityTests.export();\n\nALTERNATIVE METHOD:\nOpen the test interface by navigating to:\nfile://C:\\playground\\Tauri\\todo2\\src\\security\\privilege-escalation-test.html\n",
+  "testCategories": [
+    {
+      "name": "Directory Traversal",
+      "description": "Tests for path traversal vulnerabilities in storage path setting",
+      "riskLevel": "High",
+      "testFunction": "testDirectoryTraversal()"
+    },
+    {
+      "name": "Arbitrary File Access",
+      "description": "Tests for unauthorized file system access",
+      "riskLevel": "Critical",
+      "testFunction": "testArbitraryFileAccess()"
+    },
+    {
+      "name": "Configuration Tampering",
+      "description": "Tests for configuration manipulation vulnerabilities",
+      "riskLevel": "Medium",
+      "testFunction": "testConfigurationTampering()"
+    },
+    {
+      "name": "State Manipulation",
+      "description": "Tests for application state manipulation and race conditions",
+      "riskLevel": "Medium",
+      "testFunction": "testStateManipulation()"
+    },
+    {
+      "name": "Path Traversal",
+      "description": "Tests for path traversal in file operations",
+      "riskLevel": "High",
+      "testFunction": "testPathTraversal()"
+    },
+    {
+      "name": "Symbolic Link Attack",
+      "description": "Tests for symbolic link following vulnerabilities",
+      "riskLevel": "High",
+      "testFunction": "testSymbolicLinkAttack()"
+    },
+    {
+      "name": "Resource Exhaustion",
+      "description": "Tests for resource exhaustion and DoS vulnerabilities",
+      "riskLevel": "Medium",
+      "testFunction": "testResourceExhaustion()"
+    }
+  ]
+}
