@@ -23,8 +23,23 @@ import "./App.css";
 import { useTheme } from "./hooks/useTheme";
 import { useDragAndDrop } from "./hooks/useDragAndDrop";
 import { Toaster } from "react-hot-toast";
+import { useRegisterSW } from 'virtual:pwa-register/react';
 
 function App() {
+  // PWA Update logic
+  const { updateServiceWorker } = useRegisterSW({
+    onRegisteredSW(swUrl, r) {
+      if (r) {
+        // Check for updates immediately when the app initializes
+        r.update();
+        
+        // Periodic background checks (every hour)
+        setInterval(() => {
+          r.update();
+        }, 60 * 60 * 1000);
+      }
+    },
+  });
   const { user, loading: authLoading, initialize } = useAuthStore();
   const {
     selectedListId,

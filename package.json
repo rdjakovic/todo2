@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "test": "vitest",
+    "test:sync": "vitest run src/__tests__",
     "test:ui": "vitest --ui",
     "security:lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "security:audit": "npm audit --audit-level moderate",
@@ -78,6 +79,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-security": "^3.0.1",
+    "fake-indexeddb": "^6.2.5",
     "jsdom": "^26.0.0",
     "postcss": "8.5.1",
     "rollup-plugin-visualizer": "^5.14.0",
@@ -86,6 +88,7 @@
     "typescript": "^5.9.3",
     "vite": "^6.3.5",
     "vite-plugin-compression": "^0.5.1",
+    "vite-plugin-pwa": "^1.2.0",
     "vitest": "^3.0.7"
   }
 }
