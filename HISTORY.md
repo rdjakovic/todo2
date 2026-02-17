@@ -1,5 +1,16 @@
 # History
 
+## 2026-02-17 — Fix List Name Responsive Wrapping
+
+**Description:** Updated the list view header to allow long list names to wrap to the next line instead of being truncated, especially on mobile devices.
+
+**Summary:**
+
+- Refactored the header layout:
+  - Created a dedicated flex container for the Title and List Actions (Edit/Delete) to ensure the title wraps cleanly without overlapping controls.
+  - Grouped Search, Filter, and Sort actions into a unified Toolbar that sits below the title on mobile and to the right on desktop.
+- This resolves layout issues where controls were previously forced onto new lines in a disorganized manner when the title was long.
+
 ## 2026-02-17 — Fix Security Report Script Module Error
 
 **Description:** Fixed "ReferenceError: require is not defined" in GitHub Actions by converting the security report generator to CommonJS.

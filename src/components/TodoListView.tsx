@@ -241,73 +241,37 @@ const TodoListView: React.FC = () => {
       <div className="flex-1 p-2 sm:p-8">
         <div className="max-w-4xl mx-auto px-2 sm:px-4">
           {/* Header with List Name, Search, and Toggle */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 sm:mb-8 gap-4">
-            {/* Left: List name, edit/delete buttons, and filter icon for mobile */}
-            <div className="flex items-center justify-between min-w-0 flex-shrink-0">
-              <div className="flex items-center gap-3 min-w-0">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 dark:text-white truncate">
-                  {currentList?.name || "Todos"}
-                </h1>
-                {canEditOrDelete && (
-                  <div className="flex gap-1 flex-shrink-0">
-                    <button
-                      onClick={() => setIsEditDialogOpen(true)}
-                      className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900"
-                      title="Edit list"
-                    >
-                      <PencilIcon className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => setIsDeleteDialogOpen(true)}
-                      className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
-                      title="Delete list"
-                    >
-                      <TrashIcon className="w-5 h-5" />
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Filter icon and Sort Settings - now in first row for mobile */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button
-                  onClick={() => setIsFilterDialogOpen(true)}
-                  className={clsx(
-                    "p-2 rounded-lg transition-colors",
-                    hasActiveFilters
-                      ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
-                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  )}
-                  title="Filter tasks"
-                >
-                  <FunnelIcon className="w-5 h-5" />
-                </button>
-
-                {/* Sort settings icon - only show for user-created lists */}
-                {canEditOrDelete && (
+          {/* Header with List Name and Actions */}
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between mb-6 sm:mb-8 gap-4">
+            {/* Title and List Management Section */}
+            <div className="flex items-start gap-4 flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 dark:text-white break-words min-w-0 flex-1">
+                {currentList?.name || "Todos"}
+              </h1>
+              
+              {canEditOrDelete && (
+                <div className="flex gap-1 flex-shrink-0 mt-1">
                   <button
-                    onClick={() => setIsListSortDialogOpen(true)}
-                    className={clsx(
-                      "p-2 rounded-lg transition-colors relative",
-                      currentList?.sortPreference
-                        ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
-                        : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    )}
-                    title={currentList?.sortPreference ? "Sort settings (customized)" : "Sort settings for this list"}
+                    onClick={() => setIsEditDialogOpen(true)}
+                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900"
+                    title="Edit list"
                   >
-                    <Cog6ToothIcon className="w-5 h-5" />
-                    {/* Visual indicator badge when list has custom sort */}
-                    {currentList?.sortPreference && (
-                      <span className="absolute top-1 right-1 w-2 h-2 bg-purple-600 rounded-full" />
-                    )}
+                    <PencilIcon className="w-5 h-5" />
                   </button>
-                )}
-              </div>
+                  <button
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                    className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900"
+                    title="Delete list"
+                  >
+                    <TrashIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Middle: Search field */}
-            <div className="w-full lg:flex-1 lg:max-w-md lg:mx-0">
-              <div className="relative">
+            {/* Toolbar Section: Search & View Options */}
+            <div className="flex items-center gap-3 w-full lg:w-auto">
+              <div className="relative flex-1 lg:w-64">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
                 </div>
@@ -328,9 +292,41 @@ const TodoListView: React.FC = () => {
                   </button>
                 )}
               </div>
-            </div>
 
-            {/* Remove the original filter icon container that was here for desktop */}
+              {/* View Buttons (Filter / Sort) */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={() => setIsFilterDialogOpen(true)}
+                  className={clsx(
+                    "p-2 rounded-lg transition-colors",
+                    hasActiveFilters
+                      ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  )}
+                  title="Filter tasks"
+                >
+                  <FunnelIcon className="w-5 h-5" />
+                </button>
+
+                {canEditOrDelete && (
+                  <button
+                    onClick={() => setIsListSortDialogOpen(true)}
+                    className={clsx(
+                      "p-2 rounded-lg transition-colors relative",
+                      currentList?.sortPreference
+                        ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
+                        : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    )}
+                    title={currentList?.sortPreference ? "Sort settings (customized)" : "Sort settings for this list"}
+                  >
+                    <Cog6ToothIcon className="w-5 h-5" />
+                    {currentList?.sortPreference && (
+                      <span className="absolute top-1 right-1 w-2 h-2 bg-purple-600 rounded-full" />
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Statistics section - only show for "All" list */}
