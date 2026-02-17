@@ -723,9 +723,14 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           data: { listId, todo: newTodo },
         });
         await registerBackgroundSync();
-        toast.error("Added offline - will retry sync when online");
+        set({ 
+          error: "Offline: Task saved locally. It will sync when you're back online.", 
+          isOffline: true 
+        });
+        toast.success("Added offline - will sync when online");
       } catch (queueError) {
         console.error("Failed to queue operation:", queueError);
+        set({ error: "Failed to add todo", isOffline: !isOnline() });
         toast.error("Failed to add todo");
       }
     }
@@ -833,11 +838,14 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           data: { todoId },
         });
         await registerBackgroundSync();
-        if (isOnline()) {
-          toast.error("Delete failed - will retry sync when online");
-        }
+        set({ 
+          error: "Offline: Task deletion saved locally. It will sync when you're back online.", 
+          isOffline: true 
+        });
+        toast.success("Deleted offline - will sync when online");
       } catch (queueError) {
         console.error("Failed to queue operation:", queueError);
+        set({ error: "Failed to delete todo", isOffline: !isOnline() });
         toast.error("Failed to delete todo");
       }
     }
@@ -912,11 +920,16 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           data: { todoId, updates },
         });
         await registerBackgroundSync();
+        set({ 
+          error: "Offline: Task updates saved locally. It will sync when you're back online.", 
+          isOffline: true 
+        });
         if (isOnline()) {
-          toast.error("Update failed - will retry sync when online");
+          toast.success("Update saved locally - will sync when online");
         }
       } catch (queueError) {
         console.error("Failed to queue operation:", queueError);
+        set({ error: "Failed to update todo", isOffline: !isOnline() });
         toast.error("Failed to update todo");
       }
     }
@@ -1107,9 +1120,14 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           data: { list: newList },
         });
         await registerBackgroundSync();
-        toast.error("List created offline - will retry sync when online");
+        set({ 
+          error: "Offline: List creation saved locally. It will sync when you're back online.", 
+          isOffline: true 
+        });
+        toast.success("List created offline - will sync when online");
       } catch (queueError) {
         console.error("Failed to queue operation:", queueError);
+        set({ error: "Failed to create list", isOffline: !isOnline() });
         toast.error("Failed to create list");
       }
     }
@@ -1177,9 +1195,14 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           data: { listId: id },
         });
         await registerBackgroundSync();
-        toast.error("List deleted offline - will retry sync when online");
+        set({ 
+          error: "Offline: List deletion saved locally. It will sync when you're back online.", 
+          isOffline: true 
+        });
+        toast.success("List deleted offline - will sync when online");
       } catch (queueError) {
         console.error("Failed to queue operation:", queueError);
+        set({ error: "Failed to delete list", isOffline: !isOnline() });
         toast.error("Failed to delete list");
       }
     }
@@ -1241,9 +1264,14 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           data: { listId: id, name, icon, sortPreference },
         });
         await registerBackgroundSync();
-        toast.error("List updated offline - will retry sync when online");
+        set({ 
+          error: "Offline: List updates saved locally. It will sync when you're back online.", 
+          isOffline: true 
+        });
+        toast.success("List updated offline - will sync when online");
       } catch (queueError) {
         console.error("Failed to queue operation:", queueError);
+        set({ error: "Failed to update list", isOffline: !isOnline() });
         toast.error("Failed to update list");
       }
     }
