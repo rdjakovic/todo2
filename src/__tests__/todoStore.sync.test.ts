@@ -58,7 +58,7 @@ describe('TodoStore Sync Integration', () => {
     await useTodoStore.getState().addTodo('list-1', newTodo);
 
     expect(supabase.from).toHaveBeenCalledWith('todos');
-    expect(supabase.insert).toHaveBeenCalled();
+    expect((supabase as any).insert).toHaveBeenCalled();
     expect(indexedDBManager.addToSyncQueue).not.toHaveBeenCalled();
   });
 
@@ -76,7 +76,7 @@ describe('TodoStore Sync Integration', () => {
 
     await useTodoStore.getState().addTodo('list-1', newTodo);
 
-    expect(supabase.insert).not.toHaveBeenCalled();
+    expect((supabase as any).insert).not.toHaveBeenCalled();
     expect(indexedDBManager.addToSyncQueue).toHaveBeenCalledWith(expect.objectContaining({
       type: 'addTodo',
       data: expect.objectContaining({
@@ -98,7 +98,7 @@ describe('TodoStore Sync Integration', () => {
     await useTodoStore.getState().syncPendingOperations();
 
     expect(supabase.from).toHaveBeenCalledWith('todos');
-    expect(supabase.insert).toHaveBeenCalled();
+    expect((supabase as any).insert).toHaveBeenCalled();
     expect(indexedDBManager.removeFromSyncQueue).toHaveBeenCalledWith('op-1');
   });
 

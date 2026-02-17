@@ -17,4 +17,9 @@
   - `indexedDB.functional.test.ts`: Functional tests for local storage and sync queue management using `fake-indexeddb`.
   - `serviceWorker.sync.test.ts`: Logical verification of Service Worker sync handlers.
 - Added `npm run test:sync` script to target these specific tests.
+- Resolved Netlify deployment issues:
+  - Fixed unused variable warnings in `App.tsx` (`updateServiceWorker` and `swUrl`).
+  - Fixed TypeScript errors in tests by correctly casting Supabase mocks.
+  - Updated `tsconfig.json` to exclude `src/__tests__` from production builds.
+  - Cleaned up `vite.config.ts` to prevent path issues during asset compression.
 - Added `vite-plugin-pwa/client` types to `tsconfig.json`.

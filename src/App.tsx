@@ -27,8 +27,8 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 
 function App() {
   // PWA Update logic
-  const { updateServiceWorker } = useRegisterSW({
-    onRegisteredSW(swUrl, r) {
+  useRegisterSW({
+    onRegisteredSW(_swUrl, r) {
       if (r) {
         // Check for updates immediately when the app initializes
         r.update();
