@@ -31,6 +31,10 @@ textarea,
   color: inherit;
 }
 
+.dark .tiptap-editor-content {
+  color: #f9fafb;
+}
+
 .tiptap-editor-content:empty::before {
   content: attr(data-placeholder);
   color: #9ca3af;
@@ -74,7 +78,8 @@ textarea,
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
   font-size: 0.8em;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
 .dark .tiptap-editor-content code {
@@ -88,7 +93,8 @@ textarea,
   border-radius: 0.375rem;
   margin: 0.5rem 0;
   overflow-x: auto;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   font-size: 0.8em;
   line-height: 1.6;
 }
@@ -130,7 +136,11 @@ textarea,
   user-select: none;
 }
 
-.tiptap-editor-content ul[data-type="taskList"] > li > label > input[type="checkbox"] {
+.tiptap-editor-content
+  ul[data-type="taskList"]
+  > li
+  > label
+  > input[type="checkbox"] {
   width: 1rem;
   height: 1rem;
   cursor: pointer;
@@ -159,6 +169,14 @@ textarea,
 }
 
 /* Rendered notes content (view mode / TodoItem) */
+.rendered-notes {
+  color: inherit;
+}
+
+.dark .rendered-notes {
+  color: #f3f4f6;
+}
+
 .rendered-notes h1 {
   font-size: 1.25rem;
   font-weight: 700;
@@ -189,7 +207,8 @@ textarea,
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
   font-size: 0.8em;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 }
 
 .dark .rendered-notes code {
@@ -203,7 +222,8 @@ textarea,
   border-radius: 0.375rem;
   margin: 0.375rem 0;
   overflow-x: auto;
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-family:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   font-size: 0.8em;
   line-height: 1.5;
 }

@@ -1,5 +1,15 @@
 # History
 
+## 2026-02-17 — Fix Rich Text Editor Dark Mode Text Color
+
+**Description:** Fixed the issue where text in the notes rich text editor was difficult to read in dark theme due to improper text color.
+
+**Summary:**
+
+- Added `dark:text-white` to the `RichTextEditor` wrapper component.
+- Updated `App.css` with explicit dark mode colors for `.tiptap-editor-content` and `.rendered-notes`.
+- Ensured consistent text visibility in both edit and view modes of todo item notes.
+
 ## 2026-02-17 — Implement Automatic PWA Updates
 
 **Description:** Switched to vite-plugin-pwa with auto-update logic to resolve issues with users seeing outdated versions.

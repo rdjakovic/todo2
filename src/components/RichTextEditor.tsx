@@ -44,7 +44,7 @@ const RichTextEditor = ({
   if (!editor) return null;
 
   return (
-    <div className="tiptap-wrapper rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus-within:ring-2 focus-within:ring-blue-500 dark:focus-within:ring-blue-400 focus-within:border-blue-500 dark:focus-within:border-blue-400">
+    <div className="tiptap-wrapper rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus-within:ring-2 focus-within:ring-blue-500 dark:focus-within:ring-blue-400 focus-within:border-blue-500 dark:focus-within:border-blue-400">
       <EditorToolbar editor={editor} />
       <EditorContent editor={editor} />
     </div>
