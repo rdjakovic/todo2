@@ -2,60 +2,60 @@ name: Dependency Security Scan
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+    - cron: "0 2 * * *" # Daily at 2 AM UTC
   push:
     branches: [main, develop]
   pull_request:
     branches: [main]
-  workflow_dispatch:  # Allow manual triggering
+  workflow_dispatch: # Allow manual triggering
 
 env:
-  NODE_VERSION: '18'
-  RUST_VERSION: 'stable'
+  NODE_VERSION: "18"
+  RUST_VERSION: "stable"
 
 jobs:
   npm-security-scan:
     name: NPM Security Audit
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      
+          cache: "npm"
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Run npm audit
         id: npm-audit
         run: |
           # Run audit and capture results
           npm audit --audit-level moderate --json > npm-audit-results.json || true
-          
+
           # Also run human-readable audit for logs
           echo "::group::NPM Audit Results"
           npm audit --audit-level moderate || true
           echo "::endgroup::"
-          
+
           # Check if critical vulnerabilities exist
           CRITICAL_COUNT=$(jq -r '.metadata.vulnerabilities.critical // 0' npm-audit-results.json)
           HIGH_COUNT=$(jq -r '.metadata.vulnerabilities.high // 0' npm-audit-results.json)
-          
+
           echo "critical-count=$CRITICAL_COUNT" >> $GITHUB_OUTPUT
           echo "high-count=$HIGH_COUNT" >> $GITHUB_OUTPUT
-          
+
           if [ "$CRITICAL_COUNT" -gt 0 ]; then
             echo "::error::Found $CRITICAL_COUNT critical vulnerabilities in npm dependencies"
             exit 1
           elif [ "$HIGH_COUNT" -gt 0 ]; then
             echo "::warning::Found $HIGH_COUNT high-severity vulnerabilities in npm dependencies"
           fi
-      
+
       - name: Upload npm audit results
         uses: actions/upload-artifact@v4
         if: always()
@@ -67,18 +67,18 @@ jobs:
   cargo-security-scan:
     name: Cargo Security Audit
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ env.RUST_VERSION }}
           override: true
           components: rustfmt, clippy
-      
+
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
@@ -87,36 +87,36 @@ jobs:
             ~/.cargo/git
             src-tauri/target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-      
+
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked
-      
+
       - name: Run cargo audit
         id: cargo-audit
         working-directory: src-tauri
         run: |
           # Run audit and capture results
           cargo audit --json > ../cargo-audit-results.json || true
-          
+
           # Also run human-readable audit for logs
           echo "::group::Cargo Audit Results"
           cargo audit || true
           echo "::endgroup::"
-          
+
           # Check if vulnerabilities exist
           VULN_COUNT=$(jq -r '.vulnerabilities.count // 0' ../cargo-audit-results.json)
           CRITICAL_VULNS=$(jq -r '[.vulnerabilities.list[]? | select(.advisory.severity == "critical")] | length' ../cargo-audit-results.json)
-          
+
           echo "vulnerability-count=$VULN_COUNT" >> $GITHUB_OUTPUT
           echo "critical-count=$CRITICAL_VULNS" >> $GITHUB_OUTPUT
-          
+
           if [ "$CRITICAL_VULNS" -gt 0 ]; then
             echo "::error::Found $CRITICAL_VULNS critical vulnerabilities in Rust dependencies"
             exit 1
           elif [ "$VULN_COUNT" -gt 0 ]; then
             echo "::warning::Found $VULN_COUNT vulnerabilities in Rust dependencies"
           fi
-      
+
       - name: Upload cargo audit results
         uses: actions/upload-artifact@v4
         if: always()
@@ -130,48 +130,48 @@ jobs:
     needs: [npm-security-scan, cargo-security-scan]
     runs-on: ubuntu-latest
     if: always()
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      
+          cache: "npm"
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Download audit results
         uses: actions/download-artifact@v4
         with:
-          pattern: '*-audit-results'
+          pattern: "*-audit-results"
           merge-multiple: true
-      
+
       - name: Generate security report
         run: |
           # Make script executable
-          chmod +x scripts/generate-security-report.js
-          
+          chmod +x scripts/generate-security-report.cjs
+
           # Generate comprehensive security report
-          node scripts/generate-security-report.js
-      
+          node scripts/generate-security-report.cjs
+
       - name: Upload security report
         uses: actions/upload-artifact@v4
         with:
           name: security-report
           path: security-reports/latest-security-report.*
           retention-days: 90
-      
+
       - name: Comment on PR with security report
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            
+
             try {
               const reportPath = 'security-reports/latest-security-report.json';
               if (fs.existsSync(reportPath)) {
@@ -216,7 +216,7 @@ jobs:
       always() && 
       (needs.npm-security-scan.outputs.critical-count > 0 || 
        needs.cargo-security-scan.outputs.critical-count > 0)
-    
+
     steps:
       - name: Create security issue
         uses: actions/github-script@v7
@@ -224,34 +224,34 @@ jobs:
           script: |
             const npmCritical = '${{ needs.npm-security-scan.outputs.critical-count }}' || '0';
             const cargoCritical = '${{ needs.cargo-security-scan.outputs.critical-count }}' || '0';
-            
+
             const title = '🚨 Critical Security Vulnerabilities Detected';
             const body = `## Critical Security Alert
-            
+
             Automated security scanning has detected critical vulnerabilities in our dependencies:
-            
+
             - **NPM Critical Vulnerabilities**: ${npmCritical}
             - **Cargo Critical Vulnerabilities**: ${cargoCritical}
-            
+
             ## Immediate Actions Required
-            
+
             1. Review the security scan results in the [workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId})
             2. Download and analyze the detailed security report
             3. Apply security updates immediately
             4. Test the application thoroughly
             5. Deploy security fixes as soon as possible
-            
+
             ## Resources
-            
+
             - [Security Report Artifact](${context.payload.repository.html_url}/actions/runs/${context.runId})
             - [Dependency Security Management Plan](./security-reports/dependency-security-management-plan.md)
-            
+
             **Priority**: CRITICAL
             **Assigned**: Security Team
-            
+
             ---
             *This issue was created automatically by the security scanning workflow.*`;
-            
+
             // Check if similar issue already exists
             const existingIssues = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
@@ -259,7 +259,7 @@ jobs:
               labels: 'security,critical,dependencies',
               state: 'open'
             });
-            
+
             if (existingIssues.data.length === 0) {
               await github.rest.issues.create({
                 owner: context.repo.owner,
@@ -287,7 +287,7 @@ jobs:
       always() && 
       (needs.npm-security-scan.outputs.critical-count > 0 || 
        needs.cargo-security-scan.outputs.critical-count > 0)
-    
+
     steps:
       - name: Send Slack notification
         if: env.SLACK_WEBHOOK_URL != ''
@@ -321,7 +321,7 @@ jobs:
               ]
             }' \
             $SLACK_WEBHOOK_URL
-      
+
       - name: Send email notification
         if: env.SECURITY_EMAIL != ''
         env:

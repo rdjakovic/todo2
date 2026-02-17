@@ -1,5 +1,14 @@
 # History
 
+## 2026-02-17 — Fix Security Report Script Module Error
+
+**Description:** Fixed "ReferenceError: require is not defined" in GitHub Actions by converting the security report generator to CommonJS.
+
+**Summary:**
+
+- Renamed `scripts/generate-security-report.js` to `scripts/generate-security-report.cjs` to force CommonJS interpretation in a "type: module" project.
+- Updated `.github/workflows/dependency-security.yml` to call the renamed `.cjs` script.
+
 ## 2026-02-17 — Fix Rich Text Editor Dark Mode Text Color
 
 **Description:** Fixed the issue where text in the notes rich text editor was difficult to read in dark theme due to improper text color.
