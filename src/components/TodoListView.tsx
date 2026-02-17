@@ -26,6 +26,8 @@ interface FilterOptions {
   hasNote: boolean;
 }
 
+const ERROR_DISMISS_TIMEOUT = 3000;
+
 const TodoListView: React.FC = () => {
   const {
     lists,
@@ -66,6 +68,17 @@ const TodoListView: React.FC = () => {
 
   // Track user's actual preference for showCompleted (separate from forced state for Completed list)
   const [userShowCompletedPreference, setUserShowCompletedPreference] = useState(false);
+  const { setError } = useTodoStore();
+
+  // Auto-dismiss error after 5 seconds
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, ERROR_DISMISS_TIMEOUT);
+      return () => clearTimeout(timer);
+    }
+  }, [error, setError]);
 
   const canEditOrDelete = currentList &&
     currentList.name !== "All" &&

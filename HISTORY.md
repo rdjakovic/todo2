@@ -22,4 +22,7 @@
   - Fixed TypeScript errors in tests by correctly casting Supabase mocks.
   - Updated `tsconfig.json` to exclude `src/__tests__` from production builds.
   - Cleaned up `vite.config.ts` to prevent path issues during asset compression.
+- Improved offline user experience:
+  - Added descriptive error messages for offline operations (e.g., "Offline: Task saved locally").
+  - Implemented auto-dismiss logic for the error banner in `TodoListView.tsx` (5-second timeout).
 - Added `vite-plugin-pwa/client` types to `tsconfig.json`.

@@ -712,7 +712,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       }
     } catch (error) {
       console.error("Failed to add todo:", error);
-      set({ error: "Failed to add todo", isOffline: !isOnline() });
+      set({ 
+        error: isOnline() ? "Failed to add todo" : "Offline: Task saved locally. It will sync when you're back online.", 
+        isOffline: !isOnline() 
+      });
 
       try {
         await indexedDBManager.addToSyncQueue({
@@ -819,7 +822,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       }
     } catch (error) {
       console.error("Failed to delete todo:", error);
-      set({ error: "Failed to delete todo", isOffline: !isOnline() });
+      set({ 
+        error: isOnline() ? "Failed to delete todo" : "Offline: Task deletion saved locally. It will sync when you're back online.", 
+        isOffline: !isOnline() 
+      });
 
       try {
         await indexedDBManager.addToSyncQueue({
@@ -1090,7 +1096,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       }
     } catch (error) {
       console.error("Failed to create list:", error);
-      set({ error: "Failed to create list", isOffline: !isOnline() });
+      set({ 
+        error: isOnline() ? "Failed to create list" : "Offline: List creation saved locally. It will sync when you're back online.", 
+        isOffline: !isOnline() 
+      });
 
       try {
         await indexedDBManager.addToSyncQueue({
@@ -1157,7 +1166,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       }
     } catch (error) {
       console.error("Failed to delete list:", error);
-      set({ error: "Failed to delete list", isOffline: !isOnline() });
+      set({ 
+        error: isOnline() ? "Failed to delete list" : "Offline: List deletion saved locally. It will sync when you're back online.", 
+        isOffline: !isOnline() 
+      });
 
       try {
         await indexedDBManager.addToSyncQueue({
@@ -1218,7 +1230,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       }
     } catch (error) {
       console.error("Failed to edit list:", error);
-      set({ error: "Failed to update list", isOffline: !isOnline() });
+      set({ 
+        error: isOnline() ? "Failed to update list" : "Offline: List updates saved locally. It will sync when you're back online.", 
+        isOffline: !isOnline() 
+      });
 
       try {
         await indexedDBManager.addToSyncQueue({
