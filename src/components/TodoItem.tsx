@@ -8,6 +8,7 @@ import { forwardRef, useState } from "react";
 import { Todo } from "../types/todo";
 import TiptapRenderer from "./TiptapRenderer";
 import { hasVisibleContent } from "../lib/content";
+import { useMediaQuery } from "../hooks/useMediaQuery";
 
 interface TodoItemProps {
   todo: Todo;
@@ -43,6 +44,7 @@ const getPriorityBadgeColors = (priority?: "low" | "medium" | "high") => {
 const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
   ({ todo, onToggle, onDelete, onOpenEditDialog, isDragging }, ref) => {
     const [showNotes, setShowNotes] = useState(false);
+    const isMobile = useMediaQuery("(max-width: 639px)"); // sm breakpoint
 
     const {
       attributes,
@@ -109,8 +111,8 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
           <div
             className="flex-1 cursor-pointer sm:cursor-auto"
             onClick={() => {
-              // Only make clickable on mobile (screen width < 640px)
-              if (window.innerWidth < 640) {
+              // Only make clickable on mobile
+              if (isMobile) {
                 onOpenEditDialog(todo, true); // Open in view mode
               }
             }}
@@ -157,7 +159,7 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {/* Format date more compactly on mobile */}
                     {isValidNativeDate(todo.dateCreated)
-                      ? window.innerWidth < 640
+                      ? isMobile
                         ? formatMobileDate(todo.dateCreated) // New compact format for mobile
                         : formatNativeDate(todo.dateCreated)
                       : "Invalid creation date"}
@@ -183,7 +185,7 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 sm:mt-0">
                     Completed:{" "}
                     {isValidNativeDate(todo.dateOfCompletion)
-                      ? window.innerWidth < 640
+                      ? isMobile
                         ? formatMobileDate(todo.dateOfCompletion) // New compact format for mobile
                         : formatNativeDate(todo.dateOfCompletion)
                       : "Invalid completion date"}

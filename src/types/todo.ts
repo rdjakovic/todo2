@@ -27,3 +27,14 @@ export interface Todo {
   dateOfCompletion?: Date;
   listId: string;
 }
+
+export interface FilterOptions {
+  showCompleted: boolean;
+  priorities: {
+    low: boolean;
+    medium: boolean;
+    high: boolean;
+  };
+  hasDueDate: boolean;
+  hasNote: boolean;
+}
