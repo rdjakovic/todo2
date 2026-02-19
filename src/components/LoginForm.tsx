@@ -413,7 +413,13 @@ export default function LoginForm() {
         }
 
         setUser(data.user);
-        await forceDataLoad();
+        
+        // Load user data - don't fail auth if this fails
+        try {
+          await forceDataLoad();
+        } catch (dataLoadError) {
+          console.warn('Failed to load user data, but authentication succeeded:', dataLoadError);
+        }
 
         // Reset failed attempts on successful authentication
         try {

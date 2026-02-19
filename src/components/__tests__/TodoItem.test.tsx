@@ -1,8 +1,8 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, test, expect, beforeEach, vi } from "vitest";
 import "@testing-library/jest-dom";
-import TodoItem from "./TodoItem"; // Changed to default import
-import { Todo } from "../types/todo";
+import TodoItem from "../TodoItem"; // Changed to default import
+import { Todo } from "../../types/todo";
 
 describe("TodoItem", () => {
   const mockTodo: Todo = {

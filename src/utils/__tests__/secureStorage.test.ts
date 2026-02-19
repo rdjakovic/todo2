@@ -390,10 +390,9 @@ describe('SecureStorage', () => {
       await expect(storage.encrypt('test')).rejects.toThrow('Failed to initialize crypto key');
     });
 
-    it('should handle storage errors gracefully', async () => {
-      // Mock localStorage to throw an error
-      const originalSetItem = localStorageMock.setItem;
-      localStorageMock.setItem = vi.fn().mockImplementation(() => {
+    it('should handle storage errors gracefully by falling back to memory storage', async () => {
+      // Mock localStorage and sessionStorage to throw errors
+      const localStorageSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
         throw new Error('Storage quota exceeded');
       });
 
@@ -402,10 +401,15 @@ describe('SecureStorage', () => {
         new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]).buffer
       );
 
-      await expect(storage.store('test-key', 'test-value')).rejects.toThrow('Storage failed');
+      // Store should succeed by falling back to memory storage
+      await expect(storage.store('test-key', 'test-value')).resolves.not.toThrow();
+      
+      // Verify data can be retrieved from memory storage
+      const retrieved = await storage.retrieve('test-key');
+      expect(retrieved).toBe('test-value');
 
       // Restore original method
-      localStorageMock.setItem = originalSetItem;
+      localStorageSpy.mockRestore();
     });
   });
 });

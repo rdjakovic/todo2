@@ -534,16 +534,23 @@ describe('Rate Limiting Security Integration Tests', { timeout: 30000 }, () => {
       expect(statusAfter.isLocked).toBe(false);
     });
 
-    it('should handle quota exceeded storage errors', async () => {
+    it('should handle quota exceeded storage errors by falling back to memory storage', async () => {
+      // Use a unique identifier for this test
+      const uniqueIdentifier = 'quota-test@example.com';
+      
       // Mock localStorage to throw quota exceeded error
       const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-        throw new Error('QuotaExceededError'); // specific error type might be flaky in jsdom
+        throw new Error('QuotaExceededError');
       });
       
       try {
-        // Should handle storage error gracefully
-        await expect(rateLimitManager.incrementFailedAttempts(testIdentifier))
-          .rejects.toThrow('Failed to update security state');
+        // Should succeed by falling back to memory storage
+        await expect(rateLimitManager.incrementFailedAttempts(uniqueIdentifier))
+          .resolves.not.toThrow();
+        
+        // Verify state was still updated (2 remaining after 1 attempt, since maxAttempts is 3)
+        const status = await rateLimitManager.checkRateLimit(uniqueIdentifier);
+        expect(status.attemptsRemaining).toBe(2);
       } finally {
         setItemSpy.mockRestore();
       }
