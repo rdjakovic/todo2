@@ -24,26 +24,16 @@ export class TransmissionSecurityChecker {
    * Runs comprehensive data transmission security analysis
    */
   async runSecurityAnalysis(config: TransmissionSecurityConfig): Promise<DataTransmissionSecurityReport> {
-    console.log('Starting data transmission security analysis...');
+    // Validate configuration first (throws if invalid)
+    this.validateConfiguration(config);
     
-    try {
-      // Validate configuration
-      this.validateConfiguration(config);
-      
-      // Generate comprehensive security report
-      const report = await this.analyzer.generateSecurityReport(
-        config.supabaseUrl,
-        config.supabaseKey
-      );
-      
-      console.log(`Security analysis completed. Risk score: ${report.overallRiskScore}/100`);
-      console.log(`Critical findings: ${report.criticalFindings.length}`);
-      
-      return report;
-    } catch (error) {
-      console.error('Security analysis failed:', error);
-      throw error;
-    }
+    // Generate comprehensive security report
+    const report = await this.analyzer.generateSecurityReport(
+      config.supabaseUrl,
+      config.supabaseKey
+    );
+    
+    return report;
   }
 
   /**
