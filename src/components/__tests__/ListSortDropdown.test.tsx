@@ -94,8 +94,8 @@ describe("ListSortDropdown", () => {
   });
 
   it("highlights the active sort option", () => {
-    const listWithSort: TodoList = { ...mockList, sortPreference: "priority:asc" };
-    render(<ListSortDropdown {...defaultProps} currentList={listWithSort} />);
+    const listWithSort: TodoList = { ...mockList, sortPreference: "priority" };
+    render(<ListSortDropdown {...defaultProps} currentList={listWithSort} listDirection="asc" />);
     fireEvent.click(screen.getByTitle("Sort (customized)"));
 
     const ascBtn = screen.getByLabelText("Sort by Priority ascending");

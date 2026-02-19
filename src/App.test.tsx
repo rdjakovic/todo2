@@ -91,7 +91,14 @@ vi.mock("./store/todoStore", async (importOriginal) => {
           completed: mockStoreState.todos.filter(t => t.completed).length,
           "list-1": mockStoreState.todos.length
         }),
-        getEffectiveSortForList: vi.fn().mockReturnValue({ field: 'dateCreated', direction: 'desc' }),
+        sortBy: "dateCreated",
+        sortDirection: "desc",
+        listSortDirections: {},
+        getEffectiveSortForList: vi.fn().mockReturnValue({ sort: 'dateCreated', direction: 'desc' }),
+        setSortBy: vi.fn(),
+        setSortDirection: vi.fn(),
+        setListSortDirection: vi.fn(),
+        editList: vi.fn().mockResolvedValue(undefined),
         setSelectedListId: vi.fn().mockImplementation((id) => { 
           mockStoreState.selectedListId = id; 
           notifyStoreChange();
