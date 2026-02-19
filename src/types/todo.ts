@@ -6,8 +6,7 @@ export interface TodoList {
   icon: string;
   showCompleted: boolean;
   userId: string;
-  /** Stored as plain SortOption or "sort:direction" encoded string */
-  sortPreference?: string;
+  sortPreference?: SortOption;
 }
 
 export interface Todo {

@@ -7,12 +7,14 @@ import {
 import clsx from "clsx";
 import { SortOption, SortDirection } from "../types/todo";
 import { TodoList } from "../types/todo";
-import { SORT_OPTION_META, parseSortPreference } from "../constants/sortOptions";
+import { SORT_OPTION_META } from "../constants/sortOptions";
 
 interface ListSortDropdownProps {
   currentList: TodoList;
   globalSort: SortOption;
   globalDirection: SortDirection;
+  /** Direction override for this specific list (from listSortDirections map) */
+  listDirection?: SortDirection;
   onSetSort: (sort: SortOption, direction: SortDirection) => Promise<void>;
   onUseGlobal: () => Promise<void>;
 }
@@ -21,18 +23,18 @@ const ListSortDropdown = ({
   currentList,
   globalSort,
   globalDirection,
+  listDirection,
   onSetSort,
   onUseGlobal,
 }: ListSortDropdownProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Determine current effective sort+direction for this list
   const hasCustomSort = !!currentList.sortPreference;
-  const { sort: activeSort, direction: activeDirection } = currentList.sortPreference
-    ? parseSortPreference(currentList.sortPreference)
-    : { sort: globalSort, direction: globalDirection };
-
+  // Active sort: list's own preference or fall back to global
+  const activeSort = currentList.sortPreference ?? globalSort;
+  // Active direction: per-list override, or global
+  const activeDirection = hasCustomSort ? (listDirection ?? globalDirection) : globalDirection;
   const isUsingGlobal = !hasCustomSort;
 
   useEffect(() => {
@@ -104,7 +106,7 @@ const ListSortDropdown = ({
           {SORT_OPTION_META.map((option) => {
             const rowActive = isRowActive(option.value);
             const ascActive = rowActive && hasCustomSort && activeDirection === "asc";
-            const descActive = rowActive && (isUsingGlobal ? false : activeDirection === "desc");
+            const descActive = rowActive && hasCustomSort && activeDirection === "desc";
 
             return (
               <div
@@ -180,7 +182,6 @@ const ListSortDropdown = ({
                     </button>
                   </div>
                 ) : (
-                  /* Non-directional: show active dot for clarity */
                   <div className="w-9 flex items-center justify-center flex-shrink-0">
                     {rowActive && (
                       <span className="w-2.5 h-2.5 rounded-full bg-purple-600" />

@@ -15,6 +15,7 @@ interface TodoListHeaderProps {
   hasActiveFilters: boolean;
   globalSort: SortOption;
   globalDirection: SortDirection;
+  listDirection?: SortDirection;
   onSetSort: (sort: SortOption, direction: SortDirection) => Promise<void>;
   onUseGlobal: () => Promise<void>;
 }
@@ -30,6 +31,7 @@ const TodoListHeader: React.FC<TodoListHeaderProps> = ({
   hasActiveFilters,
   globalSort,
   globalDirection,
+  listDirection,
   onSetSort,
   onUseGlobal,
 }) => {
@@ -116,6 +118,7 @@ const TodoListHeader: React.FC<TodoListHeaderProps> = ({
               currentList={currentList}
               globalSort={globalSort}
               globalDirection={globalDirection}
+              listDirection={listDirection}
               onSetSort={onSetSort}
               onUseGlobal={onUseGlobal}
             />

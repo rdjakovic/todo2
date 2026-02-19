@@ -27,6 +27,8 @@ const TodoListView: React.FC = () => {
     searchQuery,
     sortBy,
     sortDirection,
+    listSortDirections,
+    setListSortDirection,
     setSearchQuery,
     toggleTodo,
     deleteTodo,
@@ -129,13 +131,15 @@ const TodoListView: React.FC = () => {
 
   const handleSetSort = async (sort: SortOption, direction: SortDirection) => {
     if (currentList) {
-      await editList(currentList.id, currentList.name, currentList.icon, sort, direction);
+      await editList(currentList.id, currentList.name, currentList.icon, sort);
+      setListSortDirection(currentList.id, direction);
     }
   };
 
   const handleUseGlobal = async () => {
     if (currentList) {
       await editList(currentList.id, currentList.name, currentList.icon, null);
+      setListSortDirection(currentList.id, null);
     }
   };
 
@@ -154,6 +158,7 @@ const TodoListView: React.FC = () => {
             hasActiveFilters={hasActiveFilters}
             globalSort={sortBy}
             globalDirection={sortDirection}
+            listDirection={currentList ? listSortDirections[currentList.id] : undefined}
             onSetSort={handleSetSort}
             onUseGlobal={handleUseGlobal}
           />

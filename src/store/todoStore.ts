@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { TodoList, Todo, SortOption } from "../types/todo";
-import { SortDirection, parseSortPreference, encodeSortPreference } from "../constants/sortOptions";
+import { SortDirection } from "../constants/sortOptions";
 import { supabase } from "../lib/supabase";
 import { initialLists } from "../const/initialLists";
 import toast from "react-hot-toast";
@@ -39,6 +39,8 @@ interface TodoState {
   // Sorting settings
   sortBy: SortOption;
   sortDirection: SortDirection;
+  /** Per-list sort direction, keyed by listId. Stored in localStorage only. */
+  listSortDirections: Record<string, SortDirection>;
 
   // Actions
   setLists: (lists: TodoList[]) => void;
@@ -57,6 +59,7 @@ interface TodoState {
   setActiveDraggedTodo: (todo: Todo | null) => void;
   setSortBy: (sortBy: SortOption) => void;
   setSortDirection: (direction: SortDirection) => void;
+  setListSortDirection: (listId: string, direction: SortDirection | null) => void;
 
   // Todo operations
   fetchLists: (user: User) => Promise<void>;
@@ -82,7 +85,7 @@ interface TodoState {
   addTodoFromForm: (e: React.FormEvent) => Promise<void>;
   createList: (name: string, icon?: string) => Promise<void>;
   deleteList: (id: string) => Promise<void>;
-  editList: (id: string, name: string, icon?: string, sortPreference?: SortOption | null, sortDirection?: SortDirection) => Promise<void>;
+  editList: (id: string, name: string, icon?: string, sortPreference?: SortOption | null) => Promise<void>;
   toggleSidebar: () => void;
 
   // Offline sync functions
@@ -211,6 +214,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   sortDirection: (typeof window !== "undefined" ?
     (localStorage.getItem("todo-sort-direction") as SortDirection) || "desc" :
     "desc"),
+  listSortDirections: (typeof window !== "undefined" ?
+    JSON.parse(localStorage.getItem("todo-list-sort-directions") || "{}") :
+    {}),
 
   setLists: (lists) => set({ lists }),
   setTodos: (todos) => set({ todos }),
@@ -238,12 +244,27 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       localStorage.setItem("todo-sort-direction", direction);
     }
   },
+  setListSortDirection: (listId, direction) => {
+    const current = get().listSortDirections;
+    let updated: Record<string, SortDirection>;
+    if (direction === null) {
+      const { [listId]: _removed, ...rest } = current;
+      updated = rest;
+    } else {
+      updated = { ...current, [listId]: direction };
+    }
+    set({ listSortDirections: updated });
+    if (typeof window !== "undefined") {
+      localStorage.setItem("todo-list-sort-directions", JSON.stringify(updated));
+    }
+  },
 
   // Reset function - only clear sorting preference, no list/todo data
   reset: () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("todo-sort-by");
       localStorage.removeItem("todo-sort-direction");
+      localStorage.removeItem("todo-list-sort-directions");
     }
     // Clear IndexedDB data on reset (but don't await it to avoid blocking)
     indexedDBManager.clearAllData().catch(console.error);
@@ -262,6 +283,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       activeDraggedTodo: null,
       sortBy: "dateCreated",
       sortDirection: "desc",
+      listSortDirections: {},
     });
   },
 
@@ -305,7 +327,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           ...list,
           showCompleted: list.show_completed,
           userId: list.user_id,
-          sortPreference: list.sort_preference as string | undefined,
+          sortPreference: list.sort_preference as SortOption | undefined,
         }));
 
         // Create the "All" list as a client-side only list
@@ -389,7 +411,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
           showCompleted: list.show_completed,
           id: list.id,
           userId: list.user_id,
-          sortPreference: list.sort_preference as string | undefined,
+          sortPreference: list.sort_preference as SortOption | undefined,
         }));
 
         const allList: TodoList = {
@@ -947,7 +969,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
   },
 
   getEffectiveSortForList: (listId: string) => {
-    const { lists, sortBy, sortDirection } = get();
+    const { lists, sortBy, sortDirection, listSortDirections } = get();
     const list = lists.find((l) => l.id === listId);
 
     // Special lists ("All", "Completed") always use global sort
@@ -955,11 +977,12 @@ export const useTodoStore = create<TodoState>((set, get) => ({
       return { sort: sortBy, direction: sortDirection };
     }
 
-    if (list?.sortPreference) {
-      return parseSortPreference(list.sortPreference);
-    }
+    const sort = list?.sortPreference || sortBy;
+    const direction = list?.sortPreference
+      ? (listSortDirections[listId] ?? sortDirection)
+      : sortDirection;
 
-    return { sort: sortBy, direction: sortDirection };
+    return { sort, direction };
   },
 
   getFilteredTodos: () => {
@@ -1216,7 +1239,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     }
   },
 
-  editList: async (id: string, name: string, icon?: string, sortPreference?: SortOption | null, sortDirection?: SortDirection) => {
+  editList: async (id: string, name: string, icon?: string, sortPreference?: SortOption | null) => {
     const { lists } = get();
 
     // Prevent editing of "All" list
@@ -1233,9 +1256,7 @@ export const useTodoStore = create<TodoState>((set, get) => ({
             name,
             ...(icon !== undefined && { icon }),
             ...(sortPreference !== undefined && {
-              sortPreference: sortPreference
-                ? encodeSortPreference(sortPreference, sortDirection ?? "desc")
-                : undefined,
+              sortPreference: sortPreference || undefined,
             }),
           }
         : l

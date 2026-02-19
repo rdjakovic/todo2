@@ -134,9 +134,9 @@ function updateSyncOperation(db, operation) {
 }
 
 async function syncOperation(operation) {
-  // Get Supabase URL and key from environment (passed via vite.config.ts define)
-  const supabaseUrl = process.env.VITE_SUPABASE_URL;
-  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+  // Get Supabase URL and key from environment (replaced by Vite at build time)
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   const headers = {
     "Content-Type": "application/json",
@@ -248,12 +248,15 @@ async function syncOperation(operation) {
       );
       break;
 
-    case "editList":
+    case "editList": {
       const listPayload = {
         name: operation.data.name,
       };
       if (operation.data.icon) {
         listPayload.icon = operation.data.icon;
+      }
+      if (operation.data.sortPreference !== undefined) {
+        listPayload.sort_preference = operation.data.sortPreference || null;
       }
 
       await fetch(
@@ -265,6 +268,7 @@ async function syncOperation(operation) {
         },
       );
       break;
+    }
 
     // Handle bulk operations
     case "saveTodos":
@@ -303,6 +307,7 @@ async function syncOperation(operation) {
             name: list.name,
             icon: list.icon,
             show_completed: list.showCompleted,
+            sort_preference: list.sortPreference || null,
             user_id: list.userId,
           })),
         ),

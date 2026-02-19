@@ -1,5 +1,16 @@
 # History
 
+## 2026-02-19 — Fix service worker sync: process.env and missing sort_preference
+
+**Description:** Fixed three pre-existing bugs in `src/service-worker.js` exposed by sort preference changes.
+
+**Summary:**
+- `process.env.VITE_SUPABASE_*` → `import.meta.env.VITE_SUPABASE_*`: Vite's `define` replacements don't apply to the dev-mode SW (`dev-sw.js`); `import.meta.env` is replaced correctly at build time by the `injectManifest` strategy.
+- `editList` SW handler: now includes `sort_preference` so offline sort preference changes sync to Supabase when reconnected.
+- `saveLists` SW handler: now includes `sort_preference` so bulk list saves preserve sort preferences during offline sync.
+
+---
+
 ## 2026-02-19 — Sort dropdown with ascending/descending, icon change, and sort options enum refactor
 
 **Description:** Replaced the per-list sort modal dialog with an inline dropdown, changed the sort icon, extracted sort option metadata into a shared constant, and added ascending/descending direction control per sort option.
