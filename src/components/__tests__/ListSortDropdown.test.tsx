@@ -65,7 +65,7 @@ describe("ListSortDropdown", () => {
   });
 
   it("calls onUseGlobal when 'Use Global Default' is clicked", async () => {
-    const listWithSort: TodoList = { ...mockList, sortPreference: "priority:desc" };
+    const listWithSort: TodoList = { ...mockList, sortPreference: "priority" };
     render(<ListSortDropdown {...defaultProps} currentList={listWithSort} />);
     fireEvent.click(screen.getByTitle("Sort (customized)"));
 
@@ -87,7 +87,7 @@ describe("ListSortDropdown", () => {
   });
 
   it("shows purple dot indicator when list has custom sort", () => {
-    const listWithSort: TodoList = { ...mockList, sortPreference: "priority:desc" };
+    const listWithSort: TodoList = { ...mockList, sortPreference: "priority" };
     render(<ListSortDropdown {...defaultProps} currentList={listWithSort} />);
     // The button title changes and the purple dot span is rendered
     expect(screen.getByTitle("Sort (customized)")).toBeInTheDocument();

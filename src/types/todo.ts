@@ -1,4 +1,5 @@
-export type { SortOption, SortDirection } from "../constants/sortOptions";
+import type { SortOption, SortDirection } from "../constants/sortOptions";
+export type { SortOption, SortDirection };
 
 export interface TodoList {
   id: string;
