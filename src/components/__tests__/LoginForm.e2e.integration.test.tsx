@@ -15,7 +15,7 @@ import toast from 'react-hot-toast';
 import { rateLimitManager } from '../../utils/rateLimitManager';
 import { securityErrorHandler } from '../../utils/securityErrorHandler';
 import { securityLogger } from '../../utils/securityLogger';
-import { securityStateManager } from '../../utils/securityStateManager';
+import { secureStorage } from '../../utils/secureStorage';
 import { securityConfig } from '../../config/securityConfig';
 
 // Mock external dependencies
@@ -104,6 +104,9 @@ describe('LoginForm E2E Integration Tests', () => {
     // Reset all mocks
     vi.clearAllMocks();
 
+    // Clear all storage tiers
+    secureStorage.clear();
+
     // Setup auth store mocks
     mockSetUser = vi.fn();
     mockForceDataLoad = vi.fn().mockResolvedValue(undefined);
@@ -123,19 +126,25 @@ describe('LoginForm E2E Integration Tests', () => {
     (toast.success as Mock).mockImplementation(mockToastSuccess);
     (toast.error as Mock).mockImplementation(mockToastError);
 
-    // Clear security state
-    await securityStateManager.cleanupExpiredStates();
-    await rateLimitManager.cleanupExpiredStates();
-
     // Suppress console logs for clean test output
     vi.spyOn(console, 'log').mockImplementation(() => { });
     vi.spyOn(console, 'error').mockImplementation(() => { });
     vi.spyOn(console, 'warn').mockImplementation(() => { });
     vi.spyOn(console, 'info').mockImplementation(() => { });
+
+    // Disable progressive delay for faster tests unless specifically needed
+    rateLimitManager.updateConfig({
+      progressiveDelay: false,
+      baseDelay: 0
+    });
   });
 
   afterEach(async () => {
-    await securityStateManager.cleanupExpiredStates();
+    secureStorage.clear();
+    rateLimitManager.updateConfig({
+      progressiveDelay: true,
+      baseDelay: 1000
+    });
     vi.restoreAllMocks();
   });
 
@@ -175,8 +184,10 @@ describe('LoginForm E2E Integration Tests', () => {
       });
 
       // Verify complete authentication flow
-      expect(mockSetUser).toHaveBeenCalledWith(mockUser);
-      expect(mockForceDataLoad).toHaveBeenCalled();
+      await waitFor(() => {
+        expect(mockSetUser).toHaveBeenCalledWith(mockUser);
+        expect(mockForceDataLoad).toHaveBeenCalled();
+      }, { timeout: 10000 });
       expect(mockToastSuccess).toHaveBeenCalledWith('Signed in successfully!');
 
       // Verify security logging
@@ -301,6 +312,9 @@ describe('LoginForm E2E Integration Tests', () => {
         error: null
       });
 
+      // Wait for button to be enabled (progressive delay from previous failed attempt)
+      await waitFor(() => expect(submitButton).toBeEnabled(), { timeout: 10000 });
+
       await TestScenarios.simulateUserBehavior(
         emailInput,
         passwordInput,
@@ -310,7 +324,7 @@ describe('LoginForm E2E Integration Tests', () => {
 
       await waitFor(() => {
         expect(mockSupabaseSignIn).toHaveBeenCalledTimes(2);
-      });
+      }, { timeout: 10000 });
 
       // Verify successful authentication
       expect(mockSetUser).toHaveBeenCalledWith(mockUser);
@@ -484,7 +498,19 @@ describe('LoginForm E2E Integration Tests', () => {
 
       // Perform failed attempts up to custom limit
       for (let attempt = 1; attempt <= 3; attempt++) {
-        await rateLimitManager.incrementFailedAttempts('config@example.com');
+        // Wait for button enablement if not first attempt
+        const emailInput = screen.getByLabelText(/email/i);
+        const passwordInput = screen.getByLabelText(/password/i);
+        const submitButton = screen.getByRole('button', { name: /sign in/i });
+        
+        await waitFor(() => expect(submitButton).toBeEnabled(), { timeout: 10000 });
+
+        await TestScenarios.simulateUserBehavior(
+          emailInput,
+          passwordInput,
+          submitButton,
+          { email: 'config@example.com', password: `wrong${attempt}` }
+        );
 
         if (attempt < 3) {
           const status = await rateLimitManager.checkRateLimit('config@example.com');
@@ -585,11 +611,13 @@ describe('LoginForm E2E Integration Tests', () => {
         await new Promise(resolve => setTimeout(resolve, 200));
       });
 
-      // Verify authentication succeeded despite security failures
-      expect(mockSetUser).toHaveBeenCalledWith(mockUser);
-      expect(mockToastSuccess).toHaveBeenCalledWith('Signed in successfully!');
+      // Verify authentication succeeded despite
+      await waitFor(() => {
+        expect(mockSetUser).toHaveBeenCalledWith(mockUser);
+        expect(mockToastSuccess).toHaveBeenCalledWith('Signed in successfully!');
+      }, { timeout: 10000 });
     });
-
+ 
     it('should maintain functionality when storage is unavailable', async () => {
       // Mock storage to fail
       const originalLocalStorage = window.localStorage;

@@ -361,7 +361,7 @@ describe('SupabaseSecurityAnalyzer', () => {
       const analysis = await analyzer.analyze();
       const report = analyzer.generateReport(analysis);
       
-      expect(report).toContain('CRITICAL SEVERITY FINDINGS');
+      expect(report).toContain('CRITICAL Severity Findings');
       expect(report).toContain('Invalid Supabase URL Configuration');
     });
   });

@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { indexedDBManager } from '../lib/indexedDB';
-import 'fake-indexeddb/auto';
 
 describe('IndexedDB Manager Functional', () => {
   beforeEach(async () => {

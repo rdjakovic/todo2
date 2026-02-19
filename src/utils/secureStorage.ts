@@ -28,6 +28,7 @@ export class SecureStorage {
   private keyLength: number;
   private salt: string;
   private cryptoKey: CryptoKey | null = null;
+  private memoryStorage: Map<string, string> = new Map();
 
   constructor(options: SecureStorageOptions = {}) {
     this.algorithm = options.algorithm || SecureStorage.DEFAULT_ALGORITHM;
@@ -165,131 +166,214 @@ export class SecureStorage {
   }
 
   /**
-   * Store encrypted data with integrity validation
+   * Store encrypted data with integrity validation using tiered fallback
    */
   async store(key: string, value: string): Promise<void> {
     try {
-      // Check if we're in a test environment or if crypto/localStorage is unavailable
-      if (this.isTestEnvironment() || !this.isStorageAvailable()) {
-        // In test environment, use simple storage without encryption
+      let finalValue = value;
+      let checksum = 'test-checksum';
+
+      if (!this.isTestEnvironment() && this.isCryptoAvailable()) {
+        const encryptedData = await this.encrypt(value);
+        checksum = await this.calculateChecksum(value);
+        
         const record: StorageRecord = {
-          data: value, // Store unencrypted in tests
-          checksum: 'test-checksum',
+          data: encryptedData,
+          checksum,
           timestamp: Date.now(),
           version: SecureStorage.STORAGE_VERSION
         };
-        
-        if (this.isStorageAvailable()) {
-          localStorage.setItem(key, JSON.stringify(record));
+        finalValue = JSON.stringify(record);
+      } else {
+        // In test environment or without crypto, store unencrypted with test/real checksum
+        try {
+          checksum = await this.calculateChecksum(value);
+        } catch {
+          // Fall back to test checksum
         }
-        return;
+        const record: StorageRecord = {
+          data: value,
+          checksum,
+          timestamp: Date.now(),
+          version: SecureStorage.STORAGE_VERSION
+        };
+        finalValue = JSON.stringify(record);
       }
 
-      const encryptedData = await this.encrypt(value);
-      const checksum = await this.calculateChecksum(value);
+      // Tier 1: LocalStorage
+      try {
+        if (this.isStorageAvailable()) {
+          localStorage.setItem(key, finalValue);
+          return;
+        }
+      } catch (error) {
+        console.warn('localStorage failed, falling back to sessionStorage:', error);
+      }
 
-      const record: StorageRecord = {
-        data: encryptedData,
-        checksum,
-        timestamp: Date.now(),
-        version: SecureStorage.STORAGE_VERSION
-      };
+      // Tier 2: SessionStorage
+      try {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem(key, finalValue);
+          return;
+        }
+      } catch (error) {
+        console.warn('sessionStorage failed, falling back to memoryStorage:', error);
+      }
 
-      localStorage.setItem(key, JSON.stringify(record));
+      // Tier 3: MemoryStorage
+      this.memoryStorage.set(key, finalValue);
+
     } catch (error) {
-      // In production, we want to fail gracefully rather than breaking the entire flow
-      console.error('Storage failed, continuing without persistence:', error);
-      // Don't throw in production to allow graceful degradation
-      if (!this.isTestEnvironment()) {
-        return;
-      }
+      console.error('Storage failed across all tiers:', error);
       throw new Error(`Storage failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
   /**
-   * Retrieve and decrypt data with integrity validation
+   * Retrieve and decrypt data with integrity validation from tiered storage
    */
   async retrieve(key: string): Promise<string | null> {
     try {
-      if (!this.isStorageAvailable()) {
-        return null;
+      let storedData: string | null = null;
+
+      // Tier 1: LocalStorage
+      if (this.isStorageAvailable()) {
+        storedData = localStorage.getItem(key);
       }
 
-      const storedData = localStorage.getItem(key);
+      // Tier 2: SessionStorage
+      if (!storedData && typeof sessionStorage !== 'undefined') {
+        try {
+          storedData = sessionStorage.getItem(key);
+        } catch {
+          // Ignore retrieval errors
+        }
+      }
+
+      // Tier 3: MemoryStorage
+      if (!storedData) {
+        storedData = this.memoryStorage.get(key) || null;
+      }
+
       if (!storedData) {
         return null;
       }
 
-      const record: StorageRecord = JSON.parse(storedData);
+      let record: StorageRecord;
+      try {
+        record = JSON.parse(storedData);
+      } catch {
+        console.warn('Invalid JSON in storage record, removing corrupted data');
+        this.remove(key);
+        return null;
+      }
       
       // Validate record structure
       if (!record.data || !record.checksum || !record.timestamp) {
         console.warn('Invalid storage record structure, removing corrupted data');
-        if (this.isStorageAvailable()) {
-          localStorage.removeItem(key);
-        }
+        this.remove(key);
         return null;
       }
 
-      // In test environment, return data directly without decryption
+      // In test environment or without crypto, skip decryption but validate checksum
       if (this.isTestEnvironment() || !this.isCryptoAvailable()) {
+        if (record.checksum === 'test-checksum') {
+          return record.data;
+        }
+        const isValid = await this.validateIntegrity(record.data, record.checksum);
+        if (!isValid) {
+          console.warn('Data integrity validation failed, removing corrupted data');
+          this.remove(key);
+          return null;
+        }
         return record.data;
       }
 
-      // Decrypt the data
+      // Decrypt and validate
       const decryptedData = await this.decrypt(record.data);
-
-      // Validate integrity
       const isValid = await this.validateIntegrity(decryptedData, record.checksum);
+      
       if (!isValid) {
         console.warn('Data integrity validation failed, removing corrupted data');
-        if (this.isStorageAvailable()) {
-          localStorage.removeItem(key);
-        }
+        this.remove(key);
         return null;
       }
 
       return decryptedData;
     } catch (error) {
       console.error('Retrieval failed:', error);
-      // Remove corrupted data if possible
-      if (this.isStorageAvailable()) {
-        try {
-          localStorage.removeItem(key);
-        } catch {
-          // Ignore removal errors
-        }
-      }
+      this.remove(key);
       return null;
     }
   }
 
   /**
-   * Remove data from storage
+   * Remove data from all storage tiers
    */
   remove(key: string): void {
+    // Tier 1: LocalStorage
     if (this.isStorageAvailable()) {
       try {
         localStorage.removeItem(key);
       } catch (error) {
-        console.error('Failed to remove item from storage:', error);
+        console.error('Failed to remove item from localStorage:', error);
       }
     }
+
+    // Tier 2: SessionStorage
+    if (typeof sessionStorage !== 'undefined') {
+      try {
+
+        sessionStorage.removeItem(key);
+      } catch (error) {
+        console.error('Failed to remove item from sessionStorage:', error);
+      }
+    }
+
+    // Tier 3: MemoryStorage
+    this.memoryStorage.delete(key);
   }
 
   /**
-   * Check if a key exists in storage
+   * Check if a key exists in any storage tier
    */
   exists(key: string): boolean {
-    return localStorage.getItem(key) !== null;
+    if (this.isStorageAvailable() && localStorage.getItem(key) !== null) {
+      return true;
+    }
+    
+    if (typeof sessionStorage !== 'undefined') {
+      try {
+        if (sessionStorage.getItem(key) !== null) return true;
+      } catch {
+        // Ignore
+      }
+    }
+
+    return this.memoryStorage.has(key);
   }
 
   /**
-   * Clear all storage data (use with caution)
+   * Clear all storage data across tiers
    */
   clear(): void {
-    localStorage.clear();
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.clear();
+      } catch (error) {
+        // Ignore clear errors
+      }
+    }
+
+    if (typeof sessionStorage !== 'undefined') {
+      try {
+        sessionStorage.clear();
+      } catch (error) {
+        // Ignore clear errors
+      }
+    }
+
+    this.memoryStorage.clear();
   }
 
   /**
@@ -314,35 +398,67 @@ export class SecureStorage {
   }
 
   /**
-   * Clean up expired records based on age
+   * Clean up expired records based on age across all tiers
    */
   cleanupExpired(maxAge: number): void {
-    if (!this.isStorageAvailable()) {
-      return;
-    }
-
     const now = Date.now();
     const keysToRemove: string[] = [];
 
-    try {
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!key) continue;
+    // LocalStorage
+    if (this.isStorageAvailable()) {
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key) continue;
+          const metadata = this.getMetadata(key);
+          if (!metadata || (now - metadata.timestamp) > maxAge) {
+            keysToRemove.push(key);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to cleanup localStorage:', error);
+      }
+    }
 
-        const metadata = this.getMetadata(key);
-        if (!metadata) {
-          // If we can't get metadata, the record is corrupted
-          keysToRemove.push(key);
-        } else if ((now - metadata.timestamp) > maxAge) {
-          // Record is expired
+    // SessionStorage
+    if (typeof sessionStorage !== 'undefined') {
+      try {
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          if (!key) continue;
+          
+          // Get metadata from sessionStorage record
+          try {
+            const storedData = sessionStorage.getItem(key);
+            if (storedData) {
+              const record: StorageRecord = JSON.parse(storedData);
+              if ((now - record.timestamp) > maxAge) {
+                keysToRemove.push(key);
+              }
+            }
+          } catch {
+            keysToRemove.push(key);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to cleanup sessionStorage:', error);
+      }
+    }
+
+    // MemoryStorage
+    for (const [key, value] of this.memoryStorage.entries()) {
+      try {
+        const record: StorageRecord = JSON.parse(value);
+        if ((now - record.timestamp) > maxAge) {
           keysToRemove.push(key);
         }
+      } catch {
+        keysToRemove.push(key);
       }
-
-      keysToRemove.forEach(key => this.remove(key));
-    } catch (error) {
-      console.error('Failed to cleanup expired records:', error);
     }
+
+    // Perform removal
+    keysToRemove.forEach(key => this.remove(key));
   }
 
   /**

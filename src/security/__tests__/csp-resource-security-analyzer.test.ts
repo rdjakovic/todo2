@@ -9,6 +9,11 @@ import { CSPResourceSecurityAnalyzer } from '../csp-resource-security-analyzer';
 
 // Mock fs module
 vi.mock('fs', () => ({
+  default: {
+    promises: {
+      readFile: vi.fn()
+    }
+  },
   promises: {
     readFile: vi.fn()
   }

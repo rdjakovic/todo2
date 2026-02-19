@@ -304,17 +304,21 @@ export default function LoginForm() {
 
     // Log authentication attempt
     const sessionId = crypto.randomUUID();
-    securityLogger.logEvent(SecurityEventType.FAILED_LOGIN, {
-      userAgent: navigator.userAgent,
-      timestamp: new Date(),
-      sessionId,
-      additionalContext: {
-        userIdentifier: securityLogger['hashIdentifier'](email),
-        component: 'LoginForm',
-        action: 'authentication_attempt',
-        attemptType: 'password_login'
-      }
-    }, 'Authentication attempt initiated');
+    try {
+      securityLogger.logEvent(SecurityEventType.FAILED_LOGIN, {
+        userAgent: navigator.userAgent,
+        timestamp: new Date(),
+        sessionId,
+        additionalContext: {
+          userIdentifier: securityLogger['hashIdentifier'](email),
+          component: 'LoginForm',
+          action: 'authentication_attempt',
+          attemptType: 'password_login'
+        }
+      }, 'Authentication attempt initiated');
+    } catch (logError) {
+      console.warn('Security logging failed:', logError);
+    }
 
     try {
       const { error, data } = await supabase.auth.signInWithPassword({
@@ -382,13 +386,10 @@ export default function LoginForm() {
           }
         };
 
-        try {
-          securityErrorHandler.handleAuthError(error, errorContext);
-          throw new Error('Authentication failed. Please check your credentials and try again.');
-        } catch (handlerError) {
-          // If error handler fails, use a generic message
-          throw new Error('Authentication failed. Please check your credentials and try again.');
-        }
+        const response = securityErrorHandler.handleAuthError(error, errorContext);
+        setError(response.userMessage);
+        toast.error(response.userMessage);
+        return;
       }
 
       console.log("## Sign in data:", data);
@@ -472,9 +473,9 @@ export default function LoginForm() {
         }
       );
 
-      securityErrorHandler.handleAuthError(err, errorContext);
-      setError('Authentication failed. Please check your credentials and try again.');
-      toast.error('Authentication failed. Please check your credentials and try again.');
+      const response = securityErrorHandler.handleAuthError(err, errorContext);
+      setError(response.userMessage);
+      toast.error(response.userMessage);
     } finally {
       setLoading(false);
       setIsSubmitting(false);
@@ -523,7 +524,7 @@ export default function LoginForm() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4" role="form">
+        <form onSubmit={handleSubmit} className="space-y-4" role="form" noValidate>
           <div>
             <label
               htmlFor="email"
@@ -537,7 +538,6 @@ export default function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              required
               disabled={loading || rateLimitStatus.isLocked || progressiveDelay > 0 || isSubmitting}
             />
           </div>
@@ -555,7 +555,6 @@ export default function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-              required
               disabled={loading || rateLimitStatus.isLocked || progressiveDelay > 0 || isSubmitting}
             />
           </div>

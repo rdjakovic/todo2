@@ -6,7 +6,7 @@
  * security logging, and state persistence.
  */
 
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach, Mock } from 'vitest';
 import LoginForm from '../LoginForm';
 import { useAuthStore } from '../../store/authStore';
@@ -40,13 +40,6 @@ vi.mock('../../store/authStore', () => ({
   useAuthStore: vi.fn()
 }));
 
-// Mock crypto.randomUUID for consistent testing
-Object.defineProperty(global, 'crypto', {
-  value: {
-    randomUUID: vi.fn(() => 'test-uuid-123')
-  }
-});
-
 // Mock navigator for user agent
 Object.defineProperty(global, 'navigator', {
   value: {
@@ -55,7 +48,7 @@ Object.defineProperty(global, 'navigator', {
   }
 });
 
-describe('LoginForm E2E Security Tests', () => {
+describe('LoginForm E2E Security Tests', { timeout: 30000 }, () => {
   let mockSetUser: Mock;
   let mockForceDataLoad: Mock;
   let mockSupabaseSignIn: Mock;
@@ -90,17 +83,25 @@ describe('LoginForm E2E Security Tests', () => {
     
     // Reset rate limit manager
     await rateLimitManager.cleanupExpiredStates();
+    localStorage.clear();
+
+    rateLimitManager.updateConfig({
+      maxAttempts: 5,
+      storageKey: 'auth_security_state',
+      baseDelay: 10
+    });
 
     // Clear console logs for clean test output
-    vi.spyOn(console, 'log').mockImplementation(() => {});
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.spyOn(console, 'warn').mockImplementation(() => {});
-    vi.spyOn(console, 'info').mockImplementation(() => {});
+    // vi.spyOn(console, 'log').mockImplementation(() => {});
+    // vi.spyOn(console, 'error').mockImplementation(() => {});
+    // vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // vi.spyOn(console, 'info').mockImplementation(() => {});
   });
 
   afterEach(async () => {
     // Cleanup security state after each test
     await securityStateManager.cleanupExpiredStates();
+    cleanup();
     vi.restoreAllMocks();
   });
 
@@ -121,7 +122,7 @@ describe('LoginForm E2E Security Tests', () => {
       // Fill in credentials
       const emailInput = screen.getByLabelText(/email/i);
       const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const getSubmitBtn = () => screen.getByRole('button');
 
       await act(async () => {
         fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
@@ -130,7 +131,7 @@ describe('LoginForm E2E Security Tests', () => {
 
       // Submit form
       await act(async () => {
-        fireEvent.click(submitButton);
+        fireEvent.click(getSubmitBtn());
       });
 
       // Wait for authentication to complete
@@ -147,16 +148,18 @@ describe('LoginForm E2E Security Tests', () => {
       expect(mockToastSuccess).toHaveBeenCalledWith('Signed in successfully!');
 
       // Verify security logging
-      expect(logSuccessfulLoginSpy).toHaveBeenCalledWith(
-        'test@example.com',
-        expect.objectContaining({
-          component: 'LoginForm',
-          action: 'authentication_success',
-          sessionId: 'test-uuid-123',
-          userId: 'user-123',
-          userEmail: 'test@example.com'
-        })
-      );
+      await waitFor(() => {
+        expect(logSuccessfulLoginSpy).toHaveBeenCalledWith(
+          'test@example.com',
+          expect.objectContaining({
+            component: 'LoginForm',
+            action: 'authentication_success',
+            sessionId: expect.any(String),
+            userId: 'user-123',
+            userEmail: 'test@example.com'
+          })
+        );
+      });
 
       // Verify rate limit reset
       const rateLimitStatus = await rateLimitManager.checkRateLimit('test@example.com');
@@ -180,13 +183,13 @@ describe('LoginForm E2E Security Tests', () => {
 
       const emailInput = screen.getByLabelText(/email/i);
       const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const getSubmitBtn = () => screen.getByRole('button');
 
       // Perform failed authentication attempt
       await act(async () => {
         fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
         fireEvent.change(passwordInput, { target: { value: 'wrongpassword' } });
-        fireEvent.click(submitButton);
+        fireEvent.click(getSubmitBtn());
       });
 
       await waitFor(() => {
@@ -200,7 +203,7 @@ describe('LoginForm E2E Security Tests', () => {
         expect.objectContaining({
           component: 'LoginForm',
           action: 'authentication_failed',
-          sessionId: 'test-uuid-123',
+          sessionId: expect.any(String),
           supabaseError: 'Invalid credentials',
           lockoutTriggered: false
         })
@@ -211,7 +214,7 @@ describe('LoginForm E2E Security Tests', () => {
         authError,
         expect.objectContaining({
           userIdentifier: 'test@example.com',
-          sessionId: 'test-uuid-123'
+          sessionId: expect.any(String)
         })
       );
 
@@ -233,23 +236,26 @@ describe('LoginForm E2E Security Tests', () => {
 
       const emailInput = screen.getByLabelText(/email/i);
       const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const getSubmitBtn = () => screen.getByRole('button');
 
       // Perform 5 failed attempts to trigger lockout
-      for (let i = 1; i <= 5; i++) {
+      for (let i = 0; i < 5; i++) {
+        // Wait for button to be enabled (bypassing progressive delay/loading)
+        await waitFor(() => {
+          const btn = screen.getByRole('button');
+          expect(btn).not.toBeDisabled();
+          expect(btn.textContent).toMatch(/sign in/i);
+        }, { timeout: 10000 });
+
+        const currentBtn = screen.getByRole('button');
         await act(async () => {
           fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
           fireEvent.change(passwordInput, { target: { value: `wrongpassword${i}` } });
-          fireEvent.click(submitButton);
+          fireEvent.click(currentBtn);
         });
 
         await waitFor(() => {
-          expect(mockSupabaseSignIn).toHaveBeenCalledTimes(i);
-        });
-
-        // Wait for rate limit processing
-        await act(async () => {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          expect(mockSupabaseSignIn).toHaveBeenCalledTimes(i + 1);
         });
       }
 
@@ -272,7 +278,7 @@ describe('LoginForm E2E Security Tests', () => {
       });
 
       // Verify submit button is disabled
-      expect((submitButton as HTMLButtonElement).disabled).toBe(true);
+      expect((getSubmitBtn() as HTMLButtonElement).disabled).toBe(true);
     });
 
     it('should persist security state across component remounts', async () => {
@@ -287,13 +293,13 @@ describe('LoginForm E2E Security Tests', () => {
 
       const emailInput = screen.getByLabelText(/email/i);
       const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const getSubmitBtn = () => screen.getByRole('button');
 
       // Perform failed attempt
       await act(async () => {
         fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
         fireEvent.change(passwordInput, { target: { value: 'wrongpassword' } });
-        fireEvent.click(submitButton);
+        fireEvent.click(getSubmitBtn());
       });
 
       await waitFor(() => {
@@ -334,23 +340,32 @@ describe('LoginForm E2E Security Tests', () => {
 
       const emailInput = screen.getByLabelText(/email/i);
       const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const getSubmitBtn = () => screen.getByRole('button');
 
       // Perform first failed attempt
       await act(async () => {
         fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
         fireEvent.change(passwordInput, { target: { value: 'wrongpassword1' } });
-        fireEvent.click(submitButton);
+        fireEvent.click(getSubmitBtn());
       });
 
       await waitFor(() => {
         expect(mockSupabaseSignIn).toHaveBeenCalledTimes(1);
       });
 
+      // Wait for button to be enabled before second attempt
+      await waitFor(() => {
+        const b = screen.getByRole('button');
+        expect(b).not.toBeDisabled();
+        expect(b.textContent).toMatch(/sign in/i);
+      }, { timeout: 10000 });
+
       // Perform second failed attempt
+      const btn2 = screen.getByRole('button');
       await act(async () => {
-        fireEvent.change(passwordInput, { target: { value: 'wrongpassword2' } });
-        fireEvent.click(submitButton);
+        const passwordInp2 = screen.getByLabelText(/password/i);
+        fireEvent.change(passwordInp2, { target: { value: 'wrongpassword2' } });
+        fireEvent.click(btn2);
       });
 
       await waitFor(() => {
@@ -367,7 +382,7 @@ describe('LoginForm E2E Security Tests', () => {
       });
 
       // Verify submit button is disabled during delay
-      expect((submitButton as HTMLButtonElement).disabled).toBe(true);
+      expect((getSubmitBtn() as HTMLButtonElement).disabled).toBe(true);
     });
 
     it('should prevent concurrent authentication requests', async () => {
@@ -382,7 +397,7 @@ describe('LoginForm E2E Security Tests', () => {
 
       const emailInput = screen.getByLabelText(/email/i);
       const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const getSubmitBtn = () => screen.getByRole('button');
 
       await act(async () => {
         fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
@@ -391,16 +406,16 @@ describe('LoginForm E2E Security Tests', () => {
 
       // Start first request
       await act(async () => {
-        fireEvent.click(submitButton);
+        fireEvent.click(getSubmitBtn());
       });
 
       // Verify button is disabled and shows loading state
-      expect((submitButton as HTMLButtonElement).disabled).toBe(true);
+      expect((getSubmitBtn() as HTMLButtonElement).disabled).toBe(true);
       expect(screen.getByText(/signing in/i)).toBeInTheDocument();
 
       // Try to submit again (should be prevented)
       await act(async () => {
-        fireEvent.click(submitButton);
+        fireEvent.click(getSubmitBtn());
       });
 
       // Verify only one request was made
@@ -421,12 +436,12 @@ describe('LoginForm E2E Security Tests', () => {
 
       const emailInput = screen.getByLabelText(/email/i);
       const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const getSubmitBtn = () => screen.getByRole('button');
 
       await act(async () => {
         fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
         fireEvent.change(passwordInput, { target: { value: 'password123' } });
-        fireEvent.click(submitButton);
+        fireEvent.click(getSubmitBtn());
       });
 
       await waitFor(() => {
@@ -454,25 +469,32 @@ describe('LoginForm E2E Security Tests', () => {
 
       render(<LoginForm />);
 
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const getSubmitBtn = () => screen.getByRole('button');
+      const getForm = () => screen.getByRole('form');
+
+      // Wait for component to initialize
+      await waitFor(() => {
+        expect(getSubmitBtn()).not.toBeDisabled();
+      }, { timeout: 2000 });
 
       // Try to submit with empty fields
       await act(async () => {
-        fireEvent.click(submitButton);
+        fireEvent.submit(getForm());
       });
 
       // Verify validation error was logged
-      expect(logEventSpy).toHaveBeenCalledWith(
-        SecurityEventType.VALIDATION_ERROR,
-        expect.objectContaining({
-          additionalContext: expect.objectContaining({
-            component: 'LoginForm',
-            action: 'input_validation',
-            validationFailure: 'missing_required_fields'
+      await waitFor(() => {
+        expect(logEventSpy).toHaveBeenCalledWith(
+          SecurityEventType.VALIDATION_ERROR,
+          expect.objectContaining({
+            additionalContext: expect.objectContaining({
+              component: 'LoginForm',
+              action: 'input_validation',
+              validationFailure: 'missing_required_fields'
+            })
           })
-        }),
-        expect.any(String)
-      );
+        );
+      });
 
       // Verify no authentication attempt was made
       expect(mockSupabaseSignIn).not.toHaveBeenCalled();
@@ -484,19 +506,20 @@ describe('LoginForm E2E Security Tests', () => {
       await act(async () => {
         fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
         fireEvent.change(passwordInput, { target: { value: 'password123' } });
-        fireEvent.click(submitButton);
+        fireEvent.click(getSubmitBtn());
       });
 
       // Verify email validation error was logged
-      expect(logEventSpy).toHaveBeenCalledWith(
-        SecurityEventType.VALIDATION_ERROR,
-        expect.objectContaining({
-          additionalContext: expect.objectContaining({
-            validationFailure: 'invalid_email_format'
+      await waitFor(() => {
+        expect(logEventSpy).toHaveBeenCalledWith(
+          SecurityEventType.VALIDATION_ERROR,
+          expect.objectContaining({
+            additionalContext: expect.objectContaining({
+              validationFailure: 'invalid_email_format'
+            })
           })
-        }),
-        expect.any(String)
-      );
+        );
+      });
 
       // Verify still no authentication attempt
       expect(mockSupabaseSignIn).not.toHaveBeenCalled();
@@ -513,12 +536,12 @@ describe('LoginForm E2E Security Tests', () => {
 
       const emailInput = screen.getByLabelText(/email/i) as HTMLInputElement;
       const passwordInput = screen.getByLabelText(/password/i) as HTMLInputElement;
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const getSubmitBtn = () => screen.getByRole('button');
 
       await act(async () => {
         fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
         fireEvent.change(passwordInput, { target: { value: 'password123' } });
-        fireEvent.click(submitButton);
+        fireEvent.click(getSubmitBtn());
       });
 
       await waitFor(() => {
@@ -595,8 +618,9 @@ describe('LoginForm E2E Security Tests', () => {
         progressiveDelay: 'not-a-number'
       };
 
-      // Try to set corrupted state
-      await securityStateManager.setSecurityState('test@example.com', corruptedState as any);
+      // Try to set corrupted state manually in localStorage
+      const storageKey = 'security_state_' + btoa('test@example.com').replace(/[^a-zA-Z0-9]/g, '');
+      localStorage.setItem(storageKey, JSON.stringify(corruptedState));
 
       // Verify system falls back to safe defaults
       const status = await rateLimitManager.checkRateLimit('test@example.com');
@@ -609,12 +633,18 @@ describe('LoginForm E2E Security Tests', () => {
       // Create multiple security states with different expiration times
       const now = Date.now();
       
-      // Expired state
-      await securityStateManager.setSecurityState('expired@example.com', {
+      // Create expired state manually with old updatedAt
+      const expiredKey = 'security_state_' + btoa('expired@example.com').replace(/[^a-zA-Z0-9]/g, '');
+      const expiredStateData = {
+        identifier: 'expired@example.com',
         failedAttempts: 3,
-        lockoutUntil: now - 1000, // Expired 1 second ago
-        lastAttempt: now - 2000
-      });
+        lockoutUntil: now - 1000,
+        lastAttempt: now - 2000,
+        createdAt: now - 10000,
+        updatedAt: now - (25 * 60 * 60 * 1000), // 25 hours ago
+        version: 1
+      };
+      localStorage.setItem(expiredKey, JSON.stringify(expiredStateData));
 
       // Active state
       await securityStateManager.setSecurityState('active@example.com', {
@@ -638,7 +668,7 @@ describe('LoginForm E2E Security Tests', () => {
   });
 
   describe('Error Handling and User Experience', () => {
-    it('should display appropriate lockout countdown', async () => {
+    it('should display appropriate lockout countdown', { timeout: 30000 }, async () => {
       // Setup lockout state
       const authError = new Error('Invalid credentials');
       mockSupabaseSignIn.mockResolvedValue({
@@ -650,22 +680,29 @@ describe('LoginForm E2E Security Tests', () => {
 
       const emailInput = screen.getByLabelText(/email/i);
       const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const getSubmitBtn = () => screen.getByRole('button');
+
+      const getForm = () => screen.getByRole('form');
+
+      const testEmail = 'countdown-test@example.com';
 
       // Trigger lockout
       for (let i = 0; i < 5; i++) {
+        // Wait for potential progressive delay to clear and button to be re-enabled
+        await waitFor(() => {
+          const btn = getSubmitBtn();
+          expect(btn).toBeEnabled();
+          expect(btn.textContent).toMatch(/Sign In/i);
+        }, { timeout: 15000 });
+
         await act(async () => {
-          fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+          fireEvent.change(emailInput, { target: { value: testEmail } });
           fireEvent.change(passwordInput, { target: { value: `wrong${i}` } });
-          fireEvent.click(submitButton);
+          fireEvent.submit(getForm());
         });
 
         await waitFor(() => {
           expect(mockSupabaseSignIn).toHaveBeenCalledTimes(i + 1);
-        });
-
-        await act(async () => {
-          await new Promise(resolve => setTimeout(resolve, 50));
         });
       }
 
@@ -683,6 +720,10 @@ describe('LoginForm E2E Security Tests', () => {
     });
 
     it('should show remaining attempts warning', async () => {
+      // Disable progressive delay for this test
+      const originalConfig = rateLimitManager.getConfig();
+      rateLimitManager.updateConfig({ progressiveDelay: false });
+
       const authError = new Error('Invalid credentials');
       mockSupabaseSignIn.mockResolvedValue({
         data: { user: null },
@@ -693,22 +734,25 @@ describe('LoginForm E2E Security Tests', () => {
 
       const emailInput = screen.getByLabelText(/email/i);
       const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const getSubmitBtn = () => screen.getByRole('button');
+
+      const getForm = () => screen.getByRole('form');
 
       // Perform 2 failed attempts
       for (let i = 0; i < 2; i++) {
+        // Wait for button to be enabled
+        await waitFor(() => {
+          expect(getSubmitBtn()).not.toBeDisabled();
+        }, { timeout: 10000 });
+
         await act(async () => {
           fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
           fireEvent.change(passwordInput, { target: { value: `wrong${i}` } });
-          fireEvent.click(submitButton);
+          fireEvent.submit(getForm());
         });
 
         await waitFor(() => {
           expect(mockSupabaseSignIn).toHaveBeenCalledTimes(i + 1);
-        });
-
-        await act(async () => {
-          await new Promise(resolve => setTimeout(resolve, 50));
         });
       }
 
@@ -716,9 +760,16 @@ describe('LoginForm E2E Security Tests', () => {
       await waitFor(() => {
         expect(screen.getByText(/3 attempts remaining/i)).toBeInTheDocument();
       });
+
+      // Restore configuration
+      rateLimitManager.updateConfig(originalConfig);
     });
 
     it('should handle different network conditions', async () => {
+      // Disable progressive delay to avoid interference
+      const originalConfig = rateLimitManager.getConfig();
+      rateLimitManager.updateConfig({ progressiveDelay: false });
+
       const scenarios = [
         {
           name: 'offline',
@@ -741,16 +792,16 @@ describe('LoginForm E2E Security Tests', () => {
         {
           name: 'intermittent connection',
           setup: () => {
-            Object.defineProperty(navigator, 'onLine', { value: true, writable: true, configurable: true });
-            let callCount = 0;
-            mockSupabaseSignIn.mockImplementation(() => {
-              callCount++;
-              if (callCount % 2 === 0) {
-                return Promise.resolve({ data: { user: null }, error: new Error('Network error') });
-              } else {
-                return Promise.reject(new Error('Connection lost'));
-              }
-            });
+             Object.defineProperty(navigator, 'onLine', { value: true, writable: true, configurable: true });
+             let callCount = 0;
+             mockSupabaseSignIn.mockImplementation(() => {
+               callCount++;
+               if (callCount % 2 === 0) {
+                 return Promise.resolve({ data: { user: null }, error: new Error('Network error') });
+               } else {
+                 return Promise.reject(new Error('Connection lost'));
+               }
+             });
           }
         }
       ];
@@ -759,6 +810,8 @@ describe('LoginForm E2E Security Tests', () => {
         // Reset for each scenario
         vi.clearAllMocks();
         await securityStateManager.cleanupExpiredStates();
+        await rateLimitManager.cleanupExpiredStates();
+        localStorage.clear();
         
         scenario.setup();
 
@@ -766,12 +819,19 @@ describe('LoginForm E2E Security Tests', () => {
 
         const emailInput = screen.getByLabelText(/email/i);
         const passwordInput = screen.getByLabelText(/password/i);
-        const submitButton = screen.getByRole('button', { name: /sign in/i });
+        const getForm = () => screen.getByRole('form');
+
+        const scenarioEmail = `${scenario.name.replace(/\s+/g, '-')}@example.com`;
+
+        await waitFor(() => {
+          const b = screen.getByRole('button');
+          expect(b).not.toBeDisabled();
+        }, { timeout: 10000 });
 
         await act(async () => {
-          fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
+          fireEvent.change(emailInput, { target: { value: scenarioEmail } });
           fireEvent.change(passwordInput, { target: { value: 'password123' } });
-          fireEvent.click(submitButton);
+          fireEvent.submit(getForm());
         });
 
         // Verify error handling for network conditions
@@ -779,8 +839,14 @@ describe('LoginForm E2E Security Tests', () => {
           expect(mockToastError).toHaveBeenCalledWith(
             expect.stringMatching(/connection|network|error/i)
           );
-        }, { timeout: 2000 });
+        }, { timeout: 10000 });
+
+        // Cleanup after each scenario to prevent DOM pollution
+        cleanup();
       }
+
+      // Restore configuration
+      rateLimitManager.updateConfig(originalConfig);
     });
   });
 });

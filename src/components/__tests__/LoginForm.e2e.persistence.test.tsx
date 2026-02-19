@@ -5,7 +5,7 @@
  * browser sessions, and cross-tab synchronization.
  */
 
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach, Mock } from 'vitest';
 import LoginForm from '../LoginForm';
 import { useAuthStore } from '../../store/authStore';
@@ -40,45 +40,23 @@ vi.mock('../../store/authStore', () => ({
   }))
 }));
 
-// Mock localStorage for persistence testing
-const mockLocalStorage = (() => {
-  let store: Record<string, string> = {};
-
-  return {
-    getItem: vi.fn((key: string) => store[key] || null),
-    setItem: vi.fn((key: string, value: string) => {
-      store[key] = value;
-    }),
-    removeItem: vi.fn((key: string) => {
-      delete store[key];
-    }),
-    clear: vi.fn(() => {
-      store = {};
-    }),
-    get store() {
-      return { ...store };
-    },
-    set store(newStore: Record<string, string>) {
-      store = { ...newStore };
-    }
-  };
-})();
-
-Object.defineProperty(window, 'localStorage', {
-  value: mockLocalStorage
-});
+// Use native localStorage from jsdom
+// No need to replace window.localStorage as it works fine in jsdom
+// and replacing it breaks references held by other modules (like secureStorage)
 
 // Mock crypto for consistent testing
 Object.defineProperty(global, 'crypto', {
   value: {
-    randomUUID: vi.fn(() => 'test-uuid-123'),
+    randomUUID: vi.fn(() => '12345678-1234-1234-1234-123456789abc'),
     subtle: {
       encrypt: vi.fn(),
       decrypt: vi.fn(),
       generateKey: vi.fn(),
       importKey: vi.fn()
     }
-  }
+  },
+  configurable: true,
+  writable: true
 });
 
 describe('LoginForm E2E Persistence Tests', () => {
@@ -89,13 +67,15 @@ describe('LoginForm E2E Persistence Tests', () => {
   beforeEach(async () => {
     // Reset all mocks
     vi.clearAllMocks();
-    mockLocalStorage.clear();
+
+    // Clear all storage tiers
+    secureStorage.clear();
 
     // Setup auth store mocks
     mockSetUser = vi.fn();
     mockForceDataLoad = vi.fn().mockResolvedValue(undefined);
 
-    (useAuthStore as any).mockReturnValue({
+    (useAuthStore as unknown as Mock).mockReturnValue({
       setUser: mockSetUser,
       forceDataLoad: mockForceDataLoad
     });
@@ -104,19 +84,16 @@ describe('LoginForm E2E Persistence Tests', () => {
     mockSupabaseSignIn = vi.fn();
     (supabase.auth.signInWithPassword as Mock).mockImplementation(mockSupabaseSignIn);
 
-    // Clear security state
-    await securityStateManager.cleanupExpiredStates();
-    await rateLimitManager.cleanupExpiredStates();
-
     // Suppress console logs for clean test output
     vi.spyOn(console, 'log').mockImplementation(() => { });
     vi.spyOn(console, 'error').mockImplementation(() => { });
     vi.spyOn(console, 'warn').mockImplementation(() => { });
+    vi.spyOn(console, 'info').mockImplementation(() => { });
   });
 
   afterEach(async () => {
-    await securityStateManager.cleanupExpiredStates();
-    mockLocalStorage.clear();
+    secureStorage.clear();
+    cleanup();
     vi.restoreAllMocks();
   });
 
@@ -138,6 +115,9 @@ describe('LoginForm E2E Persistence Tests', () => {
 
       // Perform 3 failed attempts
       for (let i = 0; i < 3; i++) {
+        // Wait for button to be enabled (progressive delay)
+        await waitFor(() => expect(submitButton1).toBeEnabled(), { timeout: 5000 });
+
         await act(async () => {
           fireEvent.change(emailInput1, { target: { value: 'test@example.com' } });
           fireEvent.change(passwordInput1, { target: { value: `wrong${i}` } });
@@ -146,10 +126,6 @@ describe('LoginForm E2E Persistence Tests', () => {
 
         await waitFor(() => {
           expect(mockSupabaseSignIn).toHaveBeenCalledTimes(i + 1);
-        });
-
-        await act(async () => {
-          await new Promise(resolve => setTimeout(resolve, 50));
         });
       }
 
@@ -174,8 +150,8 @@ describe('LoginForm E2E Persistence Tests', () => {
 
       // Verify state persisted across restart
       await waitFor(() => {
-        expect(screen.getByText(/2 attempts remaining/i)).toBeInTheDocument();
-      });
+        expect(screen.getByText((content) => content.includes('2 attempts remaining'))).toBeInTheDocument();
+      }, { timeout: 10000 });
 
       const statusAfterRestart = await rateLimitManager.checkRateLimit('test@example.com');
       expect(statusAfterRestart.attemptsRemaining).toBe(2);
@@ -198,6 +174,9 @@ describe('LoginForm E2E Persistence Tests', () => {
 
       // Perform 5 failed attempts to trigger lockout
       for (let i = 0; i < 5; i++) {
+        // Wait for button to be enabled (progressive delay)
+        await waitFor(() => expect(submitButton1).toBeEnabled(), { timeout: 10000 });
+
         await act(async () => {
           fireEvent.change(emailInput1, { target: { value: 'test@example.com' } });
           fireEvent.change(passwordInput1, { target: { value: `wrong${i}` } });
@@ -206,17 +185,13 @@ describe('LoginForm E2E Persistence Tests', () => {
 
         await waitFor(() => {
           expect(mockSupabaseSignIn).toHaveBeenCalledTimes(i + 1);
-        });
-
-        await act(async () => {
-          await new Promise(resolve => setTimeout(resolve, 50));
-        });
+        }, { timeout: 10000 });
       }
 
       // Verify lockout is active
       await waitFor(() => {
-        expect(screen.getByText(/account temporarily locked/i)).toBeInTheDocument();
-      });
+        expect(screen.getByText((content) => content.includes('Account temporarily locked'))).toBeInTheDocument();
+      }, { timeout: 5000 });
 
       const statusBeforeRestart = await rateLimitManager.checkRateLimit('test@example.com');
       expect(statusBeforeRestart.isLocked).toBe(true);
@@ -236,8 +211,8 @@ describe('LoginForm E2E Persistence Tests', () => {
 
       // Verify lockout state persisted
       await waitFor(() => {
-        expect(screen.getByText(/account temporarily locked/i)).toBeInTheDocument();
-      });
+        expect(screen.getByText((content) => content.includes('Account temporarily locked'))).toBeInTheDocument();
+      }, { timeout: 10000 });
 
       const statusAfterRestart = await rateLimitManager.checkRateLimit('test@example.com');
       expect(statusAfterRestart.isLocked).toBe(true);
@@ -246,7 +221,7 @@ describe('LoginForm E2E Persistence Tests', () => {
 
     it('should handle corrupted persistence data gracefully', async () => {
       // Manually corrupt localStorage data
-      mockLocalStorage.setItem('auth_security_state_test@example.com', 'corrupted-data');
+      localStorage.setItem('auth_security_state_test@example.com', 'corrupted-data');
 
       render(<LoginForm />);
 
@@ -343,8 +318,8 @@ describe('LoginForm E2E Persistence Tests', () => {
 
       // Verify Tab 2 shows synchronized state
       await waitFor(() => {
-        expect(screen.getByText(/4 attempts remaining/i)).toBeInTheDocument();
-      });
+        expect(screen.getByText((_, el) => el?.textContent?.includes('4 attempts remaining') || false)).toBeInTheDocument();
+      }, { timeout: 10000 });
 
       status = await rateLimitManager.checkRateLimit('test@example.com');
       expect(status.attemptsRemaining).toBe(4);
@@ -397,8 +372,8 @@ describe('LoginForm E2E Persistence Tests', () => {
 
       // Wait for state synchronization
       await waitFor(() => {
-        expect(screen.getByText(/2 attempts remaining/i)).toBeInTheDocument();
-      });
+        expect(screen.getByText((_, el) => el?.textContent?.includes('2 attempts remaining') || false)).toBeInTheDocument();
+      }, { timeout: 10000 });
     });
 
     it('should prevent race conditions in cross-tab updates', async () => {
@@ -449,10 +424,6 @@ describe('LoginForm E2E Persistence Tests', () => {
         await waitFor(() => {
           expect(mockSupabaseSignIn).toHaveBeenCalledTimes(i + 1);
         });
-
-        await act(async () => {
-          await new Promise(resolve => setTimeout(resolve, 50));
-        });
       }
 
       // Verify state is maintained
@@ -472,92 +443,92 @@ describe('LoginForm E2E Persistence Tests', () => {
 
       // Verify state persisted within session
       await waitFor(() => {
-        expect(screen.getByText(/3 attempts remaining/i)).toBeInTheDocument();
-      });
+        expect(screen.getByText((_, el) => el?.textContent?.includes('3 attempts remaining') || false)).toBeInTheDocument();
+      }, { timeout: 10000 });
     });
 
     it('should handle session storage fallback when localStorage fails', async () => {
-      // Mock localStorage to fail
-      const originalSetItem = mockLocalStorage.setItem;
-      const originalGetItem = mockLocalStorage.getItem;
-
-      mockLocalStorage.setItem.mockImplementation(() => {
+      // Mock only localStorage to fail
+      const setItemSpy = vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => {
         throw new Error('Storage quota exceeded');
       });
 
       // Mock sessionStorage as fallback
       const mockSessionStorage = {
-        getItem: vi.fn(() => null),
-        setItem: vi.fn(),
-        removeItem: vi.fn(),
-        clear: vi.fn()
+        _data: new Map<string, string>(),
+        getItem: vi.fn((key: string) => mockSessionStorage._data.get(key) || null),
+        setItem: vi.fn((key: string, value: string) => { mockSessionStorage._data.set(key, value); }),
+        removeItem: vi.fn((key: string) => { mockSessionStorage._data.delete(key); }),
+        clear: vi.fn(() => { mockSessionStorage._data.clear(); }),
+        length: 0,
+        key: vi.fn((index: number) => Array.from(mockSessionStorage._data.keys())[index] || null)
       };
 
       Object.defineProperty(window, 'sessionStorage', {
-        value: mockSessionStorage
+        value: mockSessionStorage,
+        configurable: true
       });
-
-      // Clear any existing state first
-      await rateLimitManager.cleanupExpiredStates();
 
       // Attempt to create security state
       await rateLimitManager.incrementFailedAttempts('fallback@example.com');
 
       // Verify fallback mechanism was used - should start from 5 and decrement to 4
+      // checkRateLimit will find it in sessionStorage
       const status = await rateLimitManager.checkRateLimit('fallback@example.com');
       expect(status.attemptsRemaining).toBe(4);
+      expect(status.isLocked).toBe(false);
 
-      // Restore original localStorage
-      mockLocalStorage.setItem.mockImplementation(originalSetItem);
-      mockLocalStorage.getItem.mockImplementation(originalGetItem);
+      setItemSpy.mockRestore();
     });
+
+
 
     it('should handle memory-only fallback when all storage fails', async () => {
       // Mock both localStorage and sessionStorage to fail
-      const originalSetItem = mockLocalStorage.setItem;
-      const originalGetItem = mockLocalStorage.getItem;
-
-      mockLocalStorage.setItem.mockImplementation(() => {
+      const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
         throw new Error('Storage quota exceeded');
       });
 
-      const mockSessionStorage = {
-        getItem: vi.fn(() => { throw new Error('Session storage failed'); }),
-        setItem: vi.fn(() => { throw new Error('Session storage failed'); }),
-        removeItem: vi.fn(),
-        clear: vi.fn()
-      };
+      try {
+        const mockSessionStorage = {
+          getItem: vi.fn(() => { throw new Error('Session storage failed'); }),
+          setItem: vi.fn(() => { throw new Error('Session storage failed'); }),
+          removeItem: vi.fn(),
+          clear: vi.fn()
+        };
 
-      Object.defineProperty(window, 'sessionStorage', {
-        value: mockSessionStorage
-      });
+        Object.defineProperty(window, 'sessionStorage', {
+          value: mockSessionStorage,
+          configurable: true
+        });
 
-      // Clear any existing state first
-      await rateLimitManager.cleanupExpiredStates();
+        // Clear any existing state first
+        await rateLimitManager.cleanupExpiredStates();
 
-      // System should still function with memory-only storage
-      await rateLimitManager.incrementFailedAttempts('memory@example.com');
+        // System should still function with memory-only storage
+        await rateLimitManager.incrementFailedAttempts('memory@example.com');
 
-      const status = await rateLimitManager.checkRateLimit('memory@example.com');
-      expect(status.attemptsRemaining).toBe(4);
+        const status = await rateLimitManager.checkRateLimit('memory@example.com');
+        expect(status.attemptsRemaining).toBe(4);
 
-      // Verify system remains functional
-      render(<LoginForm />);
+        // Verify system remains functional
+        render(<LoginForm />);
 
-      const emailInput = screen.getByLabelText(/email/i);
-      await act(async () => {
-        fireEvent.change(emailInput, { target: { value: 'memory@example.com' } });
-      });
+        const emailInput = screen.getByLabelText(/email/i);
+        await act(async () => {
+          fireEvent.change(emailInput, { target: { value: 'memory@example.com' } });
+        });
 
-      // Should show warning but remain functional
-      await waitFor(() => {
-        expect(screen.getByText(/4 attempts remaining/i)).toBeInTheDocument();
-      });
-
-      // Restore original localStorage
-      mockLocalStorage.setItem.mockImplementation(originalSetItem);
-      mockLocalStorage.getItem.mockImplementation(originalGetItem);
+        // Should show warning but remain functional
+        await waitFor(() => {
+          expect(screen.getByText((content) => content.includes('4 attempts remaining'))).toBeInTheDocument();
+        }, { timeout: 10000 });
+      } finally {
+        setItemSpy.mockRestore();
+      }
     });
+
+
   });
 
   describe('Data Integrity and Validation', () => {
@@ -571,7 +542,7 @@ describe('LoginForm E2E Persistence Tests', () => {
       };
 
       // Manually set invalid state in storage
-      mockLocalStorage.setItem(
+      localStorage.setItem(
         'auth_security_state_test@example.com',
         JSON.stringify(invalidState)
       );

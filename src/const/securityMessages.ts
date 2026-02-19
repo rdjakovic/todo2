@@ -176,11 +176,15 @@ export function getErrorConfig(errorType: AuthSecurityErrorType): ErrorMessageCo
  * Helper function to determine if an error type should trigger security logging
  */
 export function shouldLogSecurityEvent(errorType: AuthSecurityErrorType): boolean {
+  // Only log high-security events that require monitoring
   const highSecurityEvents = [
     AuthSecurityErrorType.RATE_LIMIT_EXCEEDED,
     AuthSecurityErrorType.ACCOUNT_LOCKED,
     AuthSecurityErrorType.ENCRYPTION_ERROR,
-    AuthSecurityErrorType.CONCURRENT_REQUEST
+    AuthSecurityErrorType.CONCURRENT_REQUEST,
+    AuthSecurityErrorType.INVALID_CREDENTIALS,
+    AuthSecurityErrorType.UNKNOWN_ERROR,
+    AuthSecurityErrorType.STORAGE_ERROR
   ];
   
   return highSecurityEvents.includes(errorType);

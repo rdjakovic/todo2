@@ -114,7 +114,8 @@ export class CSPResourceSecurityAnalyzer implements SecurityAnalyzer<CSPResource
       }
     } catch (error) {
       console.error('Error analyzing Tauri CSP:', error);
-      this.report.cspImplementation.issues.push('Error reading or parsing Tauri configuration');
+      // Re-throw to let the outer analyze() catch handle it
+      throw error;
     }
   }
 
@@ -150,6 +151,21 @@ export class CSPResourceSecurityAnalyzer implements SecurityAnalyzer<CSPResource
       let match;
       let hasAnySRI = false;
       
+      // Check stylesheets first (so they appear first in externalResources)
+      while ((match = linkRegex.exec(htmlContent)) !== null) {
+        const href = match[1];
+        if (this.isExternalResource(href) && match[0].includes('stylesheet')) {
+          const hasSRI = match[0].includes('integrity=');
+          if (hasSRI) hasAnySRI = true;
+          
+          this.report.resourceIntegrity.externalResources.push({
+            url: href,
+            hasSRI,
+            type: 'stylesheet'
+          });
+        }
+      }
+      
       // Check scripts
       while ((match = scriptRegex.exec(htmlContent)) !== null) {
         const src = match[1];
@@ -161,21 +177,6 @@ export class CSPResourceSecurityAnalyzer implements SecurityAnalyzer<CSPResource
             url: src,
             hasSRI,
             type: 'script'
-          });
-        }
-      }
-      
-      // Check stylesheets
-      while ((match = linkRegex.exec(htmlContent)) !== null) {
-        const href = match[1];
-        if (this.isExternalResource(href) && match[0].includes('stylesheet')) {
-          const hasSRI = match[0].includes('integrity=');
-          if (hasSRI) hasAnySRI = true;
-          
-          this.report.resourceIntegrity.externalResources.push({
-            url: href,
-            hasSRI,
-            type: 'stylesheet'
           });
         }
       }
@@ -306,9 +307,9 @@ export class CSPResourceSecurityAnalyzer implements SecurityAnalyzer<CSPResource
     riskScore += this.report.thirdPartyScripts.riskyDomains.length * 10; // 10 points per risky domain
     
     // Determine risk level
-    if (riskScore >= 50) {
+    if (riskScore >= 30) {
       this.report.riskLevel = 'high';
-    } else if (riskScore >= 20) {
+    } else if (riskScore >= 15) {
       this.report.riskLevel = 'medium';
     } else {
       this.report.riskLevel = 'low';

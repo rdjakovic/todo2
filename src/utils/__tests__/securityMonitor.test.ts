@@ -7,7 +7,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi, Mock } from 'vitest';
 import { SecurityMonitor, SecurityMonitorConfig } from '../securityMonitor';
-import { SecurityLogger, SecurityEventType } from '../securityLogger';
+import { SecurityLogger, SecurityEventType, securityLogger } from '../securityLogger';
 import { securityStateManager } from '../securityStateManager';
 
 // Mock dependencies
@@ -46,9 +46,15 @@ describe('SecurityMonitor', () => {
     };
     
     // Mock SecurityLogger constructor and methods
+    // Mock SecurityLogger constructor and methods if needed
     vi.mocked(SecurityLogger).prototype.logEvent = mockSecurityLogger.logEvent;
     vi.mocked(SecurityLogger).prototype.logSecurityError = mockSecurityLogger.logSecurityError;
     vi.mocked(SecurityLogger).prototype['hashIdentifier'] = mockSecurityLogger.hashIdentifier;
+
+    // Explicitly mock the singleton instance methods
+    vi.mocked(securityLogger).logEvent = mockSecurityLogger.logEvent;
+    vi.mocked(securityLogger).logSecurityError = mockSecurityLogger.logSecurityError;
+    vi.mocked(securityLogger).hashIdentifier = mockSecurityLogger.hashIdentifier;
 
     // Mock console
     consoleSpy = vi.fn();
@@ -465,6 +471,7 @@ describe('SecurityMonitor', () => {
       ]);
 
       vi.spyOn(securityMonitor as any, 'getAllSecurityStates').mockResolvedValue(mockStates);
+      mockSecurityStateManager.getSecurityState.mockResolvedValue(mockStates.get('user1'));
       mockSecurityStateManager.validateStateIntegrity.mockResolvedValue(true);
       
       const health = await securityMonitor.performHealthCheck();
@@ -578,7 +585,7 @@ describe('SecurityMonitor', () => {
       vi.advanceTimersByTime(1000);
       
       // Wait for async operations
-      await vi.runAllTimersAsync();
+      await vi.runOnlyPendingTimersAsync();
       
       expect(mockSecurityStateManager.cleanupExpiredStates).toHaveBeenCalled();
     });
@@ -593,7 +600,7 @@ describe('SecurityMonitor', () => {
       vi.advanceTimersByTime(2000);
       
       // Wait for async operations
-      await vi.runAllTimersAsync();
+      await vi.runOnlyPendingTimersAsync();
       
       expect(mockSecurityLogger.logEvent).toHaveBeenCalledWith(
         SecurityEventType.SUCCESSFUL_LOGIN,

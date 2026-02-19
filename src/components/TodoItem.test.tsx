@@ -48,6 +48,6 @@ describe("TodoItem", () => {
   test("calls onOpenEditDialog when edit button is clicked", () => {
     const editButton = screen.getByTitle("Edit todo");
     fireEvent.click(editButton);
-    expect(mockOnOpenEditDialog).toHaveBeenCalledWith(mockTodo); // Changed assertion
+    expect(mockOnOpenEditDialog).toHaveBeenCalledWith(mockTodo, false); // Edit mode = false viewMode
   });
 });

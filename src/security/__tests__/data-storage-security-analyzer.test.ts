@@ -6,12 +6,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DatabaseSecurityAnalyzer, analyzeDatabaseSecurity, generateDatabaseSecurityReport } from '../data-storage-security-analyzer';
 
 // Mock Supabase
-const mockSupabase = {
-  from: vi.fn(),
-  auth: {
-    getSession: vi.fn()
+const { mockSupabase } = vi.hoisted(() => ({
+  mockSupabase: {
+    from: vi.fn(),
+    auth: {
+      getSession: vi.fn()
+    }
   }
-};
+}));
 
 vi.mock('../../lib/supabase', () => ({
   supabase: mockSupabase
