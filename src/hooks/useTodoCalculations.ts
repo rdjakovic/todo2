@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Todo, TodoList, FilterOptions, SortOption } from '../types/todo';
+import { Todo, TodoList, FilterOptions, SortOption, SortDirection } from '../types/todo';
 import { filterTodosBySearch, sortTodos } from '../store/todoStore';
 import { hasVisibleContent } from '../lib/content';
 
@@ -9,7 +9,7 @@ interface UseTodoCalculationsProps {
   selectedListId: string;
   searchQuery: string;
   activeFilters: FilterOptions;
-  effectiveSort: SortOption;
+  effectiveSort: { sort: SortOption; direction: SortDirection };
 }
 
 export const useTodoCalculations = ({
@@ -96,14 +96,14 @@ export const useTodoCalculations = ({
     const filteredTodos = applyFilters(searchFilteredTodos, activeFilters);
 
     // Split and sort
-    const incomplete = sortTodos(filteredTodos.filter(todo => !todo.completed), effectiveSort);
-    const completed = sortTodos(filteredTodos.filter(todo => todo.completed), effectiveSort);
+    const incomplete = sortTodos(filteredTodos.filter(todo => !todo.completed), effectiveSort.sort, effectiveSort.direction);
+    const completed = sortTodos(filteredTodos.filter(todo => todo.completed), effectiveSort.sort, effectiveSort.direction);
 
     return {
       incompleteTodos: incomplete,
       completedTodos: completed
     };
-  }, [todos, currentList, selectedListId, searchQuery, activeFilters, effectiveSort]);
+  }, [todos, currentList, selectedListId, searchQuery, activeFilters, effectiveSort.sort, effectiveSort.direction]);
 
   return {
     currentList,

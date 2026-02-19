@@ -1,11 +1,4 @@
-export type SortOption =
-  | "dateCreated"
-  | "priority"
-  | "dateCompleted"
-  | "completedFirst"
-  | "completedLast"
-  | "dueDate"
-  | "custom";
+export type { SortOption, SortDirection } from "../constants/sortOptions";
 
 export interface TodoList {
   id: string;
@@ -13,7 +6,8 @@ export interface TodoList {
   icon: string;
   showCompleted: boolean;
   userId: string;
-  sortPreference?: SortOption;
+  /** Stored as plain SortOption or "sort:direction" encoded string */
+  sortPreference?: string;
 }
 
 export interface Todo {

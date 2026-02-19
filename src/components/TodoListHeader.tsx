@@ -1,7 +1,8 @@
 import React from 'react';
-import { PencilIcon, TrashIcon, MagnifyingGlassIcon, XMarkIcon, FunnelIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
-import { TodoList } from "../types/todo";
+import { PencilIcon, TrashIcon, MagnifyingGlassIcon, XMarkIcon, FunnelIcon } from "@heroicons/react/24/outline";
+import { TodoList, SortOption, SortDirection } from "../types/todo";
 import clsx from 'clsx';
+import ListSortDropdown from './ListSortDropdown';
 
 interface TodoListHeaderProps {
   currentList?: TodoList;
@@ -11,8 +12,11 @@ interface TodoListHeaderProps {
   onEditList: () => void;
   onDeleteList: () => void;
   onFilterClick: () => void;
-  onSortClick: () => void;
   hasActiveFilters: boolean;
+  globalSort: SortOption;
+  globalDirection: SortDirection;
+  onSetSort: (sort: SortOption, direction: SortDirection) => Promise<void>;
+  onUseGlobal: () => Promise<void>;
 }
 
 const TodoListHeader: React.FC<TodoListHeaderProps> = ({
@@ -23,10 +27,13 @@ const TodoListHeader: React.FC<TodoListHeaderProps> = ({
   onEditList,
   onDeleteList,
   onFilterClick,
-  onSortClick,
-  hasActiveFilters
+  hasActiveFilters,
+  globalSort,
+  globalDirection,
+  onSetSort,
+  onUseGlobal,
 }) => {
-  
+
   const handleClearSearch = () => {
     setSearchQuery("");
   };
@@ -44,7 +51,7 @@ const TodoListHeader: React.FC<TodoListHeaderProps> = ({
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 dark:text-white break-words min-w-0 flex-1">
           {currentList?.name || "Todos"}
         </h1>
-        
+
         {canEditOrDelete && (
           <div className="flex gap-1 flex-shrink-0 mt-1">
             <button
@@ -104,22 +111,14 @@ const TodoListHeader: React.FC<TodoListHeaderProps> = ({
             <FunnelIcon className="w-5 h-5" />
           </button>
 
-          {canEditOrDelete && (
-            <button
-              onClick={onSortClick}
-              className={clsx(
-                "p-2 rounded-lg transition-colors relative",
-                currentList?.sortPreference
-                  ? "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/50"
-                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
-              )}
-              title={currentList?.sortPreference ? "Sort settings (customized)" : "Sort settings for this list"}
-            >
-              <Cog6ToothIcon className="w-5 h-5" />
-              {currentList?.sortPreference && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-purple-600 rounded-full" />
-              )}
-            </button>
+          {canEditOrDelete && currentList && (
+            <ListSortDropdown
+              currentList={currentList}
+              globalSort={globalSort}
+              globalDirection={globalDirection}
+              onSetSort={onSetSort}
+              onUseGlobal={onUseGlobal}
+            />
           )}
         </div>
       </div>

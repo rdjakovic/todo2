@@ -7,11 +7,10 @@ import TodoListItems from "./TodoListItems";
 import ListEditDialog from "./ListEditDialog";
 import DeleteListDialog from "./DeleteListDialog";
 import FilterDialog from "./FilterDialog";
-import ListSortDialog from "./ListSortDialog";
 import { getListById } from "../utils/helper";
 import { useTodoStore } from "../store/todoStore";
 import { useState, useEffect } from "react";
-import { FilterOptions } from "../types/todo";
+import { FilterOptions, SortOption, SortDirection } from "../types/todo";
 import { useTodoCalculations } from "../hooks/useTodoCalculations";
 import TodoStatistics from "./TodoStatistics";
 import TodoListHeader from "./TodoListHeader";
@@ -27,6 +26,7 @@ const TodoListView: React.FC = () => {
     error,
     searchQuery,
     sortBy,
+    sortDirection,
     setSearchQuery,
     toggleTodo,
     deleteTodo,
@@ -41,7 +41,6 @@ const TodoListView: React.FC = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [showCompletedSection, setShowCompletedSection] = useState(false);
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
-  const [isListSortDialogOpen, setIsListSortDialogOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterOptions>({
     showCompleted: false,
     priorities: {
@@ -61,7 +60,7 @@ const TodoListView: React.FC = () => {
   const currentList = getListById(lists, selectedListId);
   const isCompletedList = currentList?.name.toLowerCase() === "completed";
   const isAllList = currentList?.name.toLowerCase() === "all";
-  
+
   const canEditOrDelete = currentList &&
     !isAllList &&
     !isCompletedList;
@@ -128,12 +127,22 @@ const TodoListView: React.FC = () => {
     activeFilters.hasDueDate ||
     activeFilters.hasNote;
 
+  const handleSetSort = async (sort: SortOption, direction: SortDirection) => {
+    if (currentList) {
+      await editList(currentList.id, currentList.name, currentList.icon, sort, direction);
+    }
+  };
+
+  const handleUseGlobal = async () => {
+    if (currentList) {
+      await editList(currentList.id, currentList.name, currentList.icon, null);
+    }
+  };
+
   return (
     <>
       <div className="flex-1 p-2 sm:p-8">
         <div className="max-w-4xl mx-auto px-2 sm:px-4">
-          {/* Header with List Name, Search, and Toggle */}
-          {/* Header with List Name and Actions */}
           <TodoListHeader
             currentList={currentList}
             canEditOrDelete={canEditOrDelete || false}
@@ -142,8 +151,11 @@ const TodoListView: React.FC = () => {
             onEditList={() => setIsEditDialogOpen(true)}
             onDeleteList={() => setIsDeleteDialogOpen(true)}
             onFilterClick={() => setIsFilterDialogOpen(true)}
-            onSortClick={() => setIsListSortDialogOpen(true)}
             hasActiveFilters={hasActiveFilters}
+            globalSort={sortBy}
+            globalDirection={sortDirection}
+            onSetSort={handleSetSort}
+            onUseGlobal={handleUseGlobal}
           />
 
           {/* Statistics section - only show for "All" list */}
@@ -230,18 +242,6 @@ const TodoListView: React.FC = () => {
         currentFilters={activeFilters}
         isCompletedList={isCompletedList}
       />
-
-      {currentList && canEditOrDelete && (
-        <ListSortDialog
-          isOpen={isListSortDialogOpen}
-          onClose={() => setIsListSortDialogOpen(false)}
-          currentList={currentList}
-          globalSort={sortBy}
-          onSetSort={async (listId, sortPref) => {
-            await editList(listId, currentList.name, currentList.icon, sortPref);
-          }}
-        />
-      )}
     </>
   );
 };

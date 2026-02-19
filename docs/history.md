@@ -1,5 +1,29 @@
 # History
 
+## 2026-02-19 — Sort dropdown with ascending/descending, icon change, and sort options enum refactor
+
+**Description:** Replaced the per-list sort modal dialog with an inline dropdown, changed the sort icon, extracted sort option metadata into a shared constant, and added ascending/descending direction control per sort option.
+
+**Summary:**
+
+### New files
+- **`src/constants/sortOptions.ts`**: Central source of truth for sort options. Exports `SORT_OPTIONS` const object (enum-like), `SortDirection` type, `SORT_OPTION_META` array (label, description, supportsDirection), and `parseSortPreference`/`encodeSortPreference` helpers for encoding direction into the stored string.
+- **`src/components/ListSortDropdown.tsx`**: Inline dropdown replacing `ListSortDialog`. Shows all sort options with ↑/↓ direction buttons for directable sorts; immediately applies on click; closes on outside click or Escape.
+- **`src/components/__tests__/ListSortDropdown.test.tsx`**: 9 tests covering open/close, option selection, direction buttons, global default, and active highlight.
+
+### Changed files
+- **`src/types/todo.ts`**: `SortOption` now re-exported from constants. Added `SortDirection` re-export. `TodoList.sortPreference` widened to `string | undefined` to hold encoded "sort:direction" values.
+- **`src/store/todoStore.ts`**: Added `sortDirection` global state (persisted to localStorage). Added `setSortDirection` action. `sortTodos` now accepts a direction param and flips comparisons accordingly. `getEffectiveSortForList` returns `{ sort, direction }`. `editList` encodes sort+direction into the stored preference string.
+- **`src/hooks/useTodoCalculations.ts`**: Updated to accept `effectiveSort: { sort, direction }` and pass direction to `sortTodos`.
+- **`src/components/TodoListHeader.tsx`**: Replaced `Cog6ToothIcon` + `onSortClick` with embedded `ListSortDropdown`. Icon is now `BarsArrowDownIcon`.
+- **`src/components/TodoListView.tsx`**: Removed dialog state and `ListSortDialog` usage. Passes sort props to header.
+- **`src/components/SettingsView.tsx`**: Uses `SORT_OPTION_META` from constants. Added ↑/↓ direction buttons for the global sort setting.
+
+### Deleted files
+- **`src/components/ListSortDialog.tsx`**: Removed in favour of the dropdown.
+
+---
+
 ## 2026-02-19 — Fixed flaky security tests and resolved all test failures
 
 **Description:** Investigated and fixed sources of flakiness in security tests and resolved all failing tests across the codebase.
