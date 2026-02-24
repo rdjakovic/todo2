@@ -1,5 +1,16 @@
 # History
 
+## 2026-02-24 — EditTodoDialog responsive width increase
+
+**Description:** Widened the Edit Todo modal for larger screens.
+
+**Summary:**
+- Desktop (lg 1024px+): modal grows to `max-w-4xl` (896px), roughly 2× the previous `max-w-md`.
+- Tablet (md 768px–1023px): modal expands to `80vw` for better use of available screen space.
+- Mobile (< 768px): unchanged at `max-w-sm`.
+
+---
+
 ## 2026-02-19 — Fix service worker sync: process.env and missing sort_preference
 
 **Description:** Fixed three pre-existing bugs in `src/service-worker.js` exposed by sort preference changes.

@@ -94,7 +94,7 @@ const EditTodoDialog = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 transition-opacity duration-300 ease-in-out">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm sm:max-w-md transform transition-all duration-300 ease-in-out scale-100 max-h-[90vh] flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full md:max-w-[90vw] lg:max-w-4xl transform transition-all duration-300 ease-in-out scale-100 max-h-[90vh] flex flex-col">
         {/* Fixed Header */}
         <div className="flex justify-between items-center p-4 sm:p-6 pb-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div className="flex items-center gap-2">
