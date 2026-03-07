@@ -101,4 +101,72 @@ describe("ListSortDropdown", () => {
     const ascBtn = screen.getByLabelText("Sort by Priority ascending");
     expect(ascBtn).toHaveAttribute("aria-pressed", "true");
   });
+
+  describe("All list (virtual list without sortPreference)", () => {
+    const allList: TodoList = {
+      id: "all",
+      name: "All",
+      icon: "home",
+      showCompleted: true,
+      userId: "user-1",
+    };
+
+    it("shows indicator dot when listDirection is set for All list", () => {
+      render(
+        <ListSortDropdown
+          {...defaultProps}
+          currentList={allList}
+          listDirection="asc"
+        />
+      );
+      // The button should show "Sort (customized)" title when listDirection is set
+      expect(screen.getByTitle("Sort (customized)")).toBeInTheDocument();
+    });
+
+    it("shows no indicator when no listDirection override for All list", () => {
+      render(
+        <ListSortDropdown
+          {...defaultProps}
+          currentList={allList}
+          listDirection={undefined}
+        />
+      );
+      // The button should show default title when no direction override
+      expect(screen.getByTitle("Sort options")).toBeInTheDocument();
+    });
+
+    it("highlights the active sort option with arrow when direction is set for All list", () => {
+      render(
+        <ListSortDropdown
+          {...defaultProps}
+          currentList={allList}
+          globalSort="dateCreated"
+          globalDirection="desc"
+          listDirection="asc"
+        />
+      );
+      fireEvent.click(screen.getByTitle("Sort (customized)"));
+
+      // The active sort row (Date Created) should have the ascending button highlighted
+      const ascBtn = screen.getByLabelText("Sort by Date Created ascending");
+      expect(ascBtn).toHaveAttribute("aria-pressed", "true");
+    });
+
+    it("shows row as active even when using global sort for All list", () => {
+      render(
+        <ListSortDropdown
+          {...defaultProps}
+          currentList={allList}
+          globalSort="dateCreated"
+          globalDirection="desc"
+          listDirection={undefined}
+        />
+      );
+      fireEvent.click(screen.getByTitle("Sort options"));
+
+      // Date Created row should be highlighted as the active global sort
+      const dateCreatedBtn = screen.getByText("Date Created").closest("button");
+      expect(dateCreatedBtn).toHaveAttribute("aria-selected", "true");
+    });
+  });
 });

@@ -1,5 +1,36 @@
 # History
 
+## 2026-03-07 — Fixed sort indicators not showing for "All" list
+
+**Description:** Fixed a bug where sort indicators (purple dot on sort icon, arrow highlights in dropdown) were not showing when viewing the "All" list, even when a custom sort direction was set.
+
+**Summary:**
+
+### Problem
+- The "All" list is a virtual list without a `sortPreference` property
+- `hasCustomSort` was only checking `!!currentList.sortPreference`, ignoring per-list direction overrides (`listDirection`)
+- When viewing the "All" list, the sort dropdown would not show any indicators even when user had set a custom direction
+
+### Solution
+- Updated `ListSortDropdown.tsx` to also consider `listDirection` when determining if a custom sort is active:
+  - `hasCustomSort = !!currentList.sortPreference || !!listDirection`
+- Simplified `activeDirection` to always use `listDirection ?? globalDirection` (respects direction override regardless of sort preference)
+- Fixed `isRowActive` to highlight the active sort row even when using global sort (important for "All" list which uses global sort)
+
+### Files Changed
+- `src/components/ListSortDropdown.tsx`: Fixed sort indicator logic for virtual lists
+- `src/components/__tests__/ListSortDropdown.test.tsx`: Added 4 new tests for "All" list scenario
+
+### Testing
+- All 13 tests pass (9 existing + 4 new)
+- New tests verify:
+  - Indicator dot shows when `listDirection` is set for "All" list
+  - No indicator when no direction override for "All" list
+  - Active sort option is highlighted with arrow when direction is set
+  - Row is active even when using global sort for "All" list
+
+---
+
 ## 2026-02-24 — EditTodoDialog responsive width increase
 
 **Description:** Widened the Edit Todo modal for larger screens.

@@ -30,11 +30,11 @@ const ListSortDropdown = ({
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const hasCustomSort = !!currentList.sortPreference;
+  const hasCustomSort = !!currentList.sortPreference || !!listDirection;
   // Active sort: list's own preference or fall back to global
   const activeSort = currentList.sortPreference ?? globalSort;
-  // Active direction: per-list override, or global
-  const activeDirection = hasCustomSort ? (listDirection ?? globalDirection) : globalDirection;
+  // Active direction: per-list override (for All/Completed lists), or global
+  const activeDirection = listDirection ?? globalDirection;
   const isUsingGlobal = !hasCustomSort;
 
   useEffect(() => {
@@ -74,7 +74,7 @@ const ListSortDropdown = ({
 
   const isRowActive = (value: SortOption | "global") => {
     if (value === "global") return isUsingGlobal;
-    return hasCustomSort && activeSort === value;
+    return activeSort === value;
   };
 
   return (
