@@ -147,11 +147,11 @@ function App() {
       <div className={clsx("app", theme)}>
         <Toaster position="top-right" />
         <OfflineIndicator />
-        <div className="flex min-h-screen bg-gradient-to-br from-purple-50 dark:from-gray-900 to-blue-50 dark:to-gray-800">
+        <div className="flex min-h-screen min-w-0 bg-gradient-to-br from-purple-50 dark:from-gray-900 to-blue-50 dark:to-gray-800">
           <Sidebar />
 
           <main
-            className="flex-1 transition-all duration-300"
+            className="flex-1 min-w-0 transition-all duration-300"
             style={{
               marginLeft:
                 windowWidth >= 1024 && isSidebarOpen

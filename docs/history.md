@@ -32,14 +32,34 @@ Added `min-w-0` to several flex containers to allow proper shrinking on small sc
 - Adding `min-w-0` explicitly allows flex items to shrink below their intrinsic content width
 - This is especially important for text content that should wrap on small screens
 
+### Additional Fix (Root Cause)
+After testing with Playwright, identified that the root cause was in `src/App.tsx`:
+
+4. **`src/App.tsx`**:
+   - Outer flex container: Added `min-w-0` to `flex min-h-screen` to allow the entire app layout to shrink
+   - Main element: Added `min-w-0` to `flex-1` to allow the main content area to shrink below content width
+
+### Root Cause Analysis
+The issue was in the main app layout structure:
+```jsx
+<div className="flex min-h-screen">  <!-- Missing min-w-0 -->
+  <Sidebar />
+  <main className="flex-1">          <!-- Missing min-w-0 -->
+```
+
+Without `min-w-0`, flex items cannot shrink below their content's intrinsic width. The "Completed" list has wider content (completed dates + priority badges), which caused the layout to "stick" at around 467px.
+
 ### Files Changed
+- `src/App.tsx`: Fixed root flex containers (main fix)
 - `src/components/TodoListHeader.tsx`: Fixed toolbar shrinking behavior
 - `src/components/TodoListView.tsx`: Fixed main container shrinking
 - `src/components/TodoItem.tsx`: Fixed todo item content shrinking
 
 ### Testing
+- Verified with Playwright at 380px and 460px widths
+- Sort button and filter button are now fully visible
+- No horizontal overflow on "Completed" list
 - All existing tests pass
-- Layout now correctly adapts to narrow viewports on all list types
 
 ---
 
