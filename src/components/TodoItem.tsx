@@ -109,7 +109,7 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
           </button>
 
           <div
-            className="flex-1 min-w-0 cursor-pointer sm:cursor-auto"
+            className="flex-1 min-w-0 cursor-pointer sm:cursor-auto overflow-hidden"
             onClick={() => {
               // Only make clickable on mobile
               if (isMobile) {
@@ -153,9 +153,9 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
                 </div>
               )}
 
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-1">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-1 min-w-0">
                 {/* First row: Date created and priority */}
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {/* Format date more compactly on mobile */}
                     {isValidNativeDate(todo.dateCreated)

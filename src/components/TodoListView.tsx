@@ -151,8 +151,8 @@ const TodoListView: React.FC = () => {
 
   return (
     <>
-      <div className="flex-1 p-2 sm:p-8">
-        <div className="max-w-4xl mx-auto px-2 sm:px-4">
+      <div className="flex-1 p-2 sm:p-8 min-w-0">
+        <div className="max-w-4xl mx-auto px-2 sm:px-4 min-w-0">
           <TodoListHeader
             currentList={currentList}
             canEditOrDelete={canEditOrDelete || false}

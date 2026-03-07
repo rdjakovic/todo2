@@ -1,5 +1,48 @@
 # History
 
+## 2026-03-07 — Fixed responsive layout overflow on "Completed" list
+
+**Description:** Fixed a responsive layout issue where the "Completed" list content would not shrink properly on small screens (below ~470px), causing horizontal overflow while other lists worked correctly.
+
+**Summary:**
+
+### Problem
+- On small screens (< 470px width), the "Completed" list cards and search field would stop shrinking and overflow the viewport
+- Other lists like "Rent-a-car" worked correctly and adapted to narrow widths
+- The issue was caused by missing `min-w-0` classes on flex containers, preventing them from shrinking below their content's intrinsic width
+
+### Solution
+Added `min-w-0` to several flex containers to allow proper shrinking on small screens:
+
+1. **`src/components/TodoListHeader.tsx`**:
+   - Toolbar container: Added `min-w-0` to allow the entire toolbar to shrink
+   - Search container: Removed fixed `lg:w-64` width, kept `flex-1 min-w-0` for fluid sizing
+
+2. **`src/components/TodoListView.tsx`**:
+   - Main content container: Added `min-w-0` to `flex-1 p-2 sm:p-8`
+   - Inner container: Added `min-w-0` to `max-w-4xl mx-auto px-2 sm:px-4`
+
+3. **`src/components/TodoItem.tsx`**:
+   - Todo content div: Added `overflow-hidden` to `flex-1 min-w-0`
+   - Metadata row: Added `min-w-0` to the flex container for dates/priority
+   - Date/priority wrapper: Added `min-w-0` to allow text wrapping
+
+### Technical Details
+- In CSS Flexbox, flex items by default cannot shrink below their content's minimum width
+- Adding `min-w-0` explicitly allows flex items to shrink below their intrinsic content width
+- This is especially important for text content that should wrap on small screens
+
+### Files Changed
+- `src/components/TodoListHeader.tsx`: Fixed toolbar shrinking behavior
+- `src/components/TodoListView.tsx`: Fixed main container shrinking
+- `src/components/TodoItem.tsx`: Fixed todo item content shrinking
+
+### Testing
+- All existing tests pass
+- Layout now correctly adapts to narrow viewports on all list types
+
+---
+
 ## 2026-03-07 — Fixed sort indicators not showing for "All" list
 
 **Description:** Fixed a bug where sort indicators (purple dot on sort icon, arrow highlights in dropdown) were not showing when viewing the "All" list, even when a custom sort direction was set.

@@ -75,8 +75,8 @@ const TodoListHeader: React.FC<TodoListHeaderProps> = ({
       </div>
 
       {/* Toolbar Section: Search & View Options */}
-      <div className="flex items-center gap-3 w-full lg:w-auto">
-        <div className="relative flex-1 min-w-0 lg:w-64">
+      <div className="flex items-center gap-3 w-full lg:w-auto min-w-0">
+        <div className="relative flex-1 min-w-0">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
           </div>
