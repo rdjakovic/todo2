@@ -972,9 +972,10 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     const { lists, sortBy, sortDirection, listSortDirections } = get();
     const list = lists.find((l) => l.id === listId);
 
-    // Special lists ("All", "Completed") always use global sort
+    // Special lists ("All", "Completed") use global sort but can have per-list direction overrides
     if (list && (list.name.toLowerCase() === "all" || list.name.toLowerCase() === "completed")) {
-      return { sort: sortBy, direction: sortDirection };
+      const direction = listSortDirections[listId] ?? sortDirection;
+      return { sort: sortBy, direction };
     }
 
     const sort = list?.sortPreference || sortBy;

@@ -109,7 +109,7 @@ const TodoItem = forwardRef<HTMLDivElement, TodoItemProps>(
           </button>
 
           <div
-            className="flex-1 cursor-pointer sm:cursor-auto"
+            className="flex-1 min-w-0 cursor-pointer sm:cursor-auto"
             onClick={() => {
               // Only make clickable on mobile
               if (isMobile) {

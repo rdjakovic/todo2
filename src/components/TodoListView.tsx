@@ -131,14 +131,20 @@ const TodoListView: React.FC = () => {
 
   const handleSetSort = async (sort: SortOption, direction: SortDirection) => {
     if (currentList) {
-      await editList(currentList.id, currentList.name, currentList.icon, sort);
+      // Only persist sort preference for actual lists, not virtual ones like "All"
+      if (!isAllList) {
+        await editList(currentList.id, currentList.name, currentList.icon, sort);
+      }
       setListSortDirection(currentList.id, direction);
     }
   };
 
   const handleUseGlobal = async () => {
     if (currentList) {
-      await editList(currentList.id, currentList.name, currentList.icon, null);
+      // Only persist sort preference for actual lists, not virtual ones like "All"
+      if (!isAllList) {
+        await editList(currentList.id, currentList.name, currentList.icon, null);
+      }
       setListSortDirection(currentList.id, null);
     }
   };
@@ -189,7 +195,7 @@ const TodoListView: React.FC = () => {
 
           {/* Completed Section */}
           {completedTodos.length > 0 && (
-            <div className="mt-8">
+            <div className="mt-8 w-full min-w-0">
               <button
                 onClick={() => setShowCompletedSection(!showCompletedSection)}
                 className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors mb-4"

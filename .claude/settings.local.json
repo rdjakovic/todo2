@@ -12,7 +12,13 @@
       "Bash(npm ls:*)",
       "Bash(npx tsc:*)",
       "Bash(npm run build:*)",
-      "Bash(npx vite build:*)"
+      "Bash(npx vite build:*)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_fill_form",
+      "mcp__plugin_playwright_playwright__browser_snapshot",
+      "mcp__plugin_playwright_playwright__browser_click",
+      "mcp__plugin_playwright_playwright__browser_resize",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot"
     ]
   }
 }

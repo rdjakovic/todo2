@@ -2,6 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Reserve scrollbar gutter space to prevent layout shift when content overflows */
+html {
+  scrollbar-gutter: stable; /* Consistent space for scrollbar in all browsers */
+  scrollbar-width: thin; /* Firefox: thin scrollbar */
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.4);
+}
+
 /* Prevent selection globally */
 * {
   -webkit-user-select: none;
